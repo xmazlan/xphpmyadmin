@@ -51,6 +51,12 @@ final class Foundation
         return $real;
     }
 
+    /** Validate an existing private file without changing its permissions. */
+    public static function privateFile(string $path): string
+    {
+        return self::privatePath($path, false);
+    }
+
     public static function configuration(): array
     {
         $file = self::privatePath(self::configPath(), false);

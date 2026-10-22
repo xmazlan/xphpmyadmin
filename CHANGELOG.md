@@ -2,6 +2,15 @@
 
 Semua perubahan pada proyek xphpMyAdmin didokumentasikan di berkas ini.
 
+## [Penyimpanan Profil - Brief 02] - 2026-10-22
+
+### Lapisan Database & Repositori Profil (Profile Storage & Repository)
+- Menambahkan kelas `PhpMyAdmin\Local\ProfileDatabase` untuk mengelola koneksi SQLite privat (`data_dir/profiles.sqlite`), penegakan `PRAGMA foreign_keys=ON`, `synchronous=FULL`, migrasi schema versi 1 terisolasi (`profiles`, `profile_imports`), serta dukungan transaksi bertingkat berbasis savepoint.
+- Menambahkan kelas `PhpMyAdmin\Local\ProfileInput` untuk validasi dan normalisasi input metadata profil (nama, host loopback, port TCP, username, database default, environment tag, dan konfigurasi TLS).
+- Menambahkan kelas `PhpMyAdmin\Local\ProfileRepository` yang menyediakan kontrak operasi CRUD profil, pelacakan revisi koneksi, dan indexing pencarian/penggunaan terakhir.
+- Menambahkan kelas `PhpMyAdmin\Local\StorageException` untuk enkapsulasi kegagalan database yang aman tanpa mengekspos query SQL, parameter, atau path internal.
+- Menambahkan helper `Foundation::privateFile()` untuk verifikasi keamanan permission berkas privat.
+
 ## [Fondasi Lokal - Brief 01] - 2026-10-22
 
 ### Keamanan & Akses Jaringan (Local Access Guard)
