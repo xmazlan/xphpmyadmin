@@ -15,6 +15,11 @@ Semua perubahan pada proyek xphpMyAdmin didokumentasikan di berkas ini.
 - Menambahkan kelas `PhpMyAdmin\Local\ConnectionTestAction` untuk menangani payload POST tes koneksi, mendukung verifikasi kredensial dari tiga sumber (`input`, `saved`, `session`) dengan validasi kesesuaian revisi dan target koneksi.
 - Menambahkan endpoint web POST `local-connection-test.php` yang diproteksi oleh guard akses loopback, pemeriksaan flag `profiles_enabled`, penolakan method non-POST, penolakan query string dan payload non-JSON, inisialisasi sesi phpMyAdmin minimal, serta penegakan validasi token CSRF.
 
+### Pengujian Otomatis Koneksi & TLS (Automated Testing)
+- Menambahkan rangkaian pengujian CLI komprehensif `test/local/connections.php` untuk memvalidasi seluruh kategori error `ConnectionFailure`, verifikasi sertifikat CA/klien, pemisahan read timeout, penanganan kredensial draft/tersimpan/sesi, dan penutupan koneksi.
+- Menambahkan orkestrator pengujian `test/local/check_connections.py` yang menjalankan server MySQL dan MariaDB disposable dengan konfigurasi TLS kustom, memverifikasi koneksi sukses, kegagalan autentikasi, sertifikat tidak valid, dan pemblokiran akses forwarded pada endpoint web.
+- Memperbarui `test/local/check_http.py` untuk menguji proteksi loopback dan penolakan header forwarded pada endpoint baru `local-connection-test.php`.
+
 ## [Penyimpanan Rahasia & Password - Brief 03] - 2026-10-22
 
 ### Manajemen Kunci Master & Enkripsi AEAD (Master Key & AEAD Cipher)

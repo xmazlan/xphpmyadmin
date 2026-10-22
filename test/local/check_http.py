@@ -28,7 +28,7 @@ assert status == 200 and json.loads(body)['runtime']['sapi'] == 'fpm-fcgi'
 for header in ['Forwarded', 'X-Forwarded-For', 'X-Real-IP']:
     assert request(base + '/local-runtime.php', {header: '127.0.0.1'})[0] == 403
 for entry in ['index.php', 'url.php', 'show_config_errors.php', 'setup/index.php',
-              'setup/config.php', 'setup/validate.php', 'js/messages.php',
+              'setup/config.php', 'setup/validate.php', 'js/messages.php', 'local-connection-test.php',
               'examples/signon.php', 'examples/signon-script.php', 'examples/openid.php',
               'examples/config.manyhosts.inc.php']:
     assert request(base + '/' + entry, {'X-Forwarded-For': '127.0.0.1'})[0] == 403
@@ -55,7 +55,7 @@ try:
 finally:
     for canary in canaries:
         canary.unlink(missing_ok=True)
-print('Herd FPM: runtime 200; spoof headers and eleven entrypoints 403; POST 405; private content absent.')
+print('Herd FPM: runtime 200; spoof headers and twelve entrypoints 403; POST 405; private content absent.')
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.connect(('192.0.2.1', 80))
