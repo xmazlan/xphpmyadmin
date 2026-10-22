@@ -19,3 +19,7 @@ Semua perubahan pada proyek xphpMyAdmin didokumentasikan di berkas ini.
 - Menambahkan kelas `PhpMyAdmin\Local\Foundation` untuk verifikasi dependensi native runtime (`PDO SQLite`, `ext-sodium`), proteksi manipulasi path direktori privat di luar web root, dan validasi token CSRF mutasi profil.
 - Menyediakan skrip CLI `scripts/local-bootstrap.php` untuk inisialisasi direktori penyimpanan privat aman (`~/Library/Application Support/xphpmyadmin/`) dengan permission ketat (0700/0600) dan konfigurasi awal `local.json`.
 - Menyediakan endpoint diagnostik `local-runtime.php` (CLI dan web GET) untuk memverifikasi kesiapan runtime PHP dan izin akses penyimpanan privat.
+
+### Pengujian Otomatis Fondasi (Automated Testing)
+- Menambahkan skrip CLI `test/local/foundation.php` untuk verifikasi unit dan fungsional kelas `Access`, validasi konfigurasi dan runtime `Foundation`, serta pengujian penolakan CSRF dan izin file direktori privat.
+- Menambahkan skrip integrasi HTTP `test/local/check_http.py` untuk menguji penolakan akses eksternal, pemblokiran header forwarded di seluruh entry point web di bawah server FPM/Herd, penolakan method selain GET, dan pencegahan path traversal ke direktori privat menggunakan file canary.
