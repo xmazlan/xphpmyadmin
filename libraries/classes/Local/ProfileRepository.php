@@ -15,6 +15,7 @@ final class ProfileRepository
     private const SELECT = 'SELECT p.id, p.name, p.host, p.port, p.username, p.database_name,
         p.environment, p.tls_enabled, p.tls_verify, p.tls_ca, p.tls_cert, p.tls_key,
         p.favorite, p.created_at, p.updated_at, p.last_used_at, p.connection_revision,
+        EXISTS(SELECT 1 FROM profile_secrets s WHERE s.profile_id = p.id) AS has_saved_password,
         i.origin FROM profiles p LEFT JOIN profile_imports i ON i.profile_id = p.id';
     private const CONNECTION_FIELDS = ['host', 'port', 'username', 'database', 'tls'];
     private $database;
@@ -49,7 +50,7 @@ final class ProfileRepository
 
     private static function hydrate(array $row): array
     {
-        // Explicit projection: future secret columns must never leak through list/detail.
+        // Explicit projection: secret material must never leak through list/detail.
         return [
             'id' => $row['id'], 'name' => $row['name'], 'host' => $row['host'],
             'port' => (int) $row['port'], 'username' => $row['username'],
@@ -59,6 +60,7 @@ final class ProfileRepository
             'favorite' => (bool) $row['favorite'], 'created_at' => $row['created_at'],
             'updated_at' => $row['updated_at'], 'last_used_at' => $row['last_used_at'],
             'connection_revision' => (int) $row['connection_revision'], 'origin' => $row['origin'],
+            'has_saved_password' => (bool) $row['has_saved_password'],
         ];
     }
 
@@ -118,7 +120,10 @@ final class ProfileRepository
         return array_map([self::class, 'hydrate'], $this->database->rows($sql . ' ORDER BY ' . $orders[$order], $parameters));
     }
 
-    public function create(array $input): array
+    public function create(
+        #[\SensitiveParameter]
+        array $input
+    ): array
     {
         $input = ProfileInput::validate($input);
 
@@ -138,7 +143,11 @@ final class ProfileRepository
     }
 
     /** Partial update; omitted fields are preserved. Explicit null clears optional fields. */
-    public function update(string $id, array $patch): array
+    public function update(
+        string $id,
+        #[\SensitiveParameter]
+        array $patch
+    ): array
     {
         self::id($id);
         if (array_diff(array_keys($patch), ProfileInput::FIELDS) !== []) {
@@ -200,7 +209,7 @@ final class ProfileRepository
         self::id($id);
         $this->database->transaction(function (PDO $pdo) use ($id): void {
             $this->requireProfile($id);
-            // Future secrets use REFERENCES profiles(id) ON DELETE CASCADE on this same connection.
+            // profile_secrets cascades on this same SQLite connection.
             $statement = $pdo->prepare('DELETE FROM profiles WHERE id=:id');
             $statement->execute([':id' => $id]);
             // profile_imports keeps the origin with profile_id=NULL: deletion is never auto-reimported.

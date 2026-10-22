@@ -11,6 +11,13 @@ Semua perubahan pada proyek xphpMyAdmin didokumentasikan di berkas ini.
 - Menambahkan exception `PhpMyAdmin\Local\SecretUnavailable` untuk kegagalan kriptografi/kunci yang aman tanpa eksposur detail error driver atau path berkas.
 - Menambahkan utilitas CLI `scripts/local-key.php` untuk inisialisasi administratif master key dan pemulihan backup kunci secara eksplisit.
 
+### Siklus Hidup Password Profil & Rahasia Sesi (Password Lifecycle & Session Secrets)
+- Migrasi schema SQLite ke versi 2 (`secret_key_registry`, `profile_secrets` dengan referensi cascade) dan pengaktifan `PRAGMA secure_delete = ON` pada `ProfileDatabase`.
+- Menambahkan kelas `PhpMyAdmin\Local\ProfilePasswords` untuk mengelola operasi password profil (`keep`, `replace`, `remove`) secara terenkripsi, penyimpanan atomic envelope, serta penghapusan aman.
+- Menambahkan kelas `PhpMyAdmin\Local\SessionPasswords` untuk manajemen password sementara berbasis server-side PHP Session terisolasi dengan batas TTL, penegakan identitas tab, dan enkripsi sesi.
+- Memperbarui `ProfileRepository` dengan proyeksi indikator `has_saved_password` (tanpa membocorkan material rahasia ke respons daftar/detail profil) dan penambahan atribut `#[\SensitiveParameter]`.
+- Menerapkan atribut `#[\SensitiveParameter]` pada `ProfileInput` dan `LegacyProfileImporter` untuk mencegah kebocoran password pada logging error PHP.
+
 ## [Penyimpanan Profil - Brief 02] - 2026-10-22
 
 ### Lapisan Database & Repositori Profil (Profile Storage & Repository)

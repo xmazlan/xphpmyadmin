@@ -20,7 +20,10 @@ final class LegacyProfileImporter
     }
 
     /** Accept the already-loaded $cfg['Servers']; never serialize or log the original configuration. */
-    public function import(array $servers): array
+    public function import(
+        #[\SensitiveParameter]
+        array $servers
+    ): array
     {
         return $this->database->transaction(function (PDO $pdo) use ($servers): array {
             $counts = ['created' => 0, 'existing' => 0, 'skipped' => 0];

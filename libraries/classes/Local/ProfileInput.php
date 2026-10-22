@@ -39,7 +39,10 @@ final class ProfileInput
         return $value;
     }
 
-    public static function validate(array $input): array
+    public static function validate(
+        #[\SensitiveParameter]
+        array $input
+    ): array
     {
         if (array_diff(array_keys($input), self::FIELDS) !== []) {
             throw new InvalidArgumentException('Unsupported profile field. Passwords are not metadata.');
