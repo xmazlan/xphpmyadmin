@@ -148,3 +148,15 @@ Default tidak menyimpan password. Bootstrap kunci administratif eksplisit:
 Layanan profil lokal memerlukan PHP 8.2+, PDO SQLite (SQLite 3.24+), dan Sodium
 native. UI tetap nonaktif; integrasi disconnect/logout mengikuti Brief 05.
 Panduan backup dan pemulihan: doc/rahasia-dan-siklus-password.md.
+
+Tes koneksi dan TLS (Brief 04)
+-----------------------------
+Konektor MySQL/MariaDB bersama dan endpoint POST /local-connection-test.php
+tersedia, memakai token CSRF sesi phpMyAdmin. Tes draft tidak menyimpan profil
+atau mengubah last_used_at. TLS diverifikasi tanpa retry non-TLS.
+
+Pengujian dengan server dan datadir disposable:
+  python3 test/local/check_connections.py
+
+Endpoint mengikuti profiles_enabled, yang tetap false pada instalasi ini.
+Kontrak sumber password, timeout dan pemulihan: doc/tes-koneksi-dan-tls.md.

@@ -20,6 +20,11 @@ Semua perubahan pada proyek xphpMyAdmin didokumentasikan di berkas ini.
 - Menambahkan orkestrator pengujian `test/local/check_connections.py` yang menjalankan server MySQL dan MariaDB disposable dengan konfigurasi TLS kustom, memverifikasi koneksi sukses, kegagalan autentikasi, sertifikat tidak valid, dan pemblokiran akses forwarded pada endpoint web.
 - Memperbarui `test/local/check_http.py` untuk menguji proteksi loopback dan penolakan header forwarded pada endpoint baru `local-connection-test.php`.
 
+### Dokumentasi & Pelaporan Tes Koneksi & TLS (Documentation)
+- Memperbarui `README` dengan instruksi pengujian koneksi, verifikasi TLS, dan perintah eksekusi tes koneksi.
+- Memperbarui status implementasi pada `doc/briefs/2026-10-22-04-layanan-tes-koneksi-dan-tls.md` menjadi selesai diverifikasi.
+- Menambahkan dokumen teknis lengkap `doc/tes-koneksi-dan-tls.md` yang merinci kontrak konektor bersama, kebijakan timeout, verifikasi TLS ketat, resolusi sumber kredensial, proteksi endpoint web, serta strategi pemulihan.
+
 ## [Penyimpanan Rahasia & Password - Brief 03] - 2026-10-22
 
 ### Manajemen Kunci Master & Enkripsi AEAD (Master Key & AEAD Cipher)
