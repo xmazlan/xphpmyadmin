@@ -11,6 +11,10 @@ Semua perubahan pada proyek xphpMyAdmin didokumentasikan di berkas ini.
 - Menambahkan kelas `PhpMyAdmin\Local\ConnectionTester` untuk pengujian draft koneksi secara terisolasi tanpa efek samping penyimpanan ke profil SQLite.
 - Memperbarui `PhpMyAdmin\Local\ProfileDatabase` dengan metode `openConfigured(bool $initialize = true)` dan `openExistingConfigured()` untuk mencegah pembuatan database atau eksekusi migrasi tak terduga saat pembacaan kredensial tes koneksi.
 
+### Adaptor Aksi & Endpoint Web Pengujian Koneksi (Connection Test Action & Web Endpoint)
+- Menambahkan kelas `PhpMyAdmin\Local\ConnectionTestAction` untuk menangani payload POST tes koneksi, mendukung verifikasi kredensial dari tiga sumber (`input`, `saved`, `session`) dengan validasi kesesuaian revisi dan target koneksi.
+- Menambahkan endpoint web POST `local-connection-test.php` yang diproteksi oleh guard akses loopback, pemeriksaan flag `profiles_enabled`, penolakan method non-POST, penolakan query string dan payload non-JSON, inisialisasi sesi phpMyAdmin minimal, serta penegakan validasi token CSRF.
+
 ## [Penyimpanan Rahasia & Password - Brief 03] - 2026-10-22
 
 ### Manajemen Kunci Master & Enkripsi AEAD (Master Key & AEAD Cipher)
