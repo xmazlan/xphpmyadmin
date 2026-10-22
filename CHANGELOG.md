@@ -15,6 +15,9 @@ Semua perubahan pada proyek xphpMyAdmin didokumentasikan di berkas ini.
 - Menambahkan kelas `PhpMyAdmin\Local\LegacyProfileImporter` untuk mengimpor konfigurasi server lokal dari `$cfg['Servers']` lama secara idempoten tanpa menyalin atau menyimpan plaintext password.
 - Menambahkan skrip CLI `scripts/local-profiles-init.php` untuk menjalankan inisialisasi schema database profil dan impor awal konfigurasi secara terkontrol dari terminal.
 
+### Pengujian Otomatis Profil (Automated Testing)
+- Menambahkan rangkaian uji CLI `test/local/profiles.php` yang memverifikasi migrasi schema SQLite, transaksi/savepoint rollback, pembatasan permission berkas (0600), validasi metadata masukan, operasi CRUD repositori, serta keandalan impor konfigurasi warisan tanpa bocoran password.
+
 ## [Fondasi Lokal - Brief 01] - 2026-10-22
 
 ### Keamanan & Akses Jaringan (Local Access Guard)
