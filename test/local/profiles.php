@@ -59,7 +59,7 @@ try {
     $db = ProfileDatabase::openConfigured();
     $repository = new ProfileRepository($db);
     $inspect = new PDO('sqlite:' . $file, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-    check((int) $inspect->query('PRAGMA user_version')->fetchColumn() === 1, 'schema version');
+    check((int) $inspect->query('PRAGMA user_version')->fetchColumn() === 2, 'schema version');
     check((fileperms($file) & 0777) === 0600, 'database private mode');
     check($repository->list() === [], 'empty store');
     $input = ['name' => 'Offline %_ profile', 'host' => 'offline.invalid', 'username' => 'test-user'];
@@ -230,7 +230,7 @@ try {
     check($inspect->query('PRAGMA integrity_check')->fetchColumn() === 'ok', 'SQLite integrity');
     $inspect->exec('PRAGMA user_version = 99');
     rejects(function (): void { ProfileDatabase::openConfigured(); }, StorageException::class, 'newer schema rejected');
-    $inspect->exec('PRAGMA user_version = 1');
+    $inspect->exec('PRAGMA user_version = 2');
     chmod($file, 0644);
     rejects(function (): void { ProfileDatabase::openConfigured(); }, RuntimeException::class, 'public DB mode rejected');
     chmod($file, 0600);
@@ -257,7 +257,7 @@ try {
     $collision->exec('DROP TABLE profile_imports');
     $migrated = ProfileDatabase::openConfigured();
     check($collision->query('SELECT value FROM fixture_preserved')->fetchColumn() === 'preserved', 'successful migration nondestructive');
-    check((int) $collision->query('PRAGMA user_version')->fetchColumn() === 1, 'migration retry succeeds');
+    check((int) $collision->query('PRAGMA user_version')->fetchColumn() === 2, 'migration retry succeeds');
     unset($migrated, $collision);
     echo $count . " profile checks passed using disposable SQLite only.\n";
 } finally {

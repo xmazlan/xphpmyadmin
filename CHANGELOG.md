@@ -18,6 +18,11 @@ Semua perubahan pada proyek xphpMyAdmin didokumentasikan di berkas ini.
 - Memperbarui `ProfileRepository` dengan proyeksi indikator `has_saved_password` (tanpa membocorkan material rahasia ke respons daftar/detail profil) dan penambahan atribut `#[\SensitiveParameter]`.
 - Menerapkan atribut `#[\SensitiveParameter]` pada `ProfileInput` dan `LegacyProfileImporter` untuk mencegah kebocoran password pada logging error PHP.
 
+### Pengujian Otomatis Layanan Rahasia (Automated Testing)
+- Menambahkan rangkaian pengujian CLI komprehensif `test/local/passwords.php` untuk menguji roundtrip cipher AEAD, pencegahan tamper associated data, siklus master key (init, idempotency, restore, permission check), operasi keep/replace/remove password, isolasi password sesi dan kedaluwarsa TTL.
+- Memperbarui `test/local/profiles.php` agar selaras dengan migrasi schema versi 2 SQLite dan validasi integritas rollback.
+- Memperbarui `test/local/check_http.py` dengan assertion proteksi HTTP 404 terhadap akses web langsung ke berkas `scripts/local-key.php` dan `test/local/passwords.php`.
+
 ## [Penyimpanan Profil - Brief 02] - 2026-10-22
 
 ### Lapisan Database & Repositori Profil (Profile Storage & Repository)

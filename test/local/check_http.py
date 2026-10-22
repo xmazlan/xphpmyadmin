@@ -33,6 +33,8 @@ for entry in ['index.php', 'url.php', 'show_config_errors.php', 'setup/index.php
               'examples/config.manyhosts.inc.php']:
     assert request(base + '/' + entry, {'X-Forwarded-For': '127.0.0.1'})[0] == 403
 assert request(base + '/local-runtime.php', method='POST')[0] == 405
+for script in ['scripts/local-key.php', 'test/local/passwords.php']:
+    assert request(base + '/' + script)[0] == 404
 config = Path.home() / 'Library/Application Support/xphpmyadmin/local.json'
 original = config.read_bytes()
 # Real synthetic private files must not be downloadable through the app or traversal.
