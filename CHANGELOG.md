@@ -11,6 +11,10 @@ Semua perubahan pada proyek xphpMyAdmin didokumentasikan di berkas ini.
 - Menambahkan kelas `PhpMyAdmin\Local\StorageException` untuk enkapsulasi kegagalan database yang aman tanpa mengekspos query SQL, parameter, atau path internal.
 - Menambahkan helper `Foundation::privateFile()` untuk verifikasi keamanan permission berkas privat.
 
+### Impor Profil Warisan & Inisialisasi CLI (Legacy Profile Importer & CLI Init)
+- Menambahkan kelas `PhpMyAdmin\Local\LegacyProfileImporter` untuk mengimpor konfigurasi server lokal dari `$cfg['Servers']` lama secara idempoten tanpa menyalin atau menyimpan plaintext password.
+- Menambahkan skrip CLI `scripts/local-profiles-init.php` untuk menjalankan inisialisasi schema database profil dan impor awal konfigurasi secara terkontrol dari terminal.
+
 ## [Fondasi Lokal - Brief 01] - 2026-10-22
 
 ### Keamanan & Akses Jaringan (Local Access Guard)
