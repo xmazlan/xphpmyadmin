@@ -126,5 +126,14 @@ Akses aplikasi dibatasi ke loopback. Bootstrap privat dan diagnostik runtime:
   php local-runtime.php
   http://xphpmyadmin.test/local-runtime.php
 
-Profil koneksi belum tersedia dan tetap nonaktif. Panduan integrasi, pengujian,
+Antarmuka profil koneksi belum tersedia dan tetap nonaktif. Panduan integrasi, pengujian,
 permission serta pemulihan: doc/runtime-dan-akses-lokal.md.
+
+Metadata profil lokal (Brief 02)
+------------------------------
+Penyimpanan SQLite dan impor metadata koneksi lokal tersedia secara internal:
+  php scripts/local-profiles-init.php
+  php test/local/profiles.php
+
+Impor idempotent tidak menyalin password atau menulis konfigurasi lama. UI tetap
+nonaktif. Kontrak layanan dan pemulihan: doc/penyimpanan-profil.md.

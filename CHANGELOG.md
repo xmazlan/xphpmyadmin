@@ -18,6 +18,11 @@ Semua perubahan pada proyek xphpMyAdmin didokumentasikan di berkas ini.
 ### Pengujian Otomatis Profil (Automated Testing)
 - Menambahkan rangkaian uji CLI `test/local/profiles.php` yang memverifikasi migrasi schema SQLite, transaksi/savepoint rollback, pembatasan permission berkas (0600), validasi metadata masukan, operasi CRUD repositori, serta keandalan impor konfigurasi warisan tanpa bocoran password.
 
+### Dokumentasi & Pelaporan Profil (Documentation)
+- Memperbarui `README` dengan dokumentasi inisialisasi metadata profil dan panduan pengujian.
+- Memperbarui status implementasi pada `doc/briefs/2026-10-22-02-penyimpanan-profil-dan-impor-awal.md` menjadi selesai diverifikasi.
+- Menambahkan dokumen teknis komprehensif `doc/penyimpanan-profil.md` yang merinci inisialisasi, schema/transaksi SQLite, kontrak layanan internal, aturan impor idempoten, penanganan error dan sanitasi, serta panduan verifikasi dan pemulihan.
+
 ## [Fondasi Lokal - Brief 01] - 2026-10-22
 
 ### Keamanan & Akses Jaringan (Local Access Guard)

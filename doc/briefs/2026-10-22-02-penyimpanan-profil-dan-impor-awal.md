@@ -1,7 +1,7 @@
 # Brief 02 — Penyimpanan profil dan impor awal
 
 Tanggal: 22 Oktober 2026  
-Status: belum dikerjakan  
+Status: selesai — lapisan metadata diverifikasi 22 Oktober 2026
 Sumber: [PRD](../../PRD.md)  
 Urutan: 2 dari 7  
 Dependensi: Brief 01 selesai.  
@@ -50,6 +50,12 @@ penerimaan belum terpenuhi.
   pengguna; pengujian menggunakan fixture disposable dan data sintetis.
 - Jangan mencantumkan password/kunci nyata di kode, dokumentasi, log, atau laporan.
 - Brief ini tidak menyatakan bahwa fitur telah diimplementasikan.
+
+## Hasil implementasi
+
+Schema SQLite, kontrak repositori, aturan impor, hasil pengujian dan pemulihan:
+[Penyimpanan profil](../penyimpanan-profil.md). Lapisan metadata telah disiapkan;
+UI tetap nonaktif dan penyimpanan rahasia mengikuti Brief 03.
 
 ## Navigasi
 
