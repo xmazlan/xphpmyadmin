@@ -2,6 +2,15 @@
 
 Semua perubahan pada proyek xphpMyAdmin didokumentasikan di berkas ini.
 
+## [Layanan Tes Koneksi & TLS - Brief 04] - 2026-10-22
+
+### Konektor Bersama & Layanan Tes Koneksi (MySQL/MariaDB Connector & Tester)
+- Menambahkan kelas `PhpMyAdmin\Local\MySqlConnector` sebagai transport bersama untuk tes koneksi dan Connect (Brief 05) dengan verifikasi ketat sertifikat TLS (`MYSQLI_OPT_SSL_VERIFY_SERVER_CERT=1`, tanpa retry downgrade non-TLS), batasan connect timeout 10 detik, dan isolasi read timeout.
+- Menambahkan kelas `PhpMyAdmin\Local\VerifiedConnection` yang mengenkapsulasi koneksi aktif terverifikasi dengan ringkasan status non-rahasia dan penutupan socket secara idempoten.
+- Menambahkan exception `PhpMyAdmin\Local\ConnectionFailure` untuk kategorisasi kegagalan terstruktur (`input`, `dns`, `network`, `timeout`, `authentication`, `database`, `tls`, `storage`) dengan pesan error yang aman tanpa membocorkan kredensial atau stack trace.
+- Menambahkan kelas `PhpMyAdmin\Local\ConnectionTester` untuk pengujian draft koneksi secara terisolasi tanpa efek samping penyimpanan ke profil SQLite.
+- Memperbarui `PhpMyAdmin\Local\ProfileDatabase` dengan metode `openConfigured(bool $initialize = true)` dan `openExistingConfigured()` untuk mencegah pembuatan database atau eksekusi migrasi tak terduga saat pembacaan kredensial tes koneksi.
+
 ## [Penyimpanan Rahasia & Password - Brief 03] - 2026-10-22
 
 ### Manajemen Kunci Master & Enkripsi AEAD (Master Key & AEAD Cipher)

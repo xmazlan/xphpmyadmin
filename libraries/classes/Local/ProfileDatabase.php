@@ -19,13 +19,16 @@ final class ProfileDatabase
     }
 
     /** Internal bootstrap only; this does not enable the profile UI or connect to MySQL. */
-    public static function openConfigured(): self
+    public static function openConfigured(bool $initialize = true): self
     {
         Foundation::runtime();
         $config = Foundation::configuration();
         $file = $config['data_dir'] . '/profiles.sqlite';
         $oldMask = umask(0077);
         try {
+            if (! $initialize && (! is_file($file) || is_link($file))) {
+                throw new StorageException('Profile storage is not initialized; run the private bootstrap.');
+            }
             if (! file_exists($file) && ! is_link($file)) {
                 $handle = @fopen($file, 'x');
                 if ($handle !== false) {
@@ -48,7 +51,11 @@ final class ProfileDatabase
             $pdo->exec('PRAGMA synchronous = FULL');
             $pdo->exec('PRAGMA secure_delete = ON');
             $database = new self($pdo);
-            $database->migrate();
+            if ($initialize) {
+                $database->migrate();
+            } elseif ((int) $pdo->query('PRAGMA user_version')->fetchColumn() !== 2) {
+                throw new StorageException('Profile storage needs an explicit schema initialization.');
+            }
 
             return $database;
         } catch (PDOException $error) {
@@ -56,6 +63,12 @@ final class ProfileDatabase
         } finally {
             umask($oldMask);
         }
+    }
+
+    /** Test/Connect credential reads must never create a database or apply a migration. */
+    public static function openExistingConfigured(): self
+    {
+        return self::openConfigured(false);
     }
 
     private function migrate(): void
