@@ -117,3 +117,14 @@ Enjoy!
 ------
 
 The phpMyAdmin team
+
+
+Fondasi lokal xphpMyAdmin (22 Oktober 2026)
+-----------------------------------------
+Akses aplikasi dibatasi ke loopback. Bootstrap privat dan diagnostik runtime:
+  php scripts/local-bootstrap.php
+  php local-runtime.php
+  http://xphpmyadmin.test/local-runtime.php
+
+Profil koneksi belum tersedia dan tetap nonaktif. Panduan integrasi, pengujian,
+permission serta pemulihan: doc/runtime-dan-akses-lokal.md.

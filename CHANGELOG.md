@@ -23,3 +23,8 @@ Semua perubahan pada proyek xphpMyAdmin didokumentasikan di berkas ini.
 ### Pengujian Otomatis Fondasi (Automated Testing)
 - Menambahkan skrip CLI `test/local/foundation.php` untuk verifikasi unit dan fungsional kelas `Access`, validasi konfigurasi dan runtime `Foundation`, serta pengujian penolakan CSRF dan izin file direktori privat.
 - Menambahkan skrip integrasi HTTP `test/local/check_http.py` untuk menguji penolakan akses eksternal, pemblokiran header forwarded di seluruh entry point web di bawah server FPM/Herd, penolakan method selain GET, dan pencegahan path traversal ke direktori privat menggunakan file canary.
+
+### Dokumentasi & Pelaporan Fondasi (Documentation)
+- Memperbarui `README` dengan instruksi pembatasan loopback, bootstrap privat, serta petunjuk menjalankan diagnostik CLI dan web.
+- Memperbarui status implementasi pada `doc/briefs/2026-10-22-01-fondasi-runtime-dan-akses-lokal.md` menjadi selesai terverifikasi.
+- Menambahkan dokumen arsitektur dan operasional lengkap `doc/runtime-dan-akses-lokal.md` yang mencakup peta integrasi phpMyAdmin, konfigurasi runtime & penyimpanan privat, pengikatan listener Herd, baseline backup tarball, dan prosedur pemulihan.
