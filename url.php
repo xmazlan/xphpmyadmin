@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/libraries/local-access.php';
+
 use PhpMyAdmin\Common;
 use PhpMyAdmin\UrlRedirector;
 

@@ -9,6 +9,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../libraries/local-access.php';
+
 /* Use cookies for session */
 ini_set('session.use_cookies', 'true');
 /* Change this to true if using phpMyAdmin over https */

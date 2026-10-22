@@ -5,6 +5,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../libraries/local-access.php';
+
 use PhpMyAdmin\Controllers\Setup\ConfigController;
 use PhpMyAdmin\Controllers\Setup\FormController;
 use PhpMyAdmin\Controllers\Setup\HomeController;

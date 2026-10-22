@@ -14,6 +14,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../libraries/local-access.php';
+
 if (false === @include_once 'OpenID/RelyingParty.php') {
     exit;
 }

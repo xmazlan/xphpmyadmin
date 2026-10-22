@@ -9,6 +9,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../libraries/local-access.php';
+
 // phpcs:disable Squiz.Functions.GlobalFunction
 
 /**
