@@ -1,7 +1,7 @@
 # Brief 03 — Penyimpanan rahasia dan siklus password
 
 Tanggal: 22 Oktober 2026  
-Status: belum dikerjakan  
+Status: selesai — layanan rahasia diverifikasi 22 Oktober 2026
 Sumber: [PRD](../../PRD.md)  
 Urutan: 3 dari 7  
 Dependensi: Brief 01–02 selesai.  
@@ -48,6 +48,12 @@ penerimaan belum terpenuhi.
   pengguna; pengujian menggunakan fixture disposable dan data sintetis.
 - Jangan mencantumkan password/kunci nyata di kode, dokumentasi, log, atau laporan.
 - Brief ini tidak menyatakan bahwa fitur telah diimplementasikan.
+
+## Hasil implementasi
+
+Kontrak password, penyimpanan sesi, pengujian, backup dan pemulihan kunci:
+[Rahasia dan siklus password](../rahasia-dan-siklus-password.md). UI tetap
+nonaktif; pemasangan hook disconnect/logout mengikuti integrasi Brief 05.
 
 ## Navigasi
 

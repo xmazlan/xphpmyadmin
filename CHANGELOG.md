@@ -23,6 +23,12 @@ Semua perubahan pada proyek xphpMyAdmin didokumentasikan di berkas ini.
 - Memperbarui `test/local/profiles.php` agar selaras dengan migrasi schema versi 2 SQLite dan validasi integritas rollback.
 - Memperbarui `test/local/check_http.py` dengan assertion proteksi HTTP 404 terhadap akses web langsung ke berkas `scripts/local-key.php` dan `test/local/passwords.php`.
 
+### Dokumentasi & Pelaporan Siklus Password (Documentation)
+- Memperbarui `README` dengan instruksi inisialisasi master key dan ketentuan runtime PHP 8.2+ serta Sodium native.
+- Memperbarui status implementasi pada `doc/briefs/2026-10-22-03-penyimpanan-rahasia-dan-siklus-password.md` menjadi selesai diverifikasi.
+- Memperbarui `doc/penyimpanan-profil.md` dengan catatan peningkatan schema versi 2.
+- Menambahkan dokumen teknis lengkap `doc/rahasia-dan-siklus-password.md` yang merinci schema v2, spesifikasi enkripsi Sodium AEAD, alur kerja keep/replace/remove, manajemen password sesi, dan prosedur backup/restore master key.
+
 ## [Penyimpanan Profil - Brief 02] - 2026-10-22
 
 ### Lapisan Database & Repositori Profil (Profile Storage & Repository)

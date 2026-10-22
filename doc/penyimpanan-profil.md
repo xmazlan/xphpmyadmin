@@ -1,5 +1,9 @@
 # Penyimpanan profil dan impor awal
 
+Catatan tahap Brief 02. Schema saat ini ditingkatkan ke versi 2 dan layanan
+rahasia sudah tersedia melalui [Brief 03](rahasia-dan-siklus-password.md).
+Penjelasan belum tersedianya rahasia di bawah menggambarkan kondisi akhir Brief 02.
+
 Implementasi Brief 02, 22 Oktober 2026. Lapisan metadata tersedia secara internal;
 UI, endpoint HTTP profil, tes koneksi, autentikasi/tab, dan enkripsi password
 belum diimplementasikan. `profiles_enabled` tetap `false`.

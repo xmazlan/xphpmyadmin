@@ -137,3 +137,14 @@ Penyimpanan SQLite dan impor metadata koneksi lokal tersedia secara internal:
 
 Impor idempotent tidak menyalin password atau menulis konfigurasi lama. UI tetap
 nonaktif. Kontrak layanan dan pemulihan: doc/penyimpanan-profil.md.
+
+Password opsional (Brief 03)
+--------------------------
+Layanan internal keep/replace/remove, Sodium AEAD, dan rahasia sesi tersedia.
+Default tidak menyimpan password. Bootstrap kunci administratif eksplisit:
+  php scripts/local-key.php init
+  php test/local/passwords.php
+
+Layanan profil lokal memerlukan PHP 8.2+, PDO SQLite (SQLite 3.24+), dan Sodium
+native. UI tetap nonaktif; integrasi disconnect/logout mengikuti Brief 05.
+Panduan backup dan pemulihan: doc/rahasia-dan-siklus-password.md.
