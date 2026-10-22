@@ -76,16 +76,21 @@ final class Foundation
 
     public static function runtime(): array
     {
+        if (PHP_VERSION_ID < 80200) {
+            throw new RuntimeException('Local profile services require PHP 8.2+ for sensitive argument redaction.');
+        }
         $sqlite = class_exists(PDO::class) && in_array('sqlite', PDO::getAvailableDrivers(), true);
         $sodium = extension_loaded('sodium') && function_exists('sodium_crypto_secretbox')
-            && function_exists('sodium_crypto_secretbox_open') && function_exists('random_bytes');
+            && function_exists('sodium_crypto_secretbox_open') && function_exists('random_bytes')
+            && function_exists('sodium_crypto_aead_xchacha20poly1305_ietf_encrypt')
+            && function_exists('sodium_crypto_aead_xchacha20poly1305_ietf_decrypt');
         if (! $sqlite || ! $sodium) {
             throw new RuntimeException('Local profiles require ext-pdo_sqlite and ext-sodium in this PHP runtime.');
         }
         try {
             $db = new PDO('sqlite::memory:');
             $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $db->query('SELECT sqlite_version()')->fetchColumn();
+            $sqliteVersion = (string) $db->query('SELECT sqlite_version()')->fetchColumn();
             $key = random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES);
             $nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
             $ciphertext = sodium_crypto_secretbox('runtime-check', $nonce, $key);
@@ -93,11 +98,23 @@ final class Foundation
                 throw new RuntimeException();
             }
             sodium_memzero($key);
+            $key = random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES);
+            $nonce = random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
+            $ciphertext = sodium_crypto_aead_xchacha20poly1305_ietf_encrypt('runtime-check', 'runtime', $nonce, $key);
+            if (sodium_crypto_aead_xchacha20poly1305_ietf_decrypt($ciphertext, 'runtime', $nonce, $key) !== 'runtime-check') {
+                throw new RuntimeException();
+            }
+            sodium_memzero($key);
         } catch (Throwable $error) {
             throw new RuntimeException('Local runtime self-check failed; check PDO SQLite and Sodium installation.');
         }
 
-        return ['php' => PHP_VERSION, 'sapi' => PHP_SAPI, 'pdo_sqlite' => true, 'sodium' => true];
+        if (version_compare($sqliteVersion, '3.24.0', '<')) {
+            throw new RuntimeException('Local profile services require SQLite 3.24+ for atomic secret updates.');
+        }
+
+        return ['php' => PHP_VERSION, 'sapi' => PHP_SAPI, 'pdo_sqlite' => true,
+            'sqlite_version' => $sqliteVersion, 'sodium' => true];
     }
 
     /** Call after Common::run(), before every future profile mutation controller. */

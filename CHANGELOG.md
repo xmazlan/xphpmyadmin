@@ -2,6 +2,15 @@
 
 Semua perubahan pada proyek xphpMyAdmin didokumentasikan di berkas ini.
 
+## [Penyimpanan Rahasia & Password - Brief 03] - 2026-10-22
+
+### Manajemen Kunci Master & Enkripsi AEAD (Master Key & AEAD Cipher)
+- Penegakan syarat runtime PHP 8.2+ untuk redaksi otomatis argumen sensitif pada stack trace, SQLite 3.24+ untuk operasi atomik, serta ekstensi native Sodium XChaCha20-Poly1305 IETF AEAD pada `PhpMyAdmin\Local\Foundation`.
+- Menambahkan kelas `PhpMyAdmin\Local\SecretCipher` untuk enkripsi dan dekripsi AEAD biner dengan nonce 24-byte acak, authentication tag 16-byte, pengikatan ID profil pada associated data, serta fingerprint kunci SHA-256.
+- Menambahkan kelas `PhpMyAdmin\Local\SecretKeyStore` untuk inisialisasi (`init`) dan pemulihan (`restore`) master key privat (`key_dir/master.key`, 0600) secara atomik dengan registrasi fingerprint singleton pada SQLite.
+- Menambahkan exception `PhpMyAdmin\Local\SecretUnavailable` untuk kegagalan kriptografi/kunci yang aman tanpa eksposur detail error driver atau path berkas.
+- Menambahkan utilitas CLI `scripts/local-key.php` untuk inisialisasi administratif master key dan pemulihan backup kunci secara eksplisit.
+
 ## [Penyimpanan Profil - Brief 02] - 2026-10-22
 
 ### Lapisan Database & Repositori Profil (Profile Storage & Repository)
