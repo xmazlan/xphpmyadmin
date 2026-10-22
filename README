@@ -1,0 +1,119 @@
+xphpMyAdmin — Pengelola Koneksi Database Remote
+==============================================
+
+Status: perencanaan fitur. Pengelola profil koneksi yang dijelaskan di bawah
+belum diimplementasikan. Aplikasi saat ini berbasis phpMyAdmin 5.2.3 dengan
+koneksi lokal statis melalui config.inc.php.
+
+Tujuan
+------
+
+Menjadikan proyek ini alat administrasi MySQL/MariaDB untuk penggunaan lokal
+pribadi, dengan profil server tersimpan yang dapat dipilih kembali.
+Aplikasi berjalan di Mac pengguna; koneksi database dibuat oleh proses PHP,
+bukan langsung oleh browser. Akses VPN atau tunnel eksternal harus tersedia
+dari mesin yang menjalankan aplikasi.
+
+Keputusan produk
+-----------------
+
+- Penggunaan lokal pribadi, bukan layanan web bersama untuk tim.
+- Koneksi langsung/VPN; SSH tunnel bawaan di luar cakupan versi pertama.
+- Profil koneksi tersimpan permanen; penyimpanan password terenkripsi opsional
+  dan tidak aktif secara default.
+- Database yang didukung: MySQL dan MariaDB, mengikuti basis phpMyAdmin.
+
+Fitur yang direncanakan untuk v1
+------------------------------
+
+- Halaman Koneksi: daftar profil, pencarian, favorit, dan terakhir digunakan.
+- Drawer tambah/edit: nama, host, port, username, database awal opsional,
+  label lingkungan, TLS, dan pilihan simpan password.
+- Tindakan Tes koneksi, Simpan, dan Hubungkan yang terpisah.
+- Penyimpanan profil dalam SQLite lokal di luar direktori publik; kunci
+  enkripsi password disimpan terpisah.
+- Nama server dan lingkungan aktif selalu terlihat; konteks koneksi terisolasi
+  antar-tab agar pergantian server tidak mengalihkan query tab lain.
+- Profil awal dari koneksi lokal yang sudah ada, tanpa mengubah database tujuan.
+
+Profil menyimpan pengaturan akses, bukan salinan isi database. Riwayat penggunaan
+mencatat koneksi terakhir yang berhasil dan tidak berarti menyimpan riwayat SQL.
+Menghapus profil hanya menghapus konfigurasi lokal.
+
+Menjalankan aplikasi saat ini
+----------------------------
+
+Gunakan lingkungan PHP lokal yang memenuhi composer.json dan arahkan web server
+lokal, misalnya Herd, ke proyek ini. Periksa konfigurasi koneksi di config.inc.php
+sebelum menggunakan aplikasi. Jangan membagikan kredensial dari file konfigurasi.
+Persyaratan phpMyAdmin tersedia dalam doc/html/index.html dan dokumentasi resmi:
+https://docs.phpmyadmin.net/en/release_5_2_0/
+
+SQLite dan penyimpanan rahasia di atas merupakan kebutuhan implementasi v1,
+bukan petunjuk bahwa fitur tersebut sudah tersedia pada aplikasi saat ini.
+
+Dokumen produk
+--------------
+
+Lihat PRD.md untuk kebutuhan, alur pengguna, batas cakupan, kriteria penerimaan,
+dan tahapan implementasi. Detail teknis yang ditandai sebagai rekomendasi belum
+merupakan fitur yang telah dibangun.
+
+Informasi upstream dan lisensi
+-----------------------------
+
+Informasi README phpMyAdmin asli dipertahankan di bawah ini. Pengembangan proyek
+ini tetap mengikuti lisensi upstream; lihat LICENSE dan composer.json.
+
+phpMyAdmin - Readme
+===================
+
+Version 5.2.3
+
+A web interface for MySQL and MariaDB.
+
+https://www.phpmyadmin.net/
+
+Summary
+-------
+
+phpMyAdmin is intended to handle the administration of MySQL over the web.
+For a summary of features, list of requirements, and installation instructions,
+please see the documentation in the ./doc/ folder or at https://docs.phpmyadmin.net/
+
+Copyright
+---------
+
+Copyright © 1998 onwards -- the phpMyAdmin team
+
+Certain libraries are copyrighted by their respective authors;
+see the full copyright list for details.
+
+For full copyright information, please see ./doc/copyright.rst
+
+License
+-------
+
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License version 2, as published by the
+Free Software Foundation.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+Licensing of current contributions
+----------------------------------
+
+Beginning on 2013-12-01, new contributions to this codebase are all licensed
+under terms compatible with GPLv2-or-later.  phpMyAdmin is currently
+transitioning older code to GPLv2-or-later, but work is not yet complete.
+
+Enjoy!
+------
+
+The phpMyAdmin team
