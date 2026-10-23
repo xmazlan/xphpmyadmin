@@ -7,10 +7,20 @@
     "en": "Launch of Modern Desktop Interface & Unified Data Workspace"
   },
   "body": {
-    "id": "Aplikasi kini hadir dengan antarmuka desktop modern berkanvas gelap, navigasi multi-sesi, diagnostik kesehatan sambungan otomatis, serta studio penjelajah data langsung.",
-    "en": "The application now features a modern dark-canvas desktop interface, multi-session tab navigation, automated connection health diagnostics, and a live data explorer studio."
+    "id": "Aplikasi kini hadir dengan antarmuka desktop modern berkanvas gelap yang responsif saat mode jendela maupun layar penuh, navigasi multi-sesi, diagnostik kesehatan sambungan otomatis, bilah navigasi lengkap fitur inti phpMyAdmin (Databases, SQL, Status, Users, Export, Import, Variables, Charsets, Engines, Plugins), serta pengelolaan data langsung yang aman.",
+    "en": "The application now features a modern dark-canvas desktop interface responsive in both windowed and fullscreen modes, multi-session tab navigation, automated connection health diagnostics, complete phpMyAdmin core navigation tabs (Databases, SQL, Status, Users, Export, Import, Variables, Charsets, Engines, Plugins), and integrated secure direct data management."
   },
   "items": [
+    {
+      "type": "new",
+      "id": "Navigasi Lengkap Fitur Inti phpMyAdmin: Ruang kerja kini menghadirkan seluruh bilah tab sistem inti phpMyAdmin meliputi manajemen basis data, eksekusi perintah, pemantauan status & proses server, manajemen akun pengguna, ekspor, impor, penjelajah variabel sistem, set karakter, mesin penyimpanan, dan plugin server.",
+      "en": "Complete phpMyAdmin Core Navigation: The workspace now delivers all phpMyAdmin core system tabs including database management, query execution, server status & process monitoring, user accounts management, export, import, system variables explorer, charsets, storage engines, and server plugins."
+    },
+    {
+      "type": "new",
+      "id": "Fitur Ekspor & Impor Basis Data Lengkap: Pengguna kini dapat mencadangkan seluruh skema dan data tabel ke dalam berkas cadangan dokumen, serta memulihkan data kembali secara langsung lewat pemilihan berkas maupun penempelan skrip.",
+      "en": "Comprehensive Database Export & Import Feature: Users can now back up entire schemas and table data into backup document files, and restore data directly via file selection or script pasting."
+    },
     {
       "type": "new",
       "id": "Antarmuka Pengelola Sambungan Modern: Tata letak bertingkat ramah mata dengan bilah pencarian cerdas dan navigasi multi-tab untuk mengelola banyak server sekaligus.",
@@ -30,6 +40,56 @@
       "type": "new",
       "id": "Pengelolaan Kredensial Aman: Perlindungan sandi akses dengan sistem penyimpanan terenkripsi serta kemudahan untuk memperbarui atau menghapus sandi tersimpan.",
       "en": "Secure Credential Management: Access password protection with encrypted storage system and seamless options to update or remove saved passwords."
+    },
+    {
+      "type": "improvement",
+      "id": "Responsivitas Penuh Mode Jendela & Layar Penuh: Antarmuka aplikasi kini beradaptasi secara dinamis saat berada dalam mode jendela kecil maupun layar penuh, dilengkapi panel rincian yang dapat disembunyikan, bilah penjelajah yang fleksibel, dan editor perintah yang dapat diciutkan demi memaksimalkan ruang kerja data.",
+      "en": "Full Windowed & Fullscreen Responsiveness: Application interface now dynamically adapts whether in small windowed mode or maximized fullscreen, featuring collapsible detail panels, flexible explorer sidebar, and collapsible query editor to maximize data workspace view."
+    },
+    {
+      "type": "improvement",
+      "id": "Penyederhanaan Konfigurasi Sambungan: Formulir konfigurasi awal kini tidak lagi mewajibkan pengisian basis data awal, memudahkan pengguna menyambungkan server cukup dengan alamat host, port, nama akun, dan kata sandi.",
+      "en": "Simplified Connection Setup: Initial configuration form no longer requires upfront database specification, allowing users to connect to the server with just host address, port, username, and password."
+    },
+    {
+      "type": "improvement",
+      "id": "Penjelajah Daftar Basis Data Lengkap & Pencarian Cepat: Panel samping ruang kerja menampilkan daftar seluruh basis data aktif secara transparan dan menyeluruh, dilengkapi penyaring pencarian instan dan pembaruan daftar satu-klik.",
+      "en": "Comprehensive Database Explorer & Quick Search: Workspace sidebar now displays the complete list of all active databases openly, featuring instant search filtering and one-click list refresh."
+    },
+    {
+      "type": "improvement",
+      "id": "Dukungan Tema Gelap Penuh & Pengalihan Cepat: Pilihan tema gelap terpadu sejak awal peluncuran dengan tombol pintas pengalihan tema di bilah navigasi dan pengaturan.",
+      "en": "Full Dark Mode Support & Quick Switch: Unified dark theme from the initial launch with quick theme toggle shortcuts in the navigation bar and settings."
+    },
+    {
+      "type": "improvement",
+      "id": "Kemudahan Akses Kata Sandi: Kolom pengisian sandi database kini tampil langsung di samping nama pengguna dengan tombol intip dan ringkasan status keamanan.",
+      "en": "Streamlined Password Access: Database password field is now directly displayed beside the username with peek visibility and security status overview."
+    },
+    {
+      "type": "improvement",
+      "id": "Interaktivitas & Fleksibilitas Impor SQL: Kotak pemilihan berkas impor kini dapat diklik di seluruh area, mendukung seret-dan-lepas (drag and drop), dilengkapi pemilih berkas ganda yang andal, pemilihan basis data target langsung, serta tombol eksekusi yang selalu responsif dan memberikan panduan saat berkas belum dipilih.",
+      "en": "SQL Import Interactivity & Flexibility: The import file drop-zone is now fully clickable across the entire area, supports drag-and-drop, features dual reliable file pickers, direct target database selection, and an execution button that remains responsive with interactive guidance when no file is selected."
+    },
+    {
+      "type": "improvement",
+      "id": "Navigasi Struktur Tabel Satu-Klik & Operasi Lengkap: Mengklik baris atau nama basis data pada daftar kini secara otomatis menampilkan seluruh tabel di dalamnya melalui bilah Struktur ala phpMyAdmin, dilengkapi aksi jelajahi data, inspeksi kolom skema, sisipkan baris baru, hapus/kosongkan tabel, aksi massal, serta bilah operasi basis data.",
+      "en": "One-Click Table Structure Navigation & Comprehensive Operations: Clicking any database row or name in the database list now automatically reveals all its tables in the phpMyAdmin-style Structure view, complete with data browsing, column schema inspection, new row insertion, empty/drop actions, bulk operations, and dedicated database operations tab."
+    },
+    {
+      "type": "improvement",
+      "id": "Pengalihan Tema Gelap dan Terang yang Mulus & Harmoni Tipografi Lengkap: Tombol pengubah tema kini beralih secara andal antara mode gelap dan mode terang dengan ikon interaktif (Bulan dan Matahari) serta label mode otomatis. Seluruh tipografi tabel, nama basis data, bilah navigasi, baris data saat disentuh kursor (hover), dan teks sekunder dioptimalkan dengan kontras tinggi yang tajam dan nyaman dibaca pada kedua mode.",
+      "en": "Seamless Dark and Light Theme Switching & Complete Typography Harmony: The theme toggle button now reliably switches between dark and light modes with interactive icons (Moon and Sun) and automated mode labels. All table typography, database names, navigation tabs, data row hovers, and secondary text are fully optimized with sharp, high-contrast legibility across both themes."
+    },
+    {
+      "type": "improvement",
+      "id": "Standarisasi Penuh Desain & Tata Letak Berbasis Aturan shadcn/ui: Seluruh pondasi antarmuka, tata letak, dan komponen kini secara ketat mengikuti konvensi dan token semantik resmi shadcn/ui (bg-background, text-foreground, bg-card, bg-muted, border-border, bg-primary, variant built-in, serta size-* utilities) tanpa warna hex sembarangan atau override manual. Arsitektur ini memastikan transisi tema instan, harmonis, dan bersih dari aturan gaya rapuh.",
+      "en": "Full shadcn/ui Design & Layout Standardization: All interface foundations, layouts, and components now strictly adhere to official shadcn/ui conventions and semantic tokens (bg-background, text-foreground, bg-card, bg-muted, border-border, bg-primary, built-in variants, and size-* utilities) eliminating arbitrary hex colors and fragile manual overrides for clean, robust theme transitions."
+    },
+    {
+      "type": "improvement",
+      "id": "Dukungan Lengkap Kredensial SSH Tunnel (User & Password): Formulir konfigurasi metode SSH Tunnel kini dilengkapi kolom masukan Nama Pengguna SSH (User SSH) dan Kata Sandi SSH (Password User SSH) dengan tombol intip/sembunyikan (peek visibility) serta dukungan kunci privat SSH opsional untuk fleksibilitas autentikasi ke server bastion.",
+      "en": "Comprehensive SSH Tunnel Credentials Support (User & Password): The SSH Tunnel configuration form now features dedicated inputs for SSH Username and SSH Password with interactive peek visibility toggles, alongside optional SSH private key support for flexible bastion server authentication."
     }
   ]
 }

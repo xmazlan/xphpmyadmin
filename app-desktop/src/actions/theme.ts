@@ -20,34 +20,61 @@ export async function getCurrentTheme(): Promise<ThemePreferences> {
 }
 
 export async function setTheme(newTheme: ThemeMode) {
-  const isDarkMode = newTheme === "dark";
-  await ipc.client.theme.setThemeMode(newTheme);
+  let isDarkMode = newTheme === "dark";
+  if (newTheme === "system") {
+    isDarkMode =
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  try {
+    await ipc.client?.theme?.setThemeMode?.(newTheme);
+  } catch (error) {
+    console.warn("IPC theme.setThemeMode unavailable:", error);
+  }
   localStorage.setItem(LOCAL_STORAGE_KEYS.THEME, newTheme);
   updateDocumentTheme(isDarkMode);
 }
 
 export async function toggleTheme() {
-  const isDarkMode = await ipc.client.theme.toggleThemeMode();
+  let isDarkMode: boolean;
+  try {
+    isDarkMode = await ipc.client.theme.toggleThemeMode();
+  } catch {
+    isDarkMode = !(typeof document !== "undefined" && document.documentElement.classList.contains("dark"));
+  }
   const newTheme = isDarkMode ? "dark" : "light";
 
   updateDocumentTheme(isDarkMode);
   localStorage.setItem(LOCAL_STORAGE_KEYS.THEME, newTheme);
+  return isDarkMode;
 }
 
 export async function syncWithLocalTheme() {
-  const { local } = await getCurrentTheme();
-  if (!local) {
-    setTheme("system");
-    return;
-  }
+  try {
+    const localTheme = (typeof localStorage !== "undefined"
+      ? localStorage.getItem(LOCAL_STORAGE_KEYS.THEME)
+      : null) as ThemeMode | null;
 
-  await setTheme(local);
+    if (!localTheme) {
+      await setTheme("dark");
+      return;
+    }
+
+    await setTheme(localTheme);
+  } catch {
+    updateDocumentTheme(true);
+  }
 }
 
 function updateDocumentTheme(isDarkMode: boolean) {
-  if (isDarkMode) {
-    document.documentElement.classList.add("dark");
-  } else {
-    document.documentElement.classList.remove("dark");
+  if (typeof document !== "undefined") {
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("light");
+    } else {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.add("light");
+    }
   }
 }
