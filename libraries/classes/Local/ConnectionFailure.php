@@ -9,6 +9,7 @@ use RuntimeException;
 final class ConnectionFailure extends RuntimeException
 {
     private const MESSAGES = [
+        'reconnect' => 'Connection context is unavailable, expired, or changed. Reconnect using the current profile.',
         'input' => 'Connection parameters are invalid. Check required fields, port, and TLS options.',
         'dns' => 'Database hostname could not be resolved.',
         'network' => 'Database server could not be reached or the connection was interrupted.',

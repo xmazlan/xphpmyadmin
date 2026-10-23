@@ -12,10 +12,18 @@ final class ProfileDatabase
 {
     private $pdo;
     private $depth = 0;
+    private $identity;
 
-    private function __construct(PDO $pdo)
+    private function __construct(PDO $pdo, string $file)
     {
         $this->pdo = $pdo;
+        $this->identity = hash('sha256', $file . ':' . (string) fileinode($file));
+    }
+
+    /** Recovery into a different store must not revive capabilities from the old installation. */
+    public function identity(): string
+    {
+        return $this->identity;
     }
 
     /** Internal bootstrap only; this does not enable the profile UI or connect to MySQL. */
@@ -50,7 +58,7 @@ final class ProfileDatabase
             $pdo->exec('PRAGMA busy_timeout = 250');
             $pdo->exec('PRAGMA synchronous = FULL');
             $pdo->exec('PRAGMA secure_delete = ON');
-            $database = new self($pdo);
+            $database = new self($pdo, $file);
             if ($initialize) {
                 $database->migrate();
             } elseif ((int) $pdo->query('PRAGMA user_version')->fetchColumn() !== 2) {

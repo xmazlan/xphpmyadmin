@@ -88,6 +88,10 @@ class Url
             }
         }
 
+        if (\PhpMyAdmin\Local\ProfileRequest::token() !== null) {
+            $params['xpma_context'] = \PhpMyAdmin\Local\ProfileRequest::token();
+        }
+
         return self::getHiddenFields($params);
     }
 
@@ -125,6 +129,9 @@ class Url
     public static function getHiddenFields(array $values, $pre = '', $is_token = false)
     {
         $fields = '';
+        if ($pre === '' && ! $is_token && \PhpMyAdmin\Local\ProfileRequest::token() !== null) {
+            $values['xpma_context'] = \PhpMyAdmin\Local\ProfileRequest::token();
+        }
 
         /* Always include token in plain forms */
         if ($is_token === false && isset($_SESSION[' PMA_token '])) {
@@ -230,6 +237,10 @@ class Url
         // Can be null when the user is missing an extension.
         if ($config !== null && empty($config->getCookie('pma_lang')) && ! empty($GLOBALS['lang'])) {
             $params['lang'] = $GLOBALS['lang'];
+        }
+
+        if (\PhpMyAdmin\Local\ProfileRequest::token() !== null) {
+            $params['xpma_context'] = \PhpMyAdmin\Local\ProfileRequest::token();
         }
 
         $query = self::buildHttpQuery($params, $encrypt);

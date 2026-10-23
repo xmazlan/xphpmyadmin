@@ -2,6 +2,31 @@
 
 Semua perubahan pada proyek xphpMyAdmin didokumentasikan di berkas ini.
 
+## [Integrasi Autentikasi & Isolasi Tab - Brief 05] - 2026-10-23
+
+### Adaptor Autentikasi & Konteks Target (Authentication Adapter & Target Contexts)
+- Menambahkan kelas `PhpMyAdmin\Local\ConnectionContexts` untuk mengelola kemampuan koneksi terisolasi (*opaque context capabilities*) berbasis token acak 32-byte pada sesi PHP server-side, terikat ke ID profil, nomor revisi, dan identitas penyimpanan database.
+- Menambahkan kelas `PhpMyAdmin\Local\ConnectionAction` sebagai adaptor aksi JSON POST internal untuk endpoint `local-connect.php` dengan aksi `connect`, `disconnect`, dan `logout`.
+- Menambahkan kelas `PhpMyAdmin\Local\ProfileRequest` sebagai jembatan request-local yang mengenkapsulasi token konteks aktif, verifikasi capability sebelum eksekusi query, serta pembukaan koneksi aman ke driver DbalInterface.
+- Menambahkan endpoint web POST `local-connect.php` untuk inisialisasi koneksi terautentikasi dengan dukungan kredensial input, tersimpan, dan password sesi sementara.
+- Memperbarui `PhpMyAdmin\Local\ConnectionFailure` dengan kategori error `reconnect` untuk penolakan konteks yang hilang, kedaluwarsa, atau tidak cocok dengan revisi aktif.
+- Memperbarui `PhpMyAdmin\Local\ProfileRepository` agar pembaruan revisi koneksi atau penghapusan profil secara otomatis mencabut konteks aktif terkait (`ConnectionContexts::revokeProfile`).
+
+### Propagasi Konteks & Keamanan Sesi (Context Propagation & Session Security)
+- Mengintegrasikan verifikasi konteks pada `libraries/classes/Common.php` dan `libraries/classes/DatabaseInterface.php` agar setiap request database phpMyAdmin mengarahkan link koneksi sesuai profil konteks tanpa memodifikasi `config.inc.php` dan tanpa fallback ke server default.
+- Memperbarui `libraries/classes/Url.php` untuk mempropagasi parameter `xpma_context` secara transparan pada seluruh URL internal dan input hidden form phpMyAdmin.
+- Memperbarui `js/src/functions.js` dan `js/dist/functions.js` melalui `$.ajaxPrefilter` untuk menyertakan `xpma_context` pada panggilan AJAX phpMyAdmin ke origin/path yang sama.
+- Memperbarui `libraries/classes/Plugins/AuthenticationPlugin.php` untuk membersihkan seluruh konteks aktif saat proses logout aplikasi (`ConnectionContexts::logout`).
+
+### Pengujian Otomatis Integrasi & Isolasi Tab (Automated Testing)
+- Menambahkan rangkaian pengujian CLI komprehensif `test/local/contexts.php` untuk memvalidasi isolasi token konteks, pembatasan TTL, penolakan token palsu/silang sesi, dan pencabutan revisi.
+- Menambahkan pengujian integrasi HTTP `test/local/context_http.py` untuk menguji propagasi konteks multi-tab, operasi browse/SQL/impor/ekspor terisolasi, serta kepatuhan token CSRF.
+- Menambahkan pengujian JavaScript `test/local/context-js.cjs` untuk memastikan token konteks hanya dipropagasi ke request internal phpMyAdmin tanpa kebocoran ke domain eksternal.
+
+### Dokumentasi Integrasi Autentikasi (Documentation)
+- Memperbarui status implementasi pada `doc/briefs/2026-10-22-05-integrasi-autentikasi-dan-isolasi-tab.md` menjadi selesai diverifikasi.
+- Menambahkan dokumen teknis lengkap `doc/integrasi-autentikasi-dan-isolasi-tab.md` yang merinci model kapabilitas opaque, siklus hidup konteks, pemisahan sesi per tab, resolusi koneksi database, dan proteksi kegagalan tertutup (*fail-closed*).
+
 ## [Layanan Tes Koneksi & TLS - Brief 04] - 2026-10-22
 
 ### Konektor Bersama & Layanan Tes Koneksi (MySQL/MariaDB Connector & Tester)

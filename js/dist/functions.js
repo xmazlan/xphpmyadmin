@@ -94,6 +94,19 @@ var spatialIndexes = [];
  * by appending a random variable to their parameters
  */
 $.ajaxPrefilter(function (options, originalOptions) {
+  // Several legacy SQL/navigation requests construct their own parameter list.
+  // Carry only this page's validated context, and only to this application's index.
+  var context = CommonParams.get('xpma_context');
+  if (context) {
+      var target = new URL(options.url || window.location.href, window.location.href);
+      var current = new URL(window.location.href);
+      if (target.origin === current.origin && target.pathname === current.pathname) {
+          if (!target.searchParams.has('xpma_context')) {
+              target.searchParams.set('xpma_context', context);
+              options.url = target.href;
+          }
+      }
+  }
   var nocache = new Date().getTime() + '' + Math.floor(Math.random() * 1000000);
   if (typeof options.data === 'string') {
     options.data += '&_nocache=' + nocache + '&token=' + encodeURIComponent(CommonParams.get('token'));

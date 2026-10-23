@@ -179,6 +179,9 @@ final class ProfileRepository
             $statement->execute(self::parameters($input) + [
                 ':updated_at' => self::now(), ':revision' => $revision, ':id' => $id,
             ]);
+            if ($revision !== $old['connection_revision']) {
+                ConnectionContexts::revokeProfile($id);
+            }
 
             return $this->requireProfile($id);
         });
@@ -212,6 +215,7 @@ final class ProfileRepository
             // profile_secrets cascades on this same SQLite connection.
             $statement = $pdo->prepare('DELETE FROM profiles WHERE id=:id');
             $statement->execute([':id' => $id]);
+            ConnectionContexts::revokeProfile($id);
             // profile_imports keeps the origin with profile_id=NULL: deletion is never auto-reimported.
         });
     }

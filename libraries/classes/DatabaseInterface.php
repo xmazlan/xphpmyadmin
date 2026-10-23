@@ -1952,6 +1952,18 @@ class DatabaseInterface implements DbalInterface
      */
     public function connect(int $mode, ?array $server = null, ?int $target = null)
     {
+        if (\PhpMyAdmin\Local\ProfileRequest::token() !== null) {
+            $target = $target ?? $mode;
+            $result = \PhpMyAdmin\Local\ProfileRequest::open();
+            // Match DbiMysqli::connect(): phpMyAdmin handles query errors as return values.
+            mysqli_report(MYSQLI_REPORT_OFF);
+            $this->links[$target] = $result;
+            if ($target === self::CONNECT_USER) {
+                $this->postConnect();
+            }
+            return $result;
+        }
+
         [$user, $password, $server] = Config::getConnectionParams($mode, $server);
 
         if ($target === null) {

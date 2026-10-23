@@ -124,6 +124,13 @@ final class Common
         }
 
         $request = Core::populateRequestWithEncryptedQueryParams($request);
+        // Translation JS and external documentation redirects use minimum Common
+        // and never open a database. Import progress still belongs to a context.
+        if (! isset($isMinimumCommon) || $route === '/import-status') {
+            \PhpMyAdmin\Local\ProfileRequest::bootstrap(
+                $config, $request->getQueryParams(), (array) $request->getParsedBody()
+            );
+        }
 
         /**
          * init some variables LABEL_variables_init
@@ -139,6 +146,12 @@ final class Common
 
         self::setGotoAndBackGlobals($containerBuilder, $config);
         self::checkTokenRequestParam();
+        if (\PhpMyAdmin\Local\ProfileRequest::token() !== null
+            && ! empty($GLOBALS['token_provided']) && ! empty($GLOBALS['token_mismatch'])) {
+            http_response_code(403);
+            header('Content-Type: application/json; charset=utf-8');
+            exit('{"ok":false,"error":{"category":"csrf","message":"Invalid CSRF token."}}');
+        }
         self::setDatabaseAndTableFromRequest($containerBuilder, $request);
 
         /**

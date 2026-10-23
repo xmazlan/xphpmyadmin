@@ -1,7 +1,7 @@
 # Brief 05 — Integrasi autentikasi dan isolasi tab
 
 Tanggal: 22 Oktober 2026  
-Status: belum dikerjakan  
+Status: selesai — integrasi otomatis dan dua tab browser diverifikasi 23 Oktober 2026
 Sumber: [PRD](../../PRD.md)  
 Urutan: 5 dari 7  
 Dependensi: Brief 01–04 selesai.  
@@ -55,3 +55,45 @@ penerimaan belum terpenuhi.
 
 - Sebelumnya: [Brief 04](2026-10-22-04-layanan-tes-koneksi-dan-tls.md).
 - Berikutnya: [Brief 06](2026-10-22-06-halaman-koneksi-dan-drawer-profil.md).
+
+## Hasil implementasi — 23 Oktober 2026
+
+- Adapter request/authentication dan endpoint POST `local-connect.php` tersedia.
+  Capability opaque terikat sesi/profil/revisi; server/cache berbeda per konteks.
+  Gate berjalan sebelum autentikasi legacy; konteks hilang/palsu/lintas sesi/lama
+  ditolak tanpa query remote atau fallback target.
+- Connect memakai konektor TLS bersama dan database awal tervalidasi; credential
+  input/saved/session didukung. Reconnect tidak membuat profil. Last-used hanya
+  dicatat setelah koneksi sukses. Disconnect terisolasi; logout membersihkan semua.
+- Edit parameter/hapus mencabut konteks dan credential profil pada sesi aktif;
+  sesi lain menolak revisi/ID yang sudah tidak berlaku saat request berikutnya.
+- URL, hidden fields, AJAX, SQL, browse, unggah impor SQL, dan unduh CSV membawa
+  konteks. `validated_target` pada parameter header siap dipakai indikator UI.
+- Konfigurasi lama dan data pengguna tidak diubah. Adapter memakai default server
+  bersih; ZeroConf dimatikan untuk konteks profil agar tidak membuat schema storage
+  otomatis. Detail kontrak, TTL, dan batas request berjalan ada di
+  [dokumentasi integrasi](../integrasi-autentikasi-dan-isolasi-tab.md).
+
+Pemeriksaan yang dijalankan dan lulus:
+
+- `php test/local/foundation.php`: 35 pemeriksaan.
+- `php test/local/profiles.php`: 163 pemeriksaan.
+- `php test/local/passwords.php`: 124 pemeriksaan.
+- `node test/local/context-js.cjs`: 12 pemeriksaan propagasi/isolasi origin/path
+  pada JavaScript sumber dan distribusi.
+- `python3 test/local/check_connections.py`: 83 pemeriksaan koneksi, 20 pemeriksaan
+  lifecycle konteks, serta integrasi HTTP A/B pada MySQL dan MariaDB disposable.
+  Mencakup browse, identifikasi `@@port`, unggah SQL, ekspor CSV, refresh/duplikat,
+  connect input/saved/session, reconnect, kegagalan connect, CSRF, disconnect,
+  logout, expiry, edit/delete, dan penolakan konteks tanpa query remote.
+  Sentinel tetap utuh; log fase pengujian tidak berisi DDL/DML atau password fixture.
+- Syntax PHP untuk 12 file PHP yang berubah/baru, `node --check` kedua JavaScript,
+  dan `git diff --check` lulus.
+
+Batas verifikasi: tab disimulasikan dengan URL A/B dan cookie sesi yang sama pada
+HTTP; verifikasi awal belum mengoperasikan dua tab browser secara manual. Halaman Koneksi,
+drawer, indikator visual, dan konfirmasi editor belum disediakan karena merupakan
+cakupan Brief 06. Verifikasi dua tab browser kemudian dilakukan pada Brief 06: query `@@port`
+MySQL/MariaDB, duplikasi, reconnect, pembatalan pindah server, dan pencabutan
+revisi dengan retensi query CodeMirror lulus. Semua pengujian memakai fixture disposable, bukan database
+pengguna.

@@ -119,6 +119,8 @@ abstract class AuthenticationPlugin
             $redirect_url = $this->getLoginFormURL();
         }
 
+        \PhpMyAdmin\Local\ConnectionContexts::logout();
+
         /* Clear credentials */
         $this->user = '';
         $this->password = '';
