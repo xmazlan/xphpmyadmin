@@ -13,3 +13,11 @@
 #xpma-connections .offcanvas-backdrop.show{opacity:.35}
 @media(prefers-reduced-motion:reduce){#xpma-connections #profile-drawer{transition:none}}
 .xpma-target-bar{position:sticky;top:calc(var(--xpma-menu-height,65px) + 4px);z-index:90}
+
+#ssh-trust { white-space: pre-line; overflow-wrap: anywhere; margin-top: .75rem; }
+#connection-diagnostics { font-size: .875rem; overflow-wrap: anywhere; padding-left: 1.5rem; }
+
+#xpma-connections .xpma-ssh-guide { max-width: 960px; line-height: 1.65; }
+.xpma-ssh-guide section { margin-top: 2rem; scroll-margin-top: 1rem; }
+.xpma-ssh-guide li { margin-bottom: .75rem; }
+.xpma-guide-command { background: #f4f6f8; border: 1px solid #dce2e8; border-radius: 6px; padding: 1rem; margin: .75rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }

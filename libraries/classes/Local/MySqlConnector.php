@@ -78,6 +78,7 @@ final class MySqlConnector
         } catch (InvalidArgumentException $error) {
             throw new ConnectionFailure('input');
         }
+        if ($profile['method'] !== 'direct') { throw new ConnectionFailure('input'); }
         if (strlen($password) > 65536 || ($readTimeout !== null && ($readTimeout < 1 || $readTimeout > 86400))) {
             throw new ConnectionFailure('input');
         }

@@ -8,7 +8,7 @@ use InvalidArgumentException;
 
 final class ProfileInput
 {
-    public const FIELDS = ['name', 'host', 'port', 'username', 'database', 'environment', 'tls', 'favorite'];
+    public const FIELDS = ['name', 'host', 'port', 'username', 'database', 'environment', 'tls', 'favorite', 'method', 'ssh'];
 
     private static function text($value, string $field, int $limit, bool $nullable = false): ?string
     {
@@ -89,6 +89,41 @@ final class ProfileInput
         }
         if (($result['tls']['cert'] === null) !== ($result['tls']['key'] === null)) {
             throw new InvalidArgumentException('TLS client certificate and key must be specified together.');
+        }
+        $method = $input['method'] ?? 'direct';
+        if (! in_array($method, ['direct', 'ssh'], true)) {
+            throw new InvalidArgumentException('Invalid connection method.');
+        }
+        $result['method'] = $method;
+        $result['ssh'] = null;
+        if ($method === 'ssh') {
+            $ssh = $input['ssh'] ?? null;
+            if (! is_array($ssh) || array_diff(array_keys($ssh), ['host', 'port', 'username', 'key']) !== []) {
+                throw new InvalidArgumentException('Invalid SSH metadata.');
+            }
+            $sshHost = self::text($ssh['host'] ?? null, 'ssh.host', 253);
+            if (filter_var($sshHost, FILTER_VALIDATE_IP) === false
+                && preg_match('/^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/iD', $sshHost) !== 1) {
+                throw new InvalidArgumentException('Invalid SSH hostname.');
+            }
+            $sshUser = self::text($ssh['username'] ?? null, 'ssh.username', 128);
+            if (preg_match('/^[a-zA-Z0-9_][a-zA-Z0-9_.-]*$/D', $sshUser) !== 1) {
+                throw new InvalidArgumentException('Invalid SSH username.');
+            }
+            $sshPort = $ssh['port'] ?? 22;
+            if (! is_int($sshPort) || $sshPort < 1 || $sshPort > 65535) {
+                throw new InvalidArgumentException('Invalid SSH port.');
+            }
+            $key = self::text($ssh['key'] ?? null, 'ssh.key', 4096);
+            clearstatcache(true, $key);
+            if (strpos($key, '%') !== false || $key[0] !== '/' || is_link($key) || ! is_file($key) || ! is_readable($key)
+                || (fileperms($key) & 0077) !== 0
+                || (function_exists('posix_geteuid') && fileowner($key) !== posix_geteuid())) {
+                throw new InvalidArgumentException('SSH key must be a readable private local file.');
+            }
+            $result['ssh'] = ['host' => strtolower($sshHost), 'port' => $sshPort, 'username' => $sshUser, 'key' => $key];
+        } elseif (($input['ssh'] ?? null) !== null) {
+            throw new InvalidArgumentException('Direct profiles cannot contain SSH options.');
         }
         $result['favorite'] = self::flag(array_key_exists('favorite', $input) ? $input['favorite'] : false, 'favorite');
 

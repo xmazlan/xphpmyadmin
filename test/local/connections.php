@@ -51,7 +51,7 @@ $oldReport = (new mysqli_driver())->report_mode;
 foreach (['mysql_port', 'mariadb_port'] as $port) {
     $target = array_replace($draft, ['port' => $cases[$port]]);
     $result = $tester->testDraft($target, $password);
-    check($result === ['ok' => true, 'tls' => true, 'database_selected' => true], 'verified TLS ' . $port);
+    check(array_intersect_key($result, array_flip(['ok', 'tls', 'database_selected'])) === ['ok' => true, 'tls' => true, 'database_selected' => true], 'verified TLS ' . $port);
     $connection = $connector->open($target, $password);
     check($connection->native()->query('SELECT DATABASE()')->fetch_row()[0] === 'fixture_allowed', 'exact initial database');
     $connection->close(); $connection->close();

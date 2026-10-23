@@ -8,6 +8,7 @@
     const deleteElement = $('delete-modal');
     const deleteModal = new bootstrap.Modal(deleteElement);
     const csrf = document.body.dataset.token;
+    let candidate = null;
     let items = [];
     let selected = null;
     let deleting = null;
@@ -30,13 +31,24 @@
         });
         let data;
         try { data = await response.json(); } catch (_) { throw new Error('Respons layanan tidak tersedia. Periksa penyimpanan lokal lalu coba lagi.'); }
+        if (data.diagnostics) { showDiagnostics(data.diagnostics); }
         if (!response.ok || !data.ok) {
             throw new Error(data.error?.message || 'Aksi gagal. Periksa koneksi dan coba lagi.');
         }
         return data;
     }
+    function showDiagnostics(rows) {
+        $('connection-diagnostics').replaceChildren();
+        for (const row of rows) {
+            const item = document.createElement('li');
+            item.textContent = row.stage + ': ' + row.status + ' · ' + row.duration_ms + ' ms · ' + row.code;
+            $('connection-diagnostics').append(item);
+        }
+    }
     function draft() {
         return {
+            method: $('connection-method').value,
+            ssh: $('connection-method').value === 'ssh' ? { host: $('ssh-host').value.trim(), port: Number($('ssh-port').value), username: $('ssh-username').value.trim(), key: $('ssh-key').value.trim() } : null,
             name: form.elements.name.value.trim(), host: form.elements.host.value.trim(),
             port: Number(form.elements.port.value), username: form.elements.username.value.trim(),
             database: nullable(form.elements.database.value), environment: form.elements.environment.value,
@@ -51,6 +63,8 @@
     }
     const dirty = () => snapshot() !== baseline;
     function update() {
+        $('ssh-fields').hidden = $('connection-method').value !== 'ssh';
+        $('ssh-inspect').disabled = working || !selected || dirty();
         $('tls-files').hidden = !$('tls-enabled').checked;
         const needsSave = !selected || dirty();
         $('connect-profile').disabled = working || needsSave;
@@ -97,7 +111,7 @@
             const title = document.createElement('span'); title.className = 'xpma-profile-name'; title.textContent = profile.name;
             const env = document.createElement('span'); env.className = 'xpma-env xpma-env-' + profile.environment.toLowerCase(); env.textContent = profile.environment;
             name.append(title, env); cell(row, name);
-            cell(row, profile.host + ':' + profile.port, 'xpma-host');
+            cell(row, (profile.method === 'ssh' ? 'SSH · ' : 'Direct / VPN · ') + profile.host + ':' + profile.port, 'xpma-host');
             cell(row, profile.username);
             const used = profile.last_used_at ? new Date(profile.last_used_at).toLocaleString('id-ID') : 'Belum digunakan';
             cell(row, used);
@@ -157,6 +171,9 @@
             $('tls-enabled').checked = profile.tls.enabled;
             for (const name of ['ca', 'cert', 'key']) { $('tls-' + name).value = profile.tls[name] ?? ''; }
         }
+        $('connection-method').value = profile?.method || 'direct';
+        for (const name of ['host', 'port', 'username', 'key']) { $('ssh-' + name).value = profile?.ssh?.[name] ?? (name === 'port' ? 22 : ''); }
+        candidate = null; $('ssh-approve').hidden = true; $('ssh-trust').textContent = ''; showDiagnostics([]);
         $('password-status').textContent = profile?.has_saved_password ? 'Password terenkripsi tersimpan. Nilainya tidak ditampilkan.' : 'Belum ada password tersimpan.';
         $('password-action').options[0].textContent = profile?.has_saved_password ? 'Pertahankan password tersimpan (keep)' : 'Jangan simpan password';
         $('password-action').value = 'keep';
@@ -170,7 +187,7 @@
     }
     function sameTarget(profile) {
         const current = draft();
-        return ['host', 'port', 'username', 'database', 'tls'].every(key => JSON.stringify(current[key]) === JSON.stringify(profile[key]));
+        return ['host', 'port', 'username', 'database', 'tls', 'method', 'ssh'].every(key => JSON.stringify(current[key]) === JSON.stringify(profile[key]));
     }
     function credential(profile, forTest = false) {
         if ($('use-password').checked || $('profile-password').value !== '' || $('password-action').value === 'replace') {
@@ -196,6 +213,23 @@
             revision: profile.connection_revision, credential: auth });
         baseline = snapshot(); window.location.assign(data.url);
     }
+    $('ssh-inspect').addEventListener('click', () => task(async () => {
+        if (!selected || dirty()) { throw new Error('Simpan profil terlebih dahulu.'); }
+        const result = await api('local-profiles.php', { action: 'ssh_inspect', id: selected.id, revision: selected.connection_revision });
+        candidate = result.candidate;
+        $('ssh-trust').textContent = candidate.host + ':' + candidate.port + ' · ' + candidate.algorithm + ' · ' + candidate.status + '\nFingerprint baru: ' + candidate.fingerprint + '\nFingerprint lama: ' + (candidate.old_fingerprint || 'belum ada') + '\nVerifikasi melalui sumber terpisah sebelum menyetujui.';
+        $('ssh-approve').textContent = candidate.status === 'changed' ? 'Ganti trust dengan fingerprint baru yang telah diverifikasi' : 'Percayai fingerprint yang telah diverifikasi';
+        $('ssh-approve').hidden = candidate.status === 'trusted';
+        message($('drawer-notice'), 'Pemeriksaan key tidak melakukan login MySQL.');
+    }));
+    $('ssh-approve').addEventListener('click', () => task(async () => {
+        if (!candidate || !selected || dirty()) { throw new Error('Periksa ulang host key profil tersimpan.'); }
+        await api('local-profiles.php', { action: 'ssh_approve', id: selected.id, revision: selected.connection_revision, nonce: candidate.nonce, replace: candidate.status === 'changed' });
+        candidate = null; $('ssh-approve').hidden = true;
+        message($('drawer-notice'), 'Host key dipercaya. Konteks lama dicabut; hubungkan kembali.', 'success');
+        await load();
+        selected = items.find(profile => profile.id === selected.id) || selected;
+    }));
     $('add-profile').addEventListener('click', event => open(null, event.currentTarget));
     $('close-drawer').addEventListener('click', close);
     drawerElement.addEventListener('keydown', event => { if (event.key === 'Escape') { event.preventDefault(); close(); } });

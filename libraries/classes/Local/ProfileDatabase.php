@@ -61,7 +61,7 @@ final class ProfileDatabase
             $database = new self($pdo, $file);
             if ($initialize) {
                 $database->migrate();
-            } elseif ((int) $pdo->query('PRAGMA user_version')->fetchColumn() !== 2) {
+            } elseif ((int) $pdo->query('PRAGMA user_version')->fetchColumn() !== 3) {
                 throw new StorageException('Profile storage needs an explicit schema initialization.');
             }
 
@@ -76,24 +76,39 @@ final class ProfileDatabase
     /** Test/Connect credential reads must never create a database or apply a migration. */
     public static function openExistingConfigured(): self
     {
-        return self::openConfigured(false);
+        $database = self::openConfigured(false);
+        if (is_dir(Foundation::configuration()['data_dir'] . '/ssh')) { (new SshTunnels($database))->sweep(); }
+        return $database;
     }
 
     private function migrate(): void
     {
         $version = (int) $this->pdo->query('PRAGMA user_version')->fetchColumn();
-        if ($version === 2) {
+        if ($version === 3) {
             return;
         }
-        if ($version < 0 || $version > 2) {
+        if ($version < 0 || $version > 3) {
             throw new StorageException('Profile schema is newer than this application; upgrade the application.');
+        }
+        // Preserve a verified pre-migration snapshot before touching an existing store.
+        if ($version > 0) {
+            $destination = Foundation::configuration()['data_dir'] . '/pre-v3-' . bin2hex(random_bytes(8)) . '.sqlite';
+            $statement = $this->pdo->prepare('VACUUM INTO :destination');
+            $statement->execute([':destination' => $destination]);
+            chmod($destination, 0600);
+            Foundation::privateFile($destination);
+            $backup = new PDO('sqlite:' . $destination);
+            if ($backup->query('PRAGMA integrity_check')->fetchColumn() !== 'ok'
+                || (int) $backup->query('PRAGMA user_version')->fetchColumn() !== $version) {
+                throw new StorageException('Pre-migration backup verification failed.');
+            }
         }
         $this->transaction(function (PDO $pdo): void {
             $version = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
-            if ($version === 2) {
+            if ($version === 3) {
                 return;
             }
-            if ($version < 0 || $version > 2) {
+            if ($version < 0 || $version > 3) {
                 throw new StorageException('Unsupported profile schema version.');
             }
             if ($version === 0) {
@@ -120,6 +135,7 @@ final class ProfileDatabase
                 $pdo->exec('CREATE INDEX profiles_recent ON profiles(last_used_at DESC, id)');
                 $pdo->exec('PRAGMA user_version = 1');
             }
+            if ($version < 2) {
             $pdo->exec('CREATE TABLE secret_key_registry (
                 id INTEGER PRIMARY KEY CHECK(id = 1),
                 key_id TEXT NOT NULL CHECK(length(key_id) = 64),
@@ -134,6 +150,16 @@ final class ProfileDatabase
                 updated_at TEXT NOT NULL
             )');
             $pdo->exec('PRAGMA user_version = 2');
+            }
+            $pdo->exec("ALTER TABLE profiles ADD COLUMN method TEXT NOT NULL DEFAULT 'direct' CHECK(method IN ('direct','ssh'))");
+            $pdo->exec('ALTER TABLE profiles ADD COLUMN ssh_json TEXT');
+            $pdo->exec('CREATE TABLE ssh_trust (
+                host TEXT NOT NULL, port INTEGER NOT NULL, algorithm TEXT NOT NULL,
+                public_key TEXT NOT NULL, fingerprint TEXT NOT NULL, revision INTEGER NOT NULL,
+                blocked INTEGER NOT NULL DEFAULT 0 CHECK(blocked IN (0,1)),
+                PRIMARY KEY(host, port)
+            )');
+            $pdo->exec('PRAGMA user_version = 3');
         });
     }
 

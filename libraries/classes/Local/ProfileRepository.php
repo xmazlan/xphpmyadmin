@@ -13,11 +13,11 @@ use RuntimeException;
 final class ProfileRepository
 {
     private const SELECT = 'SELECT p.id, p.name, p.host, p.port, p.username, p.database_name,
-        p.environment, p.tls_enabled, p.tls_verify, p.tls_ca, p.tls_cert, p.tls_key,
+        p.method, p.ssh_json, p.environment, p.tls_enabled, p.tls_verify, p.tls_ca, p.tls_cert, p.tls_key,
         p.favorite, p.created_at, p.updated_at, p.last_used_at, p.connection_revision,
         EXISTS(SELECT 1 FROM profile_secrets s WHERE s.profile_id = p.id) AS has_saved_password,
         i.origin FROM profiles p LEFT JOIN profile_imports i ON i.profile_id = p.id';
-    private const CONNECTION_FIELDS = ['host', 'port', 'username', 'database', 'tls'];
+    private const CONNECTION_FIELDS = ['host', 'port', 'username', 'database', 'tls', 'method', 'ssh'];
     private $database;
 
     public function __construct(ProfileDatabase $database)
@@ -52,6 +52,7 @@ final class ProfileRepository
     {
         // Explicit projection: secret material must never leak through list/detail.
         return [
+            'method' => $row['method'], 'ssh' => $row['ssh_json'] === null ? null : json_decode($row['ssh_json'], true, 16, JSON_THROW_ON_ERROR),
             'id' => $row['id'], 'name' => $row['name'], 'host' => $row['host'],
             'port' => (int) $row['port'], 'username' => $row['username'],
             'database' => $row['database_name'], 'environment' => $row['environment'],
@@ -67,6 +68,7 @@ final class ProfileRepository
     private static function parameters(array $input): array
     {
         return [
+            ':method' => $input['method'], ':ssh_json' => $input['ssh'] === null ? null : json_encode($input['ssh'], JSON_THROW_ON_ERROR),
             ':name' => $input['name'], ':host' => $input['host'], ':port' => $input['port'],
             ':username' => $input['username'], ':database_name' => $input['database'],
             ':environment' => $input['environment'], ':tls_enabled' => (int) $input['tls']['enabled'],
@@ -132,9 +134,9 @@ final class ProfileRepository
             $now = self::now();
             $parameters = self::parameters($input) + [':id' => $id, ':created_at' => $now, ':updated_at' => $now];
             $statement = $pdo->prepare('INSERT INTO profiles
-                (id, name, host, port, username, database_name, environment,
+                (id, name, host, port, username, database_name, environment, method, ssh_json,
                 tls_enabled, tls_verify, tls_ca, tls_cert, tls_key, favorite, created_at, updated_at)
-                VALUES (:id, :name, :host, :port, :username, :database_name, :environment,
+                VALUES (:id, :name, :host, :port, :username, :database_name, :environment, :method, :ssh_json,
                 :tls_enabled, :tls_verify, :tls_ca, :tls_cert, :tls_key, :favorite, :created_at, :updated_at)');
             $statement->execute($parameters);
 
@@ -161,7 +163,7 @@ final class ProfileRepository
                 $patch['tls'] = array_replace($old['tls'], $patch['tls']);
             }
             $input = ProfileInput::validate(array_replace($editable, $patch));
-            if ($input === $editable) {
+            if ($input == $editable) {
                 return $old;
             }
             $revision = $old['connection_revision'];
@@ -171,7 +173,7 @@ final class ProfileRepository
                     break;
                 }
             }
-            $statement = $pdo->prepare('UPDATE profiles SET name=:name, host=:host, port=:port,
+            $statement = $pdo->prepare('UPDATE profiles SET method=:method, ssh_json=:ssh_json, name=:name, host=:host, port=:port,
                 username=:username, database_name=:database_name, environment=:environment,
                 tls_enabled=:tls_enabled, tls_verify=:tls_verify, tls_ca=:tls_ca, tls_cert=:tls_cert,
                 tls_key=:tls_key, favorite=:favorite, updated_at=:updated_at,

@@ -13,6 +13,8 @@ final class ProfileAction
     {
         $action = $payload['action'] ?? null;
         $allowed = [
+            'ssh_inspect' => ['id', 'revision'],
+            'ssh_approve' => ['id', 'revision', 'nonce', 'replace'],
             'list' => ['search', 'favorites', 'order'],
             'create' => ['draft', 'password'],
             'update' => ['id', 'revision', 'draft', 'password'],
@@ -59,6 +61,11 @@ final class ProfileAction
             if ($profile === null || ! is_int($payload['revision'] ?? null)
                 || $profile['connection_revision'] !== $payload['revision']) {
                 throw new ConnectionFailure('reconnect');
+            }
+            if ($action === 'ssh_inspect') { return (new SshTrust($database))->inspect($profile); }
+            if ($action === 'ssh_approve') {
+                if (! is_string($payload['nonce'] ?? null) || ! is_bool($payload['replace'] ?? null)) { throw new ConnectionFailure('input'); }
+                return (new SshTrust($database))->approve($profile, $payload['nonce'], $payload['replace']);
             }
             if ($action === 'delete') {
                 $profiles->delete($payload['id']);

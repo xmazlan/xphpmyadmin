@@ -12,9 +12,14 @@ final class ConnectionTester
         #[\SensitiveParameter]
         string $password
     ): array {
-        $connection = (new MySqlConnector())->open($draft, $password, MySqlConnector::INITIAL_TIMEOUT);
+        $diagnostics = new ConnectionDiagnostics();
+        $draft = $diagnostics->run('local_validation', static function () use ($draft): array {
+            try { return ProfileInput::validate($draft); }
+            catch (\InvalidArgumentException $error) { throw new ConnectionFailure('input'); }
+        });
+        $connection = Transport::open($draft, $password, null, false, MySqlConnector::INITIAL_TIMEOUT, $diagnostics);
         try {
-            return $connection->summary();
+            return $connection->summary() + ['diagnostics' => $diagnostics->rows()];
         } finally {
             $connection->close();
         }

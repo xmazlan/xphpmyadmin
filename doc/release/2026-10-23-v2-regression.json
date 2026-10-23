@@ -1,0 +1,72 @@
+{
+  "started_at_utc": "2026-10-23T05:08:58.583333+00:00",
+  "scope": "personal-local-v2",
+  "macos": "26.3",
+  "php": "8.5.12",
+  "python": "3.9.6",
+  "node": "v22.23.4",
+  "results": [
+    {
+      "command": "php test/local/foundation.php",
+      "passed": true,
+      "seconds": 0.03,
+      "summary": "35 foundation checks passed. No user database accessed."
+    },
+    {
+      "command": "php test/local/profiles.php",
+      "passed": true,
+      "seconds": 0.48,
+      "summary": "163 profile checks passed using disposable SQLite only."
+    },
+    {
+      "command": "php test/local/passwords.php",
+      "passed": true,
+      "seconds": 0.56,
+      "summary": "124 password checks passed with disposable SQLite, keys, and PHP sessions only."
+    },
+    {
+      "command": "php test/local/recovery.php",
+      "passed": true,
+      "seconds": 0.18,
+      "summary": "34 recovery checks passed on disposable private directories; no remote database accessed."
+    },
+    {
+      "command": "node test/local/context-js.cjs",
+      "passed": true,
+      "seconds": 0.02,
+      "summary": "12 AJAX context propagation checks passed for source and shipped JavaScript."
+    },
+    {
+      "command": "python3 test/local/rollback.py",
+      "passed": true,
+      "seconds": 1.21,
+      "summary": "Rollback: archive digest, private code/config extraction, identical legacy config, disabled adapter without SQL, no metadata/key replacement passed."
+    },
+    {
+      "command": "python3 test/local/v2_upgrade.py",
+      "passed": true,
+      "seconds": 0.25,
+      "summary": "Legacy schema 2 fixture created.\nV2 upgrade: identical profile/import/ciphertext/key-registry rows, file identity/key preserved; verified pre-v3 snapshot and direct defaults passed.\nV1 application rollback: actual archived schema-2 code reads disabled restored snapshot and decrypts original secret."
+    },
+    {
+      "command": "python3 test/local/check_http.py",
+      "passed": true,
+      "seconds": 0.62,
+      "summary": "Herd FPM: runtime 200; spoof headers and application entrypoints 403; POST 405; private content absent.\nDirect HTTP: IPv4/IPv6 loopback accepted; real LAN and spoof denied; missing storage/dependency return safe 503.\nHerd entry point: LAN connections rejected on ports 80, 443 and 60."
+    },
+    {
+      "command": "python3 test/local/check_connections.py",
+      "passed": true,
+      "seconds": 50.13,
+      "summary": "Disposable MySQL and MariaDB ready; TLS, wrong-name and no-TLS fixtures ready.\n83 connection checks passed on MySQL/MariaDB/TLS fixtures.\nProfile UI HTTP: offline CRUD, CSRF/local/method guards, search, favorites, reload, encrypted password replace/remove, revision conflicts, safe read payloads passed.\n23 context lifecycle checks passed.\nHTTP context isolation: missing/forged/cross-session, A/B browse/SQL/file import/export, connect/reconnect/failure, edit/delete revocation without remote SQL, duplicate revocation, disconnect and logout passed.\nWeb process restart: identical profile IDs and saved-password reconnect passed.\nVerified disposable engine: mysql 9.4.0\nVerified disposable engine: mariadb 11.4.13-MariaDB\nHTTP: CSRF/method/flag/spoof guards, draft/saved/session credentials, target binding, no profile writes passed.\nRemote sentinel rows unchanged; only two allowed disposable import INSERTs; no other DDL/DML or plaintext fixture password."
+    },
+    {
+      "command": "python3 test/local/ssh_fixture.py",
+      "passed": true,
+      "seconds": 26.76,
+      "summary": "36 SSH process/trust checks passed using disposable system sshd.\n22 SSH MySQL/MariaDB sentinel/context/diagnostic checks passed.\nHTTP context isolation: missing/forged/cross-session, A/B browse/SQL/file import/export, connect/reconnect/failure, edit/delete revocation without remote SQL, duplicate revocation, disconnect and logout passed.\nSSH HTTP: direct A / SSH B browse, SQL, AJAX, export, file import and probe writes; trust CSRF/revisions and logout cleanup passed.\nChanged SSH key: old/new fingerprints, fail-closed trust, explicit replacement passed.\nSSH unauthorized key and real stalled-banner timeout: safe categories, bounded wait and cleanup passed.\nHerd PHP 8.4 FPM: real SSH across requests, control-socket cleanup and disabled proc_open prerequisite passed.\nEncrypted SSH identity: agent missing passed without interactive prompt.\nEncrypted SSH identity: agent loaded passed without interactive prompt.\nHerd PHP 8.4 FPM: real SSH across requests, control-socket cleanup and disabled proc_open prerequisite passed."
+    }
+  ],
+  "passed": true,
+  "finished_at_utc": "2026-10-23T05:10:18.873499+00:00"
+}

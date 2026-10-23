@@ -85,7 +85,7 @@ final class ProfileRequest
                 throw new \RuntimeException();
             }
             try {
-                $connection = (new MySqlConnector())->open(array_intersect_key($profile, array_flip(ProfileInput::FIELDS)), $password);
+                $connection = Transport::open($profile, $password, self::$token);
                 self::$connections[] = $connection; // Keep ownership until request shutdown.
                 return $connection->native();
             } finally {

@@ -188,3 +188,13 @@ VPN aktual, power-loss/hardware failure, dan suite upstream yang tidak terpasang
 belum diklaim teruji. Tidak ada kegagalan keamanan/isolation/persistensi yang
 tersisa pada suite penerimaan lokal. Lihat [laporan rilis](doc/validasi-rilis-v1.md)
 untuk cakupan, perintah, bukti tiap F, dan batasan lengkap.
+
+## Perluasan v2 — 23 Oktober 2026
+
+Keputusan v1 memakai tunnel eksternal tetap catatan baseline. V2 menambahkan
+transport SSH OpenSSH bawaan, trust host key eksplisit, registry/lease per konteks,
+cleanup CLI dan diagnostik hasil aktual. Profil direct/VPN dan identitas target
+logis tetap berlaku. TLS terverifikasi melalui SSH diblokir pada driver mysqli
+saat ini; tidak ada downgrade otomatis. Panduan dan cakupan validasi tersedia di
+[SSH dan diagnostik](doc/ssh-dan-diagnostik.md) dan
+[matriks penerimaan v2](doc/release/2026-10-23-v2.md).

@@ -56,7 +56,8 @@ final class ProfileBackup
         Foundation::privateFile($file);
         $pdo = new PDO('sqlite:' . $file, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
         $pdo->exec('PRAGMA query_only=ON');
-        if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() !== 2
+        $schema = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
+        if (! in_array($schema, [2, 3], true)
             || $pdo->query('PRAGMA integrity_check')->fetchColumn() !== 'ok'
             || $pdo->query('PRAGMA foreign_key_check')->fetchAll() !== []) { self::fail(); }
         $registered = $pdo->query('SELECT key_id FROM secret_key_registry WHERE id=1')->fetchColumn();
@@ -77,7 +78,7 @@ final class ProfileBackup
         } finally {
             if (is_string($key)) { sodium_memzero($key); }
         }
-        return ['schema' => 2, 'profiles' => (int) $pdo->query('SELECT COUNT(*) FROM profiles')->fetchColumn(),
+        return ['schema' => $schema, 'profiles' => (int) $pdo->query('SELECT COUNT(*) FROM profiles')->fetchColumn(),
             'key_id' => $registered === false ? null : $registered];
     }
 

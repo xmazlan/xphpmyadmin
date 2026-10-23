@@ -10,7 +10,26 @@ use Throwable;
 /** POST adapter. Caller must enforce local access, feature flag, session and CSRF first. */
 final class ConnectionTestAction
 {
-    public function run(
+    public function run(#[\SensitiveParameter] array $payload): array
+    {
+        $started = hrtime(true);
+        try { return $this->execute($payload); }
+        catch (ConnectionFailure $error) {
+            if ($error->response()['diagnostics'] === []) {
+                $rows = [];
+                foreach (ConnectionDiagnostics::STAGES as $stage) {
+                    $local = $stage === 'local_validation';
+                    $rows[] = ['stage' => $stage, 'status' => $local ? 'failed' : 'skipped',
+                        'duration_ms' => $local ? round((hrtime(true) - $started) / 1000000, 2) : 0,
+                        'code' => $local ? $error->category() : 'not_run'];
+                }
+                $error->withDiagnostics($rows);
+            }
+            throw $error;
+        }
+    }
+
+    private function execute(
         #[\SensitiveParameter]
         array $payload
     ): array {
@@ -41,7 +60,7 @@ final class ConnectionTestAction
                     throw new ConnectionFailure('input');
                 }
                 // Never forward an existing credential to an edited/unrelated draft target.
-                foreach (['host', 'port', 'username', 'database', 'tls'] as $field) {
+                foreach (['host', 'port', 'username', 'database', 'tls', 'method', 'ssh'] as $field) {
                     if ($profile[$field] !== $draft[$field]) {
                         throw new ConnectionFailure('input');
                     }

@@ -102,7 +102,9 @@ final class SessionPasswords
             throw new SecretUnavailable();
         }
 
-        return SecretCipher::decrypt(self::binding($context, $profile, $revision), $entry['envelope'], $state['key']);
+        $password = SecretCipher::decrypt(self::binding($context, $profile, $revision), $entry['envelope'], $state['key']);
+        $_SESSION[self::SLOT]['contexts'][$context]['expires_at'] = time() + $this->ttl;
+        return $password;
     }
 
     /** Disconnect hook for Brief 05. Never affects another context. */

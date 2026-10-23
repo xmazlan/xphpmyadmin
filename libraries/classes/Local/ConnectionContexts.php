@@ -56,7 +56,7 @@ final class ConnectionContexts
         }
         $token = bin2hex(random_bytes(32));
         try {
-            $connection = (new MySqlConnector())->open(array_intersect_key($profile, array_flip(ProfileInput::FIELDS)), $password);
+            $connection = Transport::open($profile, $password, $token, true);
             $connection->close();
             // Recheck the revision after network validation, inside the last-used transaction.
             (new SessionPasswords())->put($token, $id, $revision, $password);
@@ -70,6 +70,7 @@ final class ConnectionContexts
             ];
         } catch (Throwable $error) {
             (new SessionPasswords())->forgetContext($token);
+            if ($profile['method'] === 'ssh') { (new SshTunnels($this->database))->close($token); }
             throw $error;
         } finally {
             sodium_memzero($password);
@@ -96,12 +97,20 @@ final class ConnectionContexts
             $this->disconnect($token);
             throw new ConnectionFailure('reconnect');
         }
+        $password = (new SessionPasswords())->get($token, $profile['id'], $profile['connection_revision']);
+        if ($password === null) { $this->disconnect($token); throw new ConnectionFailure('reconnect'); }
+        sodium_memzero($password);
+        if ($profile['method'] === 'ssh') {
+            try { (new SshTunnels($this->database))->resolve($profile, $token); }
+            catch (Throwable $error) { $this->disconnect($token); throw new ConnectionFailure('tunnel_lost'); }
+        }
+        $_SESSION[self::SLOT]['entries'][$token]['expires'] = time() + 1440;
         return ['profile' => $profile, 'server' => $entry['server']];
     }
 
     public static function identity(array $profile): array
     {
-        return array_intersect_key($profile, array_flip(['id', 'name', 'host', 'port', 'username', 'database', 'environment', 'connection_revision']));
+        return array_intersect_key($profile, array_flip(['id', 'name', 'host', 'port', 'username', 'database', 'environment', 'connection_revision', 'method']));
     }
 
     /** Informational only. Revoked capabilities may identify the profile to reconnect. */
@@ -134,6 +143,7 @@ final class ConnectionContexts
     public function disconnect(string $token): void
     {
         self::requireSession();
+        if (is_dir(Foundation::configuration()['data_dir'] . '/ssh')) { (new SshTunnels($this->database))->close($token); }
         unset($_SESSION[self::SLOT]['entries'][$token]);
         (new SessionPasswords())->forgetContext($token);
     }
@@ -141,6 +151,7 @@ final class ConnectionContexts
     /** Other sessions are rejected lazily by resolve() before a remote connection. */
     public static function revokeProfile(string $id): void
     {
+        if (is_dir(Foundation::configuration()['data_dir'] . '/ssh')) { (new SshTunnels(ProfileDatabase::openExistingConfigured()))->sweep($id); }
         if (session_status() !== PHP_SESSION_ACTIVE) {
             return;
         }
@@ -154,6 +165,9 @@ final class ConnectionContexts
 
     public static function logout(): void
     {
+        if (session_status() === PHP_SESSION_ACTIVE && isset($_SESSION[self::SLOT]['entries']) && is_dir(Foundation::configuration()['data_dir'] . '/ssh')) {
+            (new SshTunnels(ProfileDatabase::openExistingConfigured()))->sweep(null, hash('sha256', session_id()));
+        }
         unset($_SESSION[self::SLOT]);
         if (isset($_SESSION[' xphpmyadmin_passwords '])) {
             (new SessionPasswords())->clearAll();

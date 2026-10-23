@@ -278,3 +278,11 @@ Proyek xphpMyAdmin dirilis di bawah ketentuan lisensi GNU General Public License
 - Modifikasi & Ekstensi xphpMyAdmin: Copyright (C) 2026 xmazlan, dilisensikan di bawah GNU General Public License v2.
 
 Lihat file LICENSE untuk ketentuan hukum lengkap GNU GPL v2.
+
+SSH Tunnel dan diagnostik lokal v2
+--------------------------------
+Panduan upgrade schema 3, trust fingerprint, OpenSSH/agent untuk Herd FPM,
+cleanup lease dan batas TLS-over-SSH: doc/ssh-dan-diagnostik.md.
+Upgrade metadata dilakukan eksplisit melalui scripts/local-profiles-init.php
+setelah backup; HTTP tidak menjalankan migrasi otomatis. Scheduler cleanup
+per menit perlu dikonfigurasi oleh operator.

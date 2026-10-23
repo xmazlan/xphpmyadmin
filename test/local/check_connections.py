@@ -201,7 +201,7 @@ def main(base):
         assert post(url + '?token=forbidden', payload, cookie)[0] == 422
         assert post(url, payload, cookie, {'X-Forwarded-For': '127.0.0.1'})[0] == 403
         status, body, headers = post(url, payload, cookie)
-        assert status == 200 and json.loads(body) == {'ok': True, 'tls': True, 'database_selected': True}
+        assert status == 200 and {k: v for k, v in json.loads(body).items() if k != 'diagnostics'} == {'ok': True, 'tls': True, 'database_selected': True}
         assert headers['Cache-Control'] == 'no-store'
         payload['credential'] = {'source': 'input', 'password': 'synthetic-wrong'}
         status, body, _ = post(url, payload, cookie)

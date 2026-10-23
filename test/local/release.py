@@ -1,4 +1,4 @@
-"""Run the personal local v1 release gates, recording only non-secret test summaries."""
+"""Run the personal local v2 release gates, recording only non-secret test summaries."""
 import argparse
 import datetime
 import json
@@ -15,8 +15,10 @@ SUITES = [
     ['php', 'test/local/recovery.php'],
     ['node', 'test/local/context-js.cjs'],
     ['python3', 'test/local/rollback.py'],
+    ['python3', 'test/local/v2_upgrade.py'],
     ['python3', 'test/local/check_http.py'],
     ['python3', 'test/local/check_connections.py'],
+    ['python3', 'test/local/ssh_fixture.py'],
 ]
 
 
@@ -25,7 +27,7 @@ def main():
     parser.add_argument('--report', type=Path, help='Write a sanitized JSON report (no secrets or session state)')
     args = parser.parse_args()
     report = {'started_at_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-              'scope': 'personal-local-v1', 'macos': platform.mac_ver()[0],
+              'scope': 'personal-local-v2', 'macos': platform.mac_ver()[0],
               'php': subprocess.check_output(['php', '-r', 'echo PHP_VERSION;'], text=True),
               'python': platform.python_version(), 'node': subprocess.check_output(['node', '--version'], text=True).strip(),
               'results': [], 'passed': True}

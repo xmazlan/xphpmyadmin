@@ -280,7 +280,7 @@ try {
 
     // Upgrade v1 fixture with a DDL collision: no partial v2 tables or metadata changes.
     $legacy = new PDO('sqlite:' . $file, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-    $legacy->exec('DROP TABLE profile_secrets'); $legacy->exec('DROP TABLE secret_key_registry'); $legacy->exec('PRAGMA user_version=1');
+    $legacy->exec('DROP TABLE profile_secrets'); $legacy->exec('DROP TABLE secret_key_registry'); $legacy->exec('DROP TABLE ssh_trust'); $legacy->exec('ALTER TABLE profiles DROP COLUMN method'); $legacy->exec('ALTER TABLE profiles DROP COLUMN ssh_json'); $legacy->exec('PRAGMA user_version=1');
     $oldRows = $legacy->query('SELECT * FROM profiles ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
     $legacy->exec('CREATE TABLE profile_secrets (fixture TEXT)');
     rejects(function (): void { ProfileDatabase::openConfigured(); }, StorageException::class, 'failed v1 migration');
@@ -289,8 +289,8 @@ try {
     check($legacy->query('SELECT * FROM profiles ORDER BY id')->fetchAll(PDO::FETCH_ASSOC) === $oldRows, 'failed upgrade metadata unchanged');
     $legacy->exec('DROP TABLE profile_secrets');
     $upgraded = ProfileDatabase::openConfigured();
-    check((int) $legacy->query('PRAGMA user_version')->fetchColumn() === 2, 'v1 migration succeeds');
-    check($legacy->query('SELECT * FROM profiles ORDER BY id')->fetchAll(PDO::FETCH_ASSOC) === $oldRows, 'v1 upgrade preserves all metadata');
+    check((int) $legacy->query('PRAGMA user_version')->fetchColumn() === 3, 'v1 migration succeeds');
+    check(array_map(static function ($row) { unset($row['method'], $row['ssh_json']); return $row; }, $legacy->query('SELECT * FROM profiles ORDER BY id')->fetchAll(PDO::FETCH_ASSOC)) === $oldRows, 'v1 upgrade preserves all metadata');
     check(file_get_contents($keyFile) === $key, 'upgrade never overwrites key');
     $recoveredKeys = new SecretKeyStore($upgraded);
     $recoveredKeys->initialize();
