@@ -1,5 +1,5 @@
 {
-    "name": "phpmyadmin/phpmyadmin",
+    "name": "xmazlan/xphpmyadmin",
     "type": "project",
     "description": "A web interface for MySQL and MariaDB",
     "keywords": ["phpmyadmin","mysql","web"],

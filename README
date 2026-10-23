@@ -269,3 +269,12 @@ Pengujian dengan server dan datadir disposable:
 
 Endpoint mengikuti profiles_enabled, yang tetap false pada instalasi ini.
 Kontrak sumber password, timeout dan pemulihan: doc/tes-koneksi-dan-tls.md.
+
+Lisensi & Hak Cipta
+-------------------
+Proyek xphpMyAdmin dirilis di bawah ketentuan lisensi GNU General Public License v2 (GPL-2.0-only).
+
+- Basis phpMyAdmin: Copyright (C) The phpMyAdmin Team (https://www.phpmyadmin.net/team/), dilisensikan di bawah GNU General Public License v2.
+- Modifikasi & Ekstensi xphpMyAdmin: Copyright (C) 2026 xmazlan, dilisensikan di bawah GNU General Public License v2.
+
+Lihat file LICENSE untuk ketentuan hukum lengkap GNU GPL v2.
