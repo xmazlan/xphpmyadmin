@@ -7,9 +7,11 @@ export default function BaseLayout({
   children: React.ReactNode;
 }) {
   return (
-    <>
-      <DragWindowRegion title="electron-shadcn" />
-      <main className="h-screen p-2 pb-20">{children}</main>
-    </>
+    <div className="flex h-screen w-screen select-none flex-col overflow-hidden bg-[#0a0d18] text-slate-100">
+      <DragWindowRegion title="xphpMyAdmin Desktop" />
+      <main className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+        {children}
+      </main>
+    </div>
   );
 }

@@ -1,3 +1,3 @@
-import rendererConfig from './vite.renderer.config.mts'
+import rendererConfig from "./vite.renderer.config.mts";
 
-export default rendererConfig
+export default rendererConfig;

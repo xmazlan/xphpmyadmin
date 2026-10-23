@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-24",
+  "type": "feature",
+  "status": "published",
+  "title": {
+    "id": "Peluncuran Antarmuka Desktop Modern & Ruang Kerja Data Terpadu",
+    "en": "Launch of Modern Desktop Interface & Unified Data Workspace"
+  },
+  "body": {
+    "id": "Aplikasi kini hadir dengan antarmuka desktop modern berkanvas gelap, navigasi multi-sesi, diagnostik kesehatan sambungan otomatis, serta studio penjelajah data langsung.",
+    "en": "The application now features a modern dark-canvas desktop interface, multi-session tab navigation, automated connection health diagnostics, and a live data explorer studio."
+  },
+  "items": [
+    {
+      "type": "new",
+      "id": "Antarmuka Pengelola Sambungan Modern: Tata letak bertingkat ramah mata dengan bilah pencarian cerdas dan navigasi multi-tab untuk mengelola banyak server sekaligus.",
+      "en": "Modern Connection Manager Interface: Eye-friendly layered layout with smart search bar and multi-tab navigation to manage multiple servers simultaneously."
+    },
+    {
+      "type": "new",
+      "id": "Pemeriksaan Sambungan Mandiri: Sistem diagnostik bertahap yang memverifikasi kesiapan jaringan, enkripsi pengamanan, dan autentikasi secara visual.",
+      "en": "Automated Connection Diagnostics: Multi-stage diagnostic system that visually verifies network readiness, security encryption, and authentication."
+    },
+    {
+      "type": "new",
+      "id": "Ruang Kerja Data & Eksekusi Perintah: Penjelajah tabel data interaktif dengan tampilan rapi, laporan status eksekusi cepat, dan fitur ekspor dokumen.",
+      "en": "Data Workspace & Query Execution: Interactive table explorer with clean data views, quick execution status reports, and document export capabilities."
+    },
+    {
+      "type": "new",
+      "id": "Pengelolaan Kredensial Aman: Perlindungan sandi akses dengan sistem penyimpanan terenkripsi serta kemudahan untuk memperbarui atau menghapus sandi tersimpan.",
+      "en": "Secure Credential Management: Access password protection with encrypted storage system and seamless options to update or remove saved passwords."
+    }
+  ]
+}
