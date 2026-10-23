@@ -32,3 +32,23 @@ for (const file of ['js/src/functions.js', 'js/dist/functions.js']) {
     assert.equal(filter('index.php?route=/sql').searchParams.get('xpma_context'), null);
 }
 console.log('12 AJAX context propagation checks passed for source and shipped JavaScript.');
+
+// Run AJAX's real body-cleanup chain: persistent target controls must survive.
+for (const file of ['js/src/ajax.js', 'js/dist/ajax.js']) {
+    const source = fs.readFileSync(path.join(root, file), 'utf8');
+    const start = source.indexOf("$('body').children()");
+    const end = source.indexOf('.remove();', start) + '.remove();'.length;
+    const nodes = ['#xpma-target', '#page_content', '#floating_menubar', '#pma_navigation', '#temporary-notice'];
+    let remaining = [...nodes];
+    let candidates = [...nodes];
+    const chain = {
+        children() { return this; },
+        not(selector) { candidates = candidates.filter(node => node !== selector); return this; },
+        remove() { remaining = remaining.filter(node => !candidates.includes(node)); }
+    };
+    vm.runInNewContext(source.slice(start, end), { $: () => chain });
+    assert(remaining.includes('#xpma-target'), file + ': target switcher survives AJAX');
+    assert(remaining.includes('#page_content'), file + ': page content survives cleanup');
+    assert(!remaining.includes('#temporary-notice'), file + ': temporary containers still removed');
+}
+console.log('6 AJAX target-bar persistence checks passed for source and shipped JavaScript.');

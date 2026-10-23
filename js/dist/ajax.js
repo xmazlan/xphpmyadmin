@@ -487,7 +487,7 @@ var AJAX = {
 
         // Remove all containers that may have
         // been added outside of #page_content
-        $('body').children().not('div.modal').not('#pma_navigation').not('#floating_menubar').not('#page_nav_icons').not('#page_content').not('#selflink').not('#pma_header').not('#pma_footer').not('#pma_demo').not('#pma_console_container').not('#prefs_autoload').remove();
+        $('body').children().not('div.modal').not('#pma_navigation').not('#floating_menubar').not('#page_nav_icons').not('#page_content').not('#selflink').not('#xpma-target').not('#pma_header').not('#pma_footer').not('#pma_demo').not('#pma_console_container').not('#prefs_autoload').remove();
         // Replace #page_content with new content
         if (data.message && data.message.length > 0) {
           $('#page_content').replaceWith('<div id=\'page_content\'>' + data.message + '</div>');

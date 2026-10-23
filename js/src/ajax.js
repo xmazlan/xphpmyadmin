@@ -515,6 +515,7 @@ var AJAX = {
                     .not('#page_nav_icons')
                     .not('#page_content')
                     .not('#selflink')
+                    .not('#xpma-target')
                     .not('#pma_header')
                     .not('#pma_footer')
                     .not('#pma_demo')
