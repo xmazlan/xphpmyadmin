@@ -29,11 +29,12 @@ for header in ['Forwarded', 'X-Forwarded-For', 'X-Real-IP']:
     assert request(base + '/local-runtime.php', {header: '127.0.0.1'})[0] == 403
 for entry in ['index.php', 'url.php', 'show_config_errors.php', 'setup/index.php',
               'setup/config.php', 'setup/validate.php', 'js/messages.php', 'local-connection-test.php',
+              'local-connect.php', 'local-profiles.php', 'local-connections.php',
               'examples/signon.php', 'examples/signon-script.php', 'examples/openid.php',
               'examples/config.manyhosts.inc.php']:
     assert request(base + '/' + entry, {'X-Forwarded-For': '127.0.0.1'})[0] == 403
 assert request(base + '/local-runtime.php', method='POST')[0] == 405
-for script in ['scripts/local-key.php', 'test/local/passwords.php']:
+for script in ['scripts/local-key.php', 'scripts/local-backup.php', 'test/local/passwords.php', 'test/local/recovery.php']:
     assert request(base + '/' + script)[0] == 404
 config = Path.home() / 'Library/Application Support/xphpmyadmin/local.json'
 original = config.read_bytes()
@@ -55,7 +56,7 @@ try:
 finally:
     for canary in canaries:
         canary.unlink(missing_ok=True)
-print('Herd FPM: runtime 200; spoof headers and twelve entrypoints 403; POST 405; private content absent.')
+print('Herd FPM: runtime 200; spoof headers and application entrypoints 403; POST 405; private content absent.')
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.connect(('192.0.2.1', 80))

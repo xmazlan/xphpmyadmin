@@ -7,6 +7,8 @@ from pathlib import Path
 import re
 import secrets
 import socket
+import sqlite3
+from http.cookies import SimpleCookie
 import subprocess
 import tempfile
 import threading
@@ -122,11 +124,13 @@ def server(base, name, flavor, tls, certificates, password):
     client = basedir / 'bin' / ('mysql' if flavor == 'mysql' else 'mariadb')
     sql = ("CREATE DATABASE fixture_allowed; CREATE DATABASE fixture_forbidden; "
            "CREATE TABLE fixture_allowed.sentinel (id INT PRIMARY KEY, value VARCHAR(32)); "
-           "INSERT INTO fixture_allowed.sentinel VALUES (1,'unchanged'); "
+           "INSERT INTO fixture_allowed.sentinel VALUES (1,'unchanged-" + flavor + "'); "
+           "CREATE TABLE fixture_allowed.import_probe (marker VARCHAR(32) PRIMARY KEY); "
            "CREATE USER 'xpma_fixture'@'127.0.0.1' IDENTIFIED BY '" + password + "'; "
            "CREATE USER 'xpma_cert'@'127.0.0.1' IDENTIFIED BY '" + password + "' REQUIRE X509; "
            "GRANT SELECT ON fixture_allowed.* TO 'xpma_fixture'@'127.0.0.1'; "
            "GRANT SELECT ON fixture_allowed.* TO 'xpma_cert'@'127.0.0.1'; "
+           "GRANT INSERT ON fixture_allowed.import_probe TO 'xpma_fixture'@'127.0.0.1'; "
            "SET GLOBAL general_log_file='" + str(folder / 'queries.log') + "'; SET GLOBAL general_log=ON;")
     # All setup SQL is sent only to the new Unix socket in this temporary directory.
     admin = [client, '--no-defaults', '--protocol=SOCKET', '--socket=' + str(sock), '--user=root', '--batch', '--skip-column-names', '--ssl-mode=DISABLED' if flavor == 'mysql' else '--skip-ssl']
@@ -240,23 +244,80 @@ def main(base):
         session_bytes = (base / 'sessions' / ('sess_' + session_data['session_id'])).read_bytes()
         assert b'unchanged-context-A' in session_bytes and password.encode() not in session_bytes
         assert (base / 'data/profiles.sqlite').read_bytes() == snapshot
+        from profiles_http import check_profiles_http
+        check_profiles_http(base, php_port, post, OPENER)
+        print(run(['php', ROOT / 'test/local/contexts.php'], env=env).decode().strip(), flush=True)
+        from context_http import check_context_http
+        check_context_http(base, php_port, post, OPENER)
+        # Optional manual browser QA keeps only this disposable fixture alive.
+        if os.environ.get('XPM_UI_READY_FILE'):
+            ready_file = Path(os.environ['XPM_UI_READY_FILE'])
+            ready_file.write_text(json.dumps({'url': 'http://127.0.0.1:' + str(php_port) + '/local-connections.php',
+                                              'cases': str(case_file)}))
+            ready_file.chmod(0o600)
+            print('Disposable browser QA ready; remove the ready file to finish cleanup.', flush=True)
+            deadline = time.monotonic() + 1800
+            while ready_file.exists() and time.monotonic() < deadline:
+                time.sleep(.25)
+            ready_file.unlink(missing_ok=True)
         php.terminate(); php.wait()
+        # A new PHP web process must read the same durable profiles and saved credential.
+        with sqlite3.connect(base / 'data/profiles.sqlite') as stored:
+            expected_ids = {row[0] for row in stored.execute('SELECT id FROM profiles')}
+        php = start(['php', '-d', 'openssl.cafile=' + cases['ca'], '-d', 'session.save_path=' + str(base / 'sessions'),
+                     '-d', 'display_errors=0', '-d', 'log_errors=1', '-d', 'error_log=' + str(app_log),
+                     '-S', '127.0.0.1:' + str(php_port), '-t', ROOT], base / 'php-restart.log', env)
+        ready(php, php_port)
+        origin = 'http://127.0.0.1:' + str(php_port)
+        with OPENER.open(origin + '/local-connections.php') as response:
+            page = response.read().decode()
+            jar = SimpleCookie()
+            for value in response.headers.get_all('Set-Cookie', []): jar.load(value)
+        restart_cookie = '; '.join(key + '=' + value.value for key, value in jar.items())
+        restart_token = re.search(r'data-token="([^"]+)"', page)[1]
+        status, body, _ = post(origin + '/local-profiles.php', {'token': restart_token, 'action': 'list'}, restart_cookie)
+        assert status == 200 and {profile['id'] for profile in json.loads(body)['profiles']} == expected_ids
+        status, body, _ = post(origin + '/local-connect.php', {'token': restart_token, 'action': 'connect',
+            'profile_id': session_data['profile_id'], 'revision': 1, 'credential': {'source': 'saved'}}, restart_cookie)
+        assert status == 200 and json.loads(body)['target']['port'] == cases['mysql_port']
+        restart_context = json.loads(body)['context']
+        php.terminate(); php.wait()
+        print('Web process restart: identical profile IDs and saved-password reconnect passed.', flush=True)
         # Feature flag off fails before session/credential/network work; no real installation state changed.
         config.write_text(json.dumps({'profiles_enabled': False, 'data_dir': str(base / 'data'), 'key_dir': str(base / 'keys')}))
         php = start(['php', '-S', '127.0.0.1:' + str(php_port), '-t', ROOT], base / 'php-disabled.log', env)
         ready(php, php_port)
+        before_disabled = [(Path(item['folder']) / 'queries.log').read_bytes() for item in servers]
+        try:
+            OPENER.open(urllib.request.Request(origin + '/index.php?route=/sql&xpma_context=' + restart_context,
+                                              headers={'Cookie': restart_cookie}))
+            raise AssertionError('Disabled profile context must not fall back to configured server')
+        except urllib.error.HTTPError as error:
+            assert error.code == 409
+        assert before_disabled == [(Path(item['folder']) / 'queries.log').read_bytes() for item in servers]
         assert post(url, {}, cookie)[0] == 404
+        assert post(url.replace('local-connection-test.php', 'local-profiles.php'), {}, cookie)[0] == 404
+        try:
+            OPENER.open(url.replace('local-connection-test.php', 'local-connections.php'))
+            raise AssertionError('Disabled connection UI must return 404')
+        except urllib.error.HTTPError as error:
+            assert error.code == 404
         php.terminate(); php.wait()
         for item in servers:
             state = run(item['admin'], data=b'SELECT COUNT(*),MIN(value) FROM fixture_allowed.sentinel;', env=item['env'])
-            assert state.strip() == b'1\tunchanged'
+            assert state.strip() == ('1\tunchanged-' + item['flavor']).encode()
             queries = (Path(item['folder']) / 'queries.log').read_text(errors='replace')
-            assert not re.search(r'\b(?:Query|Execute)\s+(?:INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER|TRUNCATE)\b', queries, re.I)
+            writes = re.findall(r'\b(?:Query|Execute)\s+((?:INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER|TRUNCATE)\b[^\n]*)', queries, re.I)
+            expected = ["INSERT INTO import_probe (marker) VALUES ('import_" + ('a' if item['flavor'] == 'mysql' else 'b') + "')"] if Path(item['folder']).name in ['mysql', 'mariadb'] else []
+            assert [query.strip().rstrip(';') for query in writes] == expected, 'Only the explicitly allowed disposable import write may occur'
             assert password not in queries
-        for name in ['application.log', 'php-server.log', 'php-disabled.log']:
+        for name in ['application.log', 'php-server.log', 'php-restart.log', 'php-disabled.log']:
             if (base / name).exists(): assert password not in (base / name).read_text(errors='replace')
+        for item in servers[:2]:
+            version = run(item['admin'], data=b'SELECT VERSION();', env=item['env']).decode().strip()
+            print('Verified disposable engine: ' + item['flavor'] + ' ' + version, flush=True)
         print('HTTP: CSRF/method/flag/spoof guards, draft/saved/session credentials, target binding, no profile writes passed.', flush=True)
-        print('Remote sentinel rows unchanged; test-phase logs contain no DDL/DML or plaintext fixture password.', flush=True)
+        print('Remote sentinel rows unchanged; only two allowed disposable import INSERTs; no other DDL/DML or plaintext fixture password.', flush=True)
     finally:
         stall.close()
         for connection in stalled: connection.close()

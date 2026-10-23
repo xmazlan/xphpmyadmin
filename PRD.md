@@ -1,7 +1,8 @@
 # PRD — xphpMyAdmin Remote Connection Manager
 
 Tanggal: 22 Oktober 2026  
-Status: draft spesifikasi v1; belum diimplementasikan.  
+Status: v1 diimplementasikan; validasi rilis lokal pribadi 23 Oktober 2026.
+Bukti dan batas dukungan: [matriks penerimaan](doc/validasi-rilis-v1.md).
 Basis aplikasi: phpMyAdmin 5.2.3.
 
 ## 1. Tujuan dan keputusan produk
@@ -22,8 +23,8 @@ setelah aplikasi/browser dibuka ulang, koneksi ulang yang mudah, dan tidak adany
 perpindahan target query tanpa tindakan pengguna pada tab terkait.
 
 Kondisi awal: konfigurasi yang diperiksa menunjuk ke `127.0.0.1:3306` dengan
-`auth_type = config`. Fitur dalam dokumen ini adalah target pengembangan, bukan
-klaim kemampuan yang sudah tersedia.
+`auth_type = config`. Kondisi awal tersebut dipertahankan sebagai baseline; fitur v1 yang lulus
+dicatat dalam matriks penerimaan dan README.
 
 ## 2. Cakupan dan pengalaman pengguna
 
@@ -92,8 +93,8 @@ atau dideteksi otomatis. Alamat file CA/sertifikat/kunci merujuk ke mesin PHP.
 
 ## 4. Penyimpanan, keamanan, dan integrasi
 
-Bagian ini adalah rekomendasi teknis untuk implementasi, bukan perubahan yang
-sudah diterapkan atau pilihan tambahan yang telah dikonfirmasi pengguna.
+Bagian ini mencatat rekomendasi teknis awal. Implementasi aktual dan bukti
+validasinya dijelaskan dalam matriks penerimaan; detail operasional ada di README.
 
 - Gunakan SQLite lokal di luar document root. Penyimpanan tidak bergantung pada
   server tujuan, sehingga daftar profil tetap dapat dibuka ketika remote offline.
@@ -172,3 +173,18 @@ administrasi dasar lulus. Tidak diperlukan telemetri eksternal untuk v1.
 - [README proyek](README)
 - [Dokumentasi konfigurasi phpMyAdmin 5.2](https://docs.phpmyadmin.net/en/release_5_2_0/config.html)
 - Manifest lokal: `composer.json` dan `package.json`.
+
+## 7. Keputusan rilis — 23 Oktober 2026
+
+F01–F12 lulus bukti layanan, HTTP dan pemulihan pada runtime lokal teruji.
+V1 diterima untuk penggunaan lokal pribadi dengan MySQL 9.4.0 / MariaDB 11.4.13,
+PHP CLI/FPM 8.5.12 dan SQLite 3.45.2. Backup/restore diuji ke direktori baru;
+rollback baseline diuji melalui ekstraksi privat dan jalur konfigurasi nonaktif,
+bukan deployment atau login ke database pengguna. Konteks juga diikat ke identitas
+penyimpanan agar restore tidak menghidupkan capability sesi lama.
+
+UI Chrome desktop mempunyai bukti Brief 06; browser lain, mobile, screen reader,
+VPN aktual, power-loss/hardware failure, dan suite upstream yang tidak terpasang
+belum diklaim teruji. Tidak ada kegagalan keamanan/isolation/persistensi yang
+tersisa pada suite penerimaan lokal. Lihat [laporan rilis](doc/validasi-rilis-v1.md)
+untuk cakupan, perintah, bukti tiap F, dan batasan lengkap.

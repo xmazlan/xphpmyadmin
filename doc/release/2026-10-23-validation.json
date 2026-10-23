@@ -1,0 +1,91 @@
+{
+  "started_at_utc": "2026-10-23T03:30:17.320118+00:00",
+  "scope": "personal-local-v1",
+  "macos": "26.3",
+  "php": "8.5.12",
+  "python": "3.9.6",
+  "node": "v22.23.4",
+  "results": [
+    {
+      "command": "php test/local/foundation.php",
+      "passed": true,
+      "seconds": 0.03,
+      "summary": "35 foundation checks passed. No user database accessed."
+    },
+    {
+      "command": "php test/local/profiles.php",
+      "passed": true,
+      "seconds": 0.49,
+      "summary": "163 profile checks passed using disposable SQLite only."
+    },
+    {
+      "command": "php test/local/passwords.php",
+      "passed": true,
+      "seconds": 0.56,
+      "summary": "124 password checks passed with disposable SQLite, keys, and PHP sessions only."
+    },
+    {
+      "command": "php test/local/recovery.php",
+      "passed": true,
+      "seconds": 0.2,
+      "summary": "34 recovery checks passed on disposable private directories; no remote database accessed."
+    },
+    {
+      "command": "node test/local/context-js.cjs",
+      "passed": true,
+      "seconds": 0.02,
+      "summary": "12 AJAX context propagation checks passed for source and shipped JavaScript."
+    },
+    {
+      "command": "python3 test/local/rollback.py",
+      "passed": true,
+      "seconds": 1.22,
+      "summary": "Rollback: archive digest, private code/config extraction, identical legacy config, disabled adapter without SQL, no metadata/key replacement passed."
+    },
+    {
+      "command": "python3 test/local/check_http.py",
+      "passed": true,
+      "seconds": 0.59,
+      "summary": "Herd FPM: runtime 200; spoof headers and application entrypoints 403; POST 405; private content absent.\nDirect HTTP: IPv4/IPv6 loopback accepted; real LAN and spoof denied; missing storage/dependency return safe 503.\nHerd entry point: LAN connections rejected on ports 80, 443 and 60."
+    },
+    {
+      "command": "python3 test/local/check_connections.py",
+      "passed": true,
+      "seconds": 50.2,
+      "summary": "Disposable MySQL and MariaDB ready; TLS, wrong-name and no-TLS fixtures ready.\n83 connection checks passed on MySQL/MariaDB/TLS fixtures.\nProfile UI HTTP: offline CRUD, CSRF/local/method guards, search, favorites, reload, encrypted password replace/remove, revision conflicts, safe read payloads passed.\n23 context lifecycle checks passed.\nHTTP context isolation: missing/forged/cross-session, A/B browse/SQL/file import/export, connect/reconnect/failure, edit/delete revocation without remote SQL, duplicate revocation, disconnect and logout passed.\nWeb process restart: identical profile IDs and saved-password reconnect passed.\nVerified disposable engine: mysql 9.4.0\nVerified disposable engine: mariadb 11.4.13-MariaDB\nHTTP: CSRF/method/flag/spoof guards, draft/saved/session credentials, target binding, no profile writes passed.\nRemote sentinel rows unchanged; only two allowed disposable import INSERTs; no other DDL/DML or plaintext fixture password."
+    }
+  ],
+  "passed": true,
+  "finished_at_utc": "2026-10-23T03:31:10.674975+00:00",
+  "installation_audit": {
+    "file_bytes_identical": {
+      "config.inc.php": true,
+      "local.json": true,
+      "profiles.sqlite": false,
+      "master.key": true
+    },
+    "tables": {
+      "profiles": {
+        "identical": false,
+        "count_before": 2,
+        "count_after": 2
+      },
+      "profile_imports": {
+        "identical": true,
+        "count_before": 1,
+        "count_after": 1
+      },
+      "profile_secrets": {
+        "identical": true,
+        "count_before": 1,
+        "count_after": 1
+      },
+      "secret_key_registry": {
+        "identical": true,
+        "count_before": 1,
+        "count_after": 1
+      }
+    },
+    "note": "Site remained available. Live profile rows changed; identical profiles/SQLite bytes are not claimed. Config/key/imports/secrets/registry are identical. All release-suite mutations used isolated disposable stores and server ports; current user data was preserved."
+  }
+}

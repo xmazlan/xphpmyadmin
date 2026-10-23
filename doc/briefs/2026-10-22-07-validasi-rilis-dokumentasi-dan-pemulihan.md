@@ -1,7 +1,7 @@
 # Brief 07 — Validasi rilis, dokumentasi, dan pemulihan
 
 Tanggal: 22 Oktober 2026  
-Status: belum dikerjakan  
+Status: selesai — gerbang rilis dan drill pemulihan lulus 23 Oktober 2026
 Sumber: [PRD](../../PRD.md)  
 Urutan: 7 dari 7  
 Dependensi: Brief 01–06 selesai.  
@@ -54,3 +54,37 @@ penerimaan belum terpenuhi.
 
 - Sebelumnya: [Brief 06](2026-10-22-06-halaman-koneksi-dan-drawer-profil.md).
 - Berikutnya: Tidak ada; akhir rangkaian v1.
+
+## Hasil implementasi — 23 Oktober 2026
+
+- [Matriks F01–F12 dan keputusan rilis](../validasi-rilis-v1.md) tersedia, dengan
+  bukti layanan, HTTP, UI Brief 06, environment, efek samping dan batasan.
+- [Laporan mesin](../release/2026-10-23-validation.json) mencatat seluruh gerbang
+  PASS pada PHP CLI/FPM 8.5.12, SQLite 3.45.2, MySQL 9.4.0 dan MariaDB 11.4.13.
+- CLI `scripts/local-backup.php` membuat snapshot SQLite/WAL tervalidasi dengan
+  kunci terpisah, serta restore ke direktori baru dengan fitur disabled. Tidak
+  menimpa store/kunci/config aktif atau menginisialisasi ulang kunci.
+- Konteks ditambah binding identitas store agar restore tidak menghidupkan sesi
+  lama. Penolakan sekaligus membersihkan password sementara konteks lama.
+- Regresi A/B sekarang memakai sentinel berbeda dan INSERT terbatas pada probe
+  disposable, query balik dan ekspor CSV spesifik target, edit/delete tanpa SQL,
+  restart proses web dan saved-password reconnect, serta rollback flag fail-closed.
+- [README](../../README), [PRD](../../PRD.md), dan
+  [panduan backup/pemulihan](../pemulihan-dan-backup.md) sesuai implementasi aktual.
+
+Perintah utama `python3 test/local/release.py --report doc/release/2026-10-23-validation.json` lulus: fondasi 35, profil 163, password
+124, recovery 34, AJAX 12, koneksi 83, lifecycle 23, suite HTTP UI/multi-tab,
+Herd/LAN guards, dan drill arsip rollback. Syntax 19 PHP, 7 JavaScript, 6 Python
+serta `git diff --check` lulus. Kode/config baseline diekstrak ke staging privat;
+tidak dideploy atau dipakai login ke database pengguna.
+
+Semua fixture baru dibersihkan; sentinel remote utuh dan hanya dua INSERT probe
+allowlist terjadi. Konfigurasi/kunci/marker impor/rahasia/registry instalasi nyata
+identik; fingerprint profil live berubah selama situs tersedia, dan variasi itu
+dicatat tanpa menimpa data pengguna. Pengujian tetap hanya memutasi fixture.
+
+Keputusan: v1 siap untuk penggunaan lokal pribadi pada runtime teruji. Tidak ada
+penghalang keamanan/isolation/persistensi yang tersisa dalam suite penerimaan.
+Chrome desktop mempunyai bukti Brief 06; browser lain, mobile, screen reader,
+VPN aktual, power-loss/hardware failure dan suite upstream yang tidak terpasang
+belum diklaim teruji. Rincian batas dukungan terdapat di matriks penerimaan.

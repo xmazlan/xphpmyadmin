@@ -1,69 +1,178 @@
 xphpMyAdmin — Pengelola Koneksi Database Remote
 ==============================================
 
-Status: perencanaan fitur. Pengelola profil koneksi yang dijelaskan di bawah
-belum diimplementasikan. Aplikasi saat ini berbasis phpMyAdmin 5.2.3 dengan
-koneksi lokal statis melalui config.inc.php.
+v1 tersedia untuk penggunaan lokal pribadi. Penerimaan F01–F12 diverifikasi
+23 Oktober 2026 pada MySQL 9.4.0 dan MariaDB 11.4.13 dengan fixture disposable.
+Basis phpMyAdmin 5.2.3; konfigurasi lama tetap dipertahankan.
 
-Tujuan
-------
+Fitur tersedia
+--------------
 
-Menjadikan proyek ini alat administrasi MySQL/MariaDB untuk penggunaan lokal
-pribadi, dengan profil server tersimpan yang dapat dipilih kembali.
-Aplikasi berjalan di Mac pengguna; koneksi database dibuat oleh proses PHP,
-bukan langsung oleh browser. Akses VPN atau tunnel eksternal harus tersedia
-dari mesin yang menjalankan aplikasi.
+- Halaman Koneksi, drawer tambah/edit, pencarian nama/host/username, favorit,
+  lingkungan, dan waktu terakhir berhasil terhubung.
+- Tes draft, Simpan offline, dan Hubungkan terpisah. Reconnect memakai profil
+  tersimpan tanpa membuat duplikat. Last-used bukan status online.
+- TLS terverifikasi, CA lokal opsional, serta pasangan sertifikat/kunci klien.
+  Non-TLS harus dipilih eksplisit; tidak ada fallback TLS diam-diam.
+- Password terenkripsi opsional, default tidak disimpan; pilihan keep/replace/
+  remove tanpa mengisi kembali plaintext ke form edit.
+- Konteks opaque per sesi/profil/revisi/penyimpanan, isolasi tab, indikator target
+  dan label Production, konfirmasi editor sebelum pindah server, serta reconnect
+  ketika konteks kedaluwarsa atau dicabut. Default konteks maksimal 24 menit.
+- Hapus hanya profil/rahasia/konteks lokal, tanpa menghapus database remote.
+- Impor idempotent konfigurasi lokal awal, tanpa mempersistenkan password lama.
+- Backup SQLite konsisten dan pemulihan ke direktori privat baru dengan kunci
+  asli yang sesuai; instalasi aktif tidak ditimpa.
 
-Keputusan produk
------------------
+Kebutuhan dan setup lokal
+------------------------
 
-- Penggunaan lokal pribadi, bukan layanan web bersama untuk tim.
-- Koneksi langsung/VPN; SSH tunnel bawaan di luar cakupan versi pertama.
-- Profil koneksi tersimpan permanen; penyimpanan password terenkripsi opsional
-  dan tidak aktif secara default.
-- Database yang didukung: MySQL dan MariaDB, mengikuti basis phpMyAdmin.
+Mac dengan PHP CLI dan FPM/Herd 8.2+, dependency composer.json (termasuk mysqli,
+OpenSSL, XML/iconv), PDO SQLite dan Sodium native. Backup membutuhkan SQLite
+3.27+ (VACUUM INTO). Runtime teruji: PHP CLI/FPM 8.5.12, SQLite 3.45.2, macOS
+26.3 arm64. Polyfill Sodium tidak menggantikan ekstensi native untuk fitur lokal.
 
-Fitur yang direncanakan untuk v1
-------------------------------
+Arahkan Herd/web server lokal ke proyek dan gunakan dependency yang sesuai
+composer.lock. Jangan mengekspos situs ke LAN/internet, proxy, atau layanan share.
+Aplikasi menolak peer non-loopback dan seluruh forwarded headers. Verifikasi
+listener web server juga membatasi file statis ke loopback; hostname .test saja
+bukan pembatas akses. PHP yang menghubungi MySQL/MariaDB, bukan browser.
 
-- Halaman Koneksi: daftar profil, pencarian, favorit, dan terakhir digunakan.
-- Drawer tambah/edit: nama, host, port, username, database awal opsional,
-  label lingkungan, TLS, dan pilihan simpan password.
-- Tindakan Tes koneksi, Simpan, dan Hubungkan yang terpisah.
-- Penyimpanan profil dalam SQLite lokal di luar direktori publik; kunci
-  enkripsi password disimpan terpisah.
-- Nama server dan lingkungan aktif selalu terlihat; konteks koneksi terisolasi
-  antar-tab agar pergantian server tidak mengalihkan query tab lain.
-- Profil awal dari koneksi lokal yang sudah ada, tanpa mengubah database tujuan.
+Jalankan sebagai akun PHP/Herd:
 
-Profil menyimpan pengaturan akses, bukan salinan isi database. Riwayat penggunaan
-mencatat koneksi terakhir yang berhasil dan tidak berarti menyimpan riwayat SQL.
-Menghapus profil hanya menghapus konfigurasi lokal.
+    php scripts/local-bootstrap.php
+    php scripts/local-profiles-init.php
+    php local-runtime.php
 
-Menjalankan aplikasi saat ini
-----------------------------
+Bootstrap idempotent menyiapkan konfigurasi privat dengan fitur masih mati.
+Init profil hanya menyiapkan SQLite dan mengimpor konfigurasi lokal yang
+representable sebagai TCP; tidak menghubungi database remote. Konfigurasi socket
+atau TLS legacy yang tidak bisa direpresentasikan ditolak, bukan dikonversi diam-diam.
 
-Gunakan lingkungan PHP lokal yang memenuhi composer.json dan arahkan web server
-lokal, misalnya Herd, ke proyek ini. Periksa konfigurasi koneksi di config.inc.php
-sebelum menggunakan aplikasi. Jangan membagikan kredensial dari file konfigurasi.
-Persyaratan phpMyAdmin tersedia dalam doc/html/index.html dan dokumentasi resmi:
-https://docs.phpmyadmin.net/en/release_5_2_0/
+Bila ingin menyimpan password terenkripsi, inisialisasi kunci sekali:
 
-SQLite dan penyimpanan rahasia di atas merupakan kebutuhan implementasi v1,
-bukan petunjuk bahwa fitur tersebut sudah tersedia pada aplikasi saat ini.
+    php scripts/local-key.php init
+
+Init tidak merotasi/mengganti kunci lama. Kunci hilang dengan registry yang sudah
+ada harus dipulihkan dari backup asli, bukan dibuat ulang.
+
+Default privat (di luar document root, dimiliki akun PHP):
+
+- ~/Library/Application Support/xphpmyadmin/local.json — 0600.
+- .../data/profiles.sqlite dan sidecar — 0600, direktori data 0700.
+- .../keys/master.key — 0600, direktori kunci terpisah 0700.
+
+local.json memuat profiles_enabled, data_dir dan key_dir. Setelah diagnostik CLI
+dan web lulus, set profiles_enabled ke true pada file privat itu. CLI dan FPM
+harus memakai konfigurasi yang sama. Untuk lokasi lain gunakan environment
+XPHPMYADMIN_LOCAL_CONFIG pada keduanya. Path harus absolut/kanonis, privat,
+bukan symlink atau lokasi yang disajikan web. Jangan menaruh SQLite/kunci di repo.
+
+Instalasi lokal saat verifikasi sudah aktif. Buka:
+
+    http://xphpmyadmin.test/local-connections.php
+
+Cara penggunaan
+---------------
+
+Tambah profil, pilih lingkungan/TLS, lalu Tes bila diperlukan. Simpan tetap
+berhasil ketika remote offline. Simpan perubahan sebelum Hubungkan; masukkan
+password jika belum tersedia dalam sesi atau penyimpanan. Untuk akun tanpa
+password, pilih input kosong secara eksplisit. Simpan password default mati.
+Path CA/sertifikat/kunci merujuk ke mesin PHP, bukan browser.
+
+Hubungkan membuka target di tab terkait dan menginisialisasi database awalnya.
+Tab lain tetap pada target masing-masing. Duplikat tab membawa konteks sama;
+Disconnect konteks bersama membuat seluruh salinannya meminta reconnect. Logout
+mengakhiri semua konteks sesi. Perubahan host/port/user/database/TLS atau hapus
+profil mencabut konteks lama; request tidak beralih ke server default.
+
+Identitas target terlihat selama administrasi. Konfirmasi pindah server dapat
+dibatalkan tanpa membuang query. Setelah pemulihan ke penyimpanan baru, konteks
+sesi lama ditolak meskipun ID profil/revisi sama. Sambungkan ulang.
+
+Backup dan pemulihan
+-------------------
+
+Buat dua direktori tujuan BARU dan terpisah di luar document root. Jangan buat
+direktori leaf tujuan terlebih dahulu; tool menolak tujuan yang sudah ada.
+Contoh parent /absolute/private/backups sudah harus ada dan bersifat privat:
+
+    php scripts/local-backup.php backup /absolute/private/backups/metadata-NEW /absolute/private/backups/keys-NEW
+    php scripts/local-backup.php restore /absolute/private/backups/metadata-NEW /absolute/private/backups/keys-NEW /absolute/private/recovered-NEW
+
+Backup memotret SQLite termasuk commit di WAL, memeriksa integrity/foreign keys,
+checksum, registry kunci dan autentikasi seluruh ciphertext. Metadata dan kunci
+harus tetap disimpan terpisah dan privat. Backup berisi ciphertext memerlukan
+kunci asli untuk memulihkan password. Jangan menyalin file SQLite utama saja
+saat penulis/WAL aktif. Key hilang/ciphertext rusak menyebabkan backup penuh
+ditolak; metadata aktif tidak dihapus atau diperbaiki otomatis.
+
+Restore hanya menulis direktori baru: data/, keys/, local.json yang telah
+menyesuaikan path dan profiles_enabled=false. Tidak menyalin sesi atau mengganti
+kunci aktif. Verifikasi diagnostik memakai XPHPMYADMIN_LOCAL_CONFIG yang menunjuk
+local.json hasil restore. Hentikan akses situs sebelum mengarahkan CLI/FPM ke
+konfigurasi hasil restore dan mengaktifkannya. Logout/reconnect setelah pergantian.
+Jangan menjalankan init-key untuk mengganti kunci yang hilang.
+
+Rollback paling sederhana: set profiles_enabled=false, pertahankan SQLite/kunci.
+Request tanpa konteks memakai konfigurasi lama; URL konteks tetap ditolak tanpa
+fallback. Pemulihan kode lengkap memakai arsip baseline privat dan staging;
+jangan reset database, downgrade schema, menghapus .git, atau menimpa perubahan
+pengguna. Panduan dan bukti drill: doc/pemulihan-dan-backup.md.
+
+Troubleshooting
+---------------
+
+- 403: pastikan akses loopback tanpa Forwarded/X-Forwarded-*/X-Real-IP; jangan
+  mengendurkan guard untuk mengakomodasi akses jaringan publik.
+- 404 halaman Koneksi: flag fitur belum aktif. Aktifkan hanya setelah bootstrap
+  dan diagnostik CLI/web lulus.
+- 409 reconnect: konteks kedaluwarsa, profil/revisi/store berubah, disconnect,
+  atau logout. Buka Koneksi dan Hubungkan kembali; tidak ada fallback server.
+- 422: periksa host tanpa skema/port, port 1–65535, field wajib, path absolut,
+  pasangan sertifikat/kunci, serta pilihan password.
+- 503 penyimpanan: periksa akun PHP, permission 0700/0600, SQLite/Sodium native,
+  inisialisasi schema, dan lokasi privat yang sama pada CLI/FPM.
+- Kunci hilang/password tersimpan gagal: profil tetap terlihat. Input password
+  ulang atau pulihkan kunci asli dengan prosedur recovery; jangan hapus metadata.
+- TLS gagal: periksa nama sertifikat, CA, pasangan cert/key dan permission file
+  pada mesin PHP. Jangan menonaktifkan verifikasi untuk menyamarkan kegagalan.
+- Database awal ditolak: periksa nama/hak akun. Aplikasi tidak menggantinya dengan
+  database lain secara otomatis. Timeout awal koneksi berbeda dari durasi query.
+
+Verifikasi dan batas cakupan
+---------------------------
+
+    python3 test/local/release.py --report /absolute/path/release-validation.json
+
+Runner memerlukan binary fixture MySQL/MariaDB, Herd lokal untuk uji akses,
+serta arsip baseline privat (XPM_BASELINE_DIR bila berbeda). Detail prasyarat
+fixture ada di doc/tes-koneksi-dan-tls.md. Suite membuat datadir/akun/sertifikat/
+SQLite/kunci/sesi disposable dan membersihkannya. SQL tulis hanya dua INSERT
+allowlist ke tabel probe disposable; sentinel tetap utuh. Tidak memakai target
+production atau mengubah data database pengguna.
+
+Matriks F01–F12 dan hasil aktual: doc/validasi-rilis-v1.md.
+Laporan mesin: doc/release/2026-10-23-validation.json.
+UI Chrome desktop telah diverifikasi pada Brief 06; Safari/Firefox, mobile dan
+screen reader belum diuji manual. Suite upstream PHPUnit/PHPCS/PHPStan/Psalm tidak
+tersedia dan tidak diklaim lulus. Hasil ini menerima v1 lokal pribadi pada runtime
+teruji; bukan klaim kompatibilitas semua versi server/browser atau hosting publik.
+Tanpa SSH bawaan, multi-user, sinkronisasi atau ekspor/impor profil melalui UI.
+VPN/tunnel dikelola di luar aplikasi; pengujian server memakai TCP loopback.
 
 Dokumen produk
 --------------
 
-Lihat PRD.md untuk kebutuhan, alur pengguna, batas cakupan, kriteria penerimaan,
-dan tahapan implementasi. Detail teknis yang ditandai sebagai rekomendasi belum
-merupakan fitur yang telah dibangun.
+PRD.md memuat kebutuhan dan keputusan produk. Bukti tiap tahap ada di doc/briefs/.
+Panduan UI: doc/halaman-koneksi-dan-drawer-profil.md. Panduan integrasi:
+doc/integrasi-autentikasi-dan-isolasi-tab.md.
 
 Informasi upstream dan lisensi
 -----------------------------
 
-Informasi README phpMyAdmin asli dipertahankan di bawah ini. Pengembangan proyek
-ini tetap mengikuti lisensi upstream; lihat LICENSE dan composer.json.
+README phpMyAdmin asli dipertahankan di bawah. Lihat LICENSE dan composer.json.
 
 phpMyAdmin - Readme
 ===================

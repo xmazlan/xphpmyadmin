@@ -2,6 +2,29 @@
 
 Semua perubahan pada proyek xphpMyAdmin didokumentasikan di berkas ini.
 
+## [Validasi Rilis v1, Backup & Pemulihan - Brief 07] - 2026-10-23
+
+### Utilitas CLI Backup Konsisten & Pemulihan Direktori Privat (Backup & Recovery CLI)
+- Menambahkan kelas `PhpMyAdmin\Local\ProfileBackup` untuk pembuatan snapshot SQLite konsisten berbasis `VACUUM INTO` (termasuk transaksi aktif pada WAL), verifikasi integritas checksum SHA-256, validasi kunci asing (*foreign keys*), autentikasi cipher AEAD seluruh rahasia profil, serta prosedur pemulihan atomik ke direktori privat baru tanpa menimpa instalasi aktif.
+- Menambahkan utilitas CLI `scripts/local-backup.php` untuk aksi administratif `backup` dan `restore` metadata profil dan master key secara independen dengan proteksi kepemilikan dan permission berkas ketat.
+
+### Pengikatan Identitas Penyimpanan & Invalidation Konteks (Store Identity Binding & Context Invalidation)
+- Menambahkan pengikatan identitas penyimpanan (`ProfileDatabase::identity()`) berbasis hash inode/path pada token kapabilitas konteks (`ConnectionContexts`), memastikan database hasil pemulihan/restore tidak menghidupkan kembali sesi dari instalasi sebelumnya.
+- Penolakan konteks yang tidak cocok secara otomatis membersihkan password sementara sesi yang terkait (*fail-closed cleanup*).
+
+### Orkestrasi Validasi Rilis & Matriks Pengujian Komprehensif (Release Validation Suite & Verification)
+- Menambahkan skrip orkestrator rilis `test/local/release.py` untuk mengeksekusi seluruh rangkaian gerbang pengujian otomatis: fondasi runtime, integritas schema & rollback, cipher AEAD & password sesi, skenario backup/recovery, sanitasi propagasi JS, pengujian konektor MySQL & MariaDB dengan TLS, siklus hidup konteks multi-tab, verifikasi boundary HTTP FPM/Herd, serta validasi sintaks PHP, JavaScript, dan Python.
+- Menambahkan pengujian drill pemulihan `test/local/recovery.php` dan `test/local/rollback.py` untuk menguji pemulihan snapshot dan rollback fail-closed.
+- Memperbarui `test/local/check_connections.py` dan `test/local/check_http.py` untuk memverifikasi proteksi seluruh endpoint baru (`local-connect.php`, `local-profiles.php`, `local-connections.php`, `scripts/local-backup.php`), operasi SQL allowlist terbatas pada tabel probe disposable, retensi sentinel data remote, serta penolakan akses forwarded headers.
+- Menghasilkan laporan validasi mesin `doc/release/2026-10-23-validation.json` dengan status PASS 100% di semua gerbang pengujian.
+
+### Dokumentasi Operasional, Panduan Pemulihan, & Rilis v1 (Documentation & Release Readiness)
+- Memperbarui `README` dengan status ketersediaan v1, panduan setup lokal, spesifikasi kebutuhan runtime (PHP 8.2+, Sodium native, SQLite 3.27+), petunjuk operasional backup/restore, pemecahan masalah (*troubleshooting*), dan batasan cakupan sistem.
+- Memperbarui `PRD.md` dengan penetapan keputusan rilis v1 berbasis bukti verifikasi aktual.
+- Memperbarui status implementasi pada `doc/briefs/2026-10-22-07-validasi-rilis-dokumentasi-dan-pemulihan.md` menjadi selesai diverifikasi.
+- Menambahkan dokumen teknis panduan pemulihan `doc/pemulihan-dan-backup.md`.
+- Menambahkan dokumen matriks penerimaan komprehensif `doc/validasi-rilis-v1.md` yang memetakan kepatuhan fitur F01–F12 terhadap kriteria rilis PRD.
+
 ## [Halaman Koneksi & Drawer Profil - Brief 06] - 2026-10-23
 
 ### Antarmuka Halaman Koneksi & Drawer (Connection Manager UI & Drawer)
