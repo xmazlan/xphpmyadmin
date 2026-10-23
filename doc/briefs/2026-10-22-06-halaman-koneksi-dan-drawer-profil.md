@@ -1,7 +1,7 @@
 # Brief 06 — Halaman Koneksi dan drawer profil
 
 Tanggal: 22 Oktober 2026  
-Status: belum dikerjakan  
+Status: selesai — implementasi dan integrasi diverifikasi 23 Oktober 2026
 Sumber: [PRD](../../PRD.md)  
 Urutan: 6 dari 7  
 Dependensi: Brief 01–05 selesai; gunakan layanan yang sudah diuji.  
@@ -57,3 +57,28 @@ penerimaan belum terpenuhi.
 
 - Sebelumnya: [Brief 05](2026-10-22-05-integrasi-autentikasi-dan-isolasi-tab.md).
 - Berikutnya: [Brief 07](2026-10-22-07-validasi-rilis-dokumentasi-dan-pemulihan.md).
+
+## Hasil implementasi — 23 Oktober 2026
+
+Halaman `local-connections.php`, drawer Bootstrap, konfirmasi hapus, dan adapter
+POST `local-profiles.php` tersedia. Halaman awal membuka Koneksi saat fitur aktif.
+Profil/favorit/pencarian, parameter TLS, pilihan password keep/replace/remove,
+Tes/Simpan/Hubungkan terpisah, loading/empty/error, request ganda, serta guard
+perubahan belum disimpan telah diterapkan. Administrasi menampilkan identitas
+tervalidasi dan Production melalui teks serta warna; konteks dicabut meminta
+reconnect sambil mempertahankan editor. UI lokal diaktifkan setelah backup
+konfigurasi privat, tanpa mengubah `config.inc.php` atau data database pengguna.
+
+Pemeriksaan lulus: foundation 35, profil 163, password 124, AJAX 12, koneksi 83,
+lifecycle konteks 20, suite HTTP UI/multi-tab pada MySQL/MariaDB disposable,
+serta guard Herd FPM/LAN. Browser Chrome memverifikasi drawer/fokus keyboard,
+simpan offline setelah tes gagal, favorit, popup hapus/batal, password edit kosong,
+tes TLS, connect/reconnect, dua tab dengan hasil `@@port` berbeda, pembatalan
+pindah server, dan pesan reconnect tanpa membuang query CodeMirror.
+Syntax PHP/JavaScript dan `git diff --check` lulus.
+
+Detail alur, kontrak, bukti pengujian, aktivasi/pemulihan, serta keterbatasan ada di
+[dokumentasi halaman Koneksi](../halaman-koneksi-dan-drawer-profil.md).
+Browser selain Chrome, screen reader, dan mobile belum diuji manual. Hapus final
+diuji lewat HTTP fixture; browser menguji popup dan pembatalannya. Validasi rilis
+penuh tetap cakupan Brief 07.

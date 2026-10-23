@@ -17,6 +17,7 @@
   <link rel="stylesheet" type="text/css" href="{{ base_dir }}js/vendor/codemirror/addon/hint/show-hint.css?{{ version }}">
   <link rel="stylesheet" type="text/css" href="{{ base_dir }}js/vendor/codemirror/addon/lint/lint.css?{{ version }}">
   <link rel="stylesheet" type="text/css" href="{{ theme_path }}/css/theme{{ text_dir == 'rtl' ? '.rtl' }}.css?{{ version }}">
+  {% if validated_target %}<link rel="stylesheet" href="{{ base_dir }}css/local-connections.css">{% endif %}
   <title>{{ title }}</title>
   {{ scripts|raw }}
   <noscript><style>html{display:block}</style></noscript>
@@ -49,6 +50,16 @@
 
   {{ console|raw }}
 
+  {% if validated_target %}
+    <aside id="xpma-target" class="xpma-target-bar" aria-label="Target database tervalidasi">
+      <strong data-xpma-name>{{ validated_target.name }}</strong>
+      <span data-xpma-host>{{ validated_target.host }}:{{ validated_target.port }}</span>
+      <span data-xpma-env class="xpma-env xpma-env-{{ validated_target.environment|lower }}">{{ validated_target.environment }}</span>
+      <span data-xpma-user>{{ validated_target.username }}</span>
+      <div class="xpma-target-actions"><a class="disableAjax btn btn-sm btn-outline-primary" data-xpma-manage href="{{ base_dir }}local-connections.php?xpma_context={{ xpma_context|url_encode }}">Koneksi / ganti server</a></div>
+      <p class="xpma-target-error" data-xpma-reconnect role="alert" hidden></p>
+    </aside>
+  {% endif %}
   <div id="page_content">
     {{ messages|raw }}
 

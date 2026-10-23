@@ -162,6 +162,9 @@ class Header
         $this->scripts->addFile('indexes.js');
         $this->scripts->addFile('common.js');
         $this->scripts->addFile('page_settings.js');
+        if (\PhpMyAdmin\Local\ProfileRequest::token() !== null) {
+            $this->scripts->addFile('local-target.js');
+        }
 
         $this->scripts->addCode($this->getJsParamsCode());
     }
@@ -181,6 +184,8 @@ class Header
         $params = [
             // Do not add any separator, JS code will decide
             'common_query' => Url::getCommonRaw([], ''),
+            'xpma_context' => \PhpMyAdmin\Local\ProfileRequest::token(),
+            'validated_target' => \PhpMyAdmin\Local\ProfileRequest::target(),
             'opendb_url' => Util::getScriptNameForOption($GLOBALS['cfg']['DefaultTabDatabase'], 'database'),
             'lang' => $GLOBALS['lang'],
             'server' => $GLOBALS['server'],
@@ -217,7 +222,9 @@ class Header
     {
         $params = $this->getJsParams();
         foreach ($params as $key => $value) {
-            if (is_bool($value)) {
+            if (is_array($value)) {
+                $params[$key] = $key . ':' . json_encode($value, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+            } elseif (is_bool($value)) {
                 $params[$key] = $key . ':' . ($value ? 'true' : 'false') . '';
             } else {
                 $params[$key] = $key . ':"' . Sanitize::escapeJsString($value) . '"';
@@ -425,6 +432,8 @@ class Header
             'console' => $console,
             'messages' => $messages,
             'recent_table' => $recentTable,
+            'validated_target' => \PhpMyAdmin\Local\ProfileRequest::target(),
+            'xpma_context' => \PhpMyAdmin\Local\ProfileRequest::token(),
         ]);
     }
 

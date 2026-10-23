@@ -2,6 +2,30 @@
 
 Semua perubahan pada proyek xphpMyAdmin didokumentasikan di berkas ini.
 
+## [Halaman Koneksi & Drawer Profil - Brief 06] - 2026-10-23
+
+### Antarmuka Halaman Koneksi & Drawer (Connection Manager UI & Drawer)
+- Menambahkan antarmuka web `local-connections.php` sebagai gerbang utama manajemen profil dengan fitur pencarian instan (nama, host, username), filter favorit, urutan terakhir digunakan (*last-used*), serta status visual (*empty*, *loading*, *error*).
+- Menambahkan drawer form Bootstrap responsif untuk penambahan dan pengeditan profil yang ramah navigasi keyboard dan pemfokusan input.
+- Mendukung konfigurasi lengkap parameter profil: nama, host loopback/domain, port, username, database awal opsional, environment tag (`Development`, `Staging`, `Production`), opsi TLS (CA kustom, sertifikat/kunci klien), dan penanganan password terenkripsi (`keep`, `replace`, `remove`).
+- Menambahkan gaya visual `css/local-connections.css` untuk tata letak halaman Koneksi, drawer profil, badge lingkungan, dan indikator target database.
+
+### Adaptor Aksi Profil & Integrasi Indikator Target (Profile Action Adapter & Target Indicator)
+- Menambahkan kelas `PhpMyAdmin\Local\ProfileAction` dan endpoint POST `local-profiles.php` untuk menangani aksi CRUD profil (`list`, `create`, `update`, `favorite`, `delete`) yang terproteksi oleh guard akses lokal dan CSRF.
+- Menambahkan modul skrip `js/src/local-connections.js` dan `js/dist/local-connections.js` untuk interaktivitas form drawer, validasi sisi klien, eksekusi tes koneksi draft tanpa dependensi simpan, penolakan pengiriman ganda (*double-submit guard*), dan popup konfirmasi hapus aman.
+- Menambahkan skrip `js/src/local-target.js` dan `js/dist/local-target.js` serta memperbarui `libraries/classes/Header.php` dan `templates/header.twig` untuk menampilkan banner target aktif (`#xpma-target`) di seluruh halaman administrasi phpMyAdmin, membedakan target Production dengan warna dan teks eksplisit.
+
+### Penanganan Perubahan Belum Disimpan & Isolasi Navigasi (Unsaved Changes & Navigation Guard)
+- Mengintegrasikan deteksi perubahan belum disimpan (*dirty-state guard*) pada editor query SQL (CodeMirror) sebelum perpindahan server atau navigasi keluar dari konteks aktif.
+- Menampilkan peringatan reconnect dan tombol navigasi kembali ke halaman Koneksi saat konteks sesi dibatalkan atau kedaluwarsa tanpa merusak draft query aktif.
+
+### Pengujian Otomatis Antarmuka Web (Automated Testing)
+- Menambahkan modul pengujian HTTP `test/local/profiles_http.py` untuk memvalidasi alur lengkap siklus hidup profil via web (list, create, favorite, update, password replace/remove, delete).
+
+### Dokumentasi Halaman Koneksi (Documentation)
+- Memperbarui status implementasi pada `doc/briefs/2026-10-22-06-halaman-koneksi-dan-drawer-profil.md` menjadi selesai diverifikasi.
+- Menambahkan dokumen teknis lengkap `doc/halaman-koneksi-dan-drawer-profil.md` yang merinci komponen UI, kontrak API local-profiles, proteksi keyboard/aksesibilitas, indikator visual target, dan hasil penjelajahan browser nyata.
+
 ## [Integrasi Autentikasi & Isolasi Tab - Brief 05] - 2026-10-23
 
 ### Adaptor Autentikasi & Konteks Target (Authentication Adapter & Target Contexts)
