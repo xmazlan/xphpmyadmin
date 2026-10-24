@@ -1,9 +1,8 @@
-import React from "react";
 import { RefreshCw, Server } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/utils/tailwind";
 import type { ServerEngineItem } from "@/types/workspace";
+import { cn } from "@/utils/tailwind";
 
 interface EnginesTabProps {
   isLoadingEngines: boolean;
@@ -17,89 +16,88 @@ export function EnginesTab({
   serverEnginesData,
 }: EnginesTabProps) {
   return (
-    <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-background">
-      <div className="flex items-center justify-between border-b border-border bg-card px-4 py-2.5 shrink-0">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
+      <div className="flex shrink-0 items-center justify-between border-border border-b bg-card px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <Server size={15} className="text-primary" />
-          <h2 className="text-xs font-semibold text-foreground">
+          <Server className="text-primary" size={15} />
+          <h2 className="font-semibold text-foreground text-xs">
             Mesin Penyimpanan Basis Data (SHOW ENGINES)
           </h2>
           <Badge
+            className="border-primary/30 bg-primary/10 font-mono text-[10px] text-primary"
             variant="outline"
-            className="text-[10px] font-mono border-primary/30 text-primary bg-primary/10"
           >
             {serverEnginesData.length} Mesin
           </Badge>
         </div>
         <Button
-          variant="outline"
-          size="sm"
-          disabled={isLoadingEngines}
           className="h-7 border-border bg-muted/40 text-muted-foreground hover:text-foreground"
+          disabled={isLoadingEngines}
           onClick={onLoadEngines}
+          size="sm"
+          variant="outline"
         >
           <RefreshCw
-            size={12}
             className={cn("mr-1.5", isLoadingEngines && "animate-spin")}
+            size={12}
           />
           <span>Segarkan</span>
         </Button>
       </div>
 
       <div className="flex-1 overflow-auto">
-        <table className="w-full border-collapse text-left text-xs font-mono">
+        <table className="w-full border-collapse text-left font-mono text-xs">
           <thead>
-            <tr className="border-b border-border bg-muted/40 text-muted-foreground sticky top-0">
-              <th className="py-2.5 px-4 font-semibold">Nama Mesin</th>
-              <th className="py-2.5 px-4 font-semibold">Dukungan</th>
-              <th className="py-2.5 px-4 font-semibold">Keterangan</th>
-              <th className="py-2.5 px-4 font-semibold text-center">
+            <tr className="sticky top-0 border-border border-b bg-muted/40 text-muted-foreground">
+              <th className="px-4 py-2.5 font-semibold">Nama Mesin</th>
+              <th className="px-4 py-2.5 font-semibold">Dukungan</th>
+              <th className="px-4 py-2.5 font-semibold">Keterangan</th>
+              <th className="px-4 py-2.5 text-center font-semibold">
                 Transaksi
               </th>
-              <th className="py-2.5 px-4 font-semibold text-center">XA</th>
-              <th className="py-2.5 px-4 font-semibold text-center">
+              <th className="px-4 py-2.5 text-center font-semibold">XA</th>
+              <th className="px-4 py-2.5 text-center font-semibold">
                 Savepoints
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50 text-foreground">
             {serverEnginesData.map((e) => (
-              <tr
-                key={e.engine}
-                className="hover:bg-muted transition-colors"
-              >
-                <td className="py-2.5 px-4 text-foreground font-medium">
+              <tr className="transition-colors hover:bg-muted" key={e.engine}>
+                <td className="px-4 py-2.5 font-medium text-foreground">
                   {e.engine}
                 </td>
-                <td className="py-2.5 px-4">
+                <td className="px-4 py-2.5">
                   {e.support === "DEFAULT" ? (
-                    <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[9px]">
+                    <Badge className="border-emerald-500/30 bg-emerald-500/15 text-[9px] text-emerald-500">
                       DEFAULT
                     </Badge>
                   ) : e.support === "YES" ? (
-                    <Badge className="bg-primary text-primary-foreground/15 text-primary border-primary/30 text-[9px]">
+                    <Badge className="border-primary/30 bg-primary text-[9px] text-primary text-primary-foreground/15">
                       YES
                     </Badge>
                   ) : (
                     <Badge
+                      className="border-border text-[9px] text-muted-foreground/70"
                       variant="outline"
-                      className="border-border text-muted-foreground/70 text-[9px]"
                     >
                       NO
                     </Badge>
                   )}
                 </td>
-                <td className="py-2.5 px-4 text-muted-foreground">{e.comment}</td>
-                <td className="py-2.5 px-4 text-center">{e.transactions}</td>
-                <td className="py-2.5 px-4 text-center">{e.xa}</td>
-                <td className="py-2.5 px-4 text-center">{e.savepoints}</td>
+                <td className="px-4 py-2.5 text-muted-foreground">
+                  {e.comment}
+                </td>
+                <td className="px-4 py-2.5 text-center">{e.transactions}</td>
+                <td className="px-4 py-2.5 text-center">{e.xa}</td>
+                <td className="px-4 py-2.5 text-center">{e.savepoints}</td>
               </tr>
             ))}
             {serverEnginesData.length === 0 && (
               <tr>
                 <td
+                  className="py-8 text-center text-muted-foreground/70 text-xs italic"
                   colSpan={6}
-                  className="py-8 text-center text-xs text-muted-foreground/70 italic"
                 >
                   {isLoadingEngines
                     ? "Memuat mesin penyimpanan..."

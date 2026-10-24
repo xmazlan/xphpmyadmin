@@ -7,8 +7,8 @@
     "en": "Launch of Modern Desktop Interface & Unified Data Workspace"
   },
   "body": {
-    "id": "Aplikasi kini hadir dengan antarmuka desktop modern berkanvas gelap yang responsif saat mode jendela maupun layar penuh, navigasi multi-sesi, diagnostik kesehatan sambungan otomatis, bilah navigasi lengkap fitur inti phpMyAdmin (Databases, SQL, Status, Users, Export, Import, Variables, Charsets, Engines, Plugins), serta pengelolaan data langsung yang aman.",
-    "en": "The application now features a modern dark-canvas desktop interface responsive in both windowed and fullscreen modes, multi-session tab navigation, automated connection health diagnostics, complete phpMyAdmin core navigation tabs (Databases, SQL, Status, Users, Export, Import, Variables, Charsets, Engines, Plugins), and integrated secure direct data management."
+    "id": "Aplikasi kini hadir dengan antarmuka desktop modern berkanvas gelap yang responsif saat mode jendela maupun layar penuh, pemisahan halaman navigasi terisolasi, dialog konfirmasi perlindungan data visual untuk aksi sensitif, opsi penghapusan sambungan host langsung, diagnostik kesehatan sambungan otomatis, bilah navigasi lengkap fitur inti phpMyAdmin (Databases, SQL, Status, Users, Export, Import, Variables, Charsets, Engines, Plugins), serta pengelolaan data langsung yang aman.",
+    "en": "The application now features a modern dark-canvas desktop interface responsive in both windowed and fullscreen modes, isolated workspace navigation routing, visual data protection confirmation dialogs for sensitive actions, direct host connection deletion, automated connection health diagnostics, complete phpMyAdmin core navigation tabs (Databases, SQL, Status, Users, Export, Import, Variables, Charsets, Engines, Plugins), and integrated secure data management."
   },
   "items": [
     {
@@ -90,6 +90,21 @@
       "type": "improvement",
       "id": "Dukungan Lengkap Kredensial SSH Tunnel (User & Password): Formulir konfigurasi metode SSH Tunnel kini dilengkapi kolom masukan Nama Pengguna SSH (User SSH) dan Kata Sandi SSH (Password User SSH) dengan tombol intip/sembunyikan (peek visibility) serta dukungan kunci privat SSH opsional untuk fleksibilitas autentikasi ke server bastion.",
       "en": "Comprehensive SSH Tunnel Credentials Support (User & Password): The SSH Tunnel configuration form now features dedicated inputs for SSH Username and SSH Password with interactive peek visibility toggles, alongside optional SSH private key support for flexible bastion server authentication."
+    },
+    {
+      "type": "new",
+      "id": "Dialog Konfirmasi Perlindungan Data Visual: Sistem kini menyajikan dialog peringatan konfirmasi terpadu sebelum melakukan tindakan sensitif dan destruktif seperti pengosongan tabel, penghapusan tabel tunggal maupun massal, serta penghapusan basis data untuk mencegah kehilangan data penting secara tidak sengaja.",
+      "en": "Visual Data Protection Confirmation Dialog: The system now presents a unified visual confirmation warning dialog prior to sensitive and destructive operations such as table truncating, single or bulk table deletions, and database dropping to safeguard against accidental data loss."
+    },
+    {
+      "type": "new",
+      "id": "Penghapusan Sambungan Host Langsung: Pengguna kini dapat langsung menghapus profil sambungan server dari kartu daftar host di halaman utama, dilengkapi konfirmasi perlindungan interaktif serta pembersihan otomatis sandi tersimpan dan tab sesi aktif.",
+      "en": "Direct Host Connection Deletion: Users can now directly delete server connection profiles from host cards on the main dashboard, complete with protective confirmation and automated cleanup of stored passwords and active session tabs."
+    },
+    {
+      "type": "improvement",
+      "id": "Pemisahan Halaman Pusat Koneksi & Ruang Kerja Data: Alur antarmuka kini memisahkan pusat pengelola sambungan server dan studio kerja basis data ke dalam halaman mandiri, memberikan kecepatan akses yang lebih responsif serta stabilitas navigasi multi-sesi.",
+      "en": "Dedicated Connection Hub & Data Workspace Routing: Interface workflow now separates the server connection hub and data workspace studio into dedicated, isolated views, providing faster responsiveness and seamless multi-session navigation stability."
     }
   ]
 }

@@ -1,4 +1,3 @@
-import React from "react";
 import { Copy, Download, FileDown, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -35,13 +34,15 @@ export function ExportModal({
   setExportDisableFk,
   setExportMode,
 }: ExportModalProps) {
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+    <div className="fade-in fixed inset-0 z-50 flex animate-in items-center justify-center bg-black/80 p-4 backdrop-blur-sm duration-150">
       <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
         {/* Header Modal */}
-        <div className="flex items-center justify-between border-b border-border bg-muted/40 px-4 py-3">
+        <div className="flex items-center justify-between border-border border-b bg-muted/40 px-4 py-3">
           <div className="flex items-center gap-2">
             <div className="flex size-7 items-center justify-center rounded-md border border-emerald-500/30 bg-emerald-500/10 text-emerald-500">
               <FileDown size={14} />
@@ -56,9 +57,9 @@ export function ExportModal({
             </div>
           </div>
           <button
-            type="button"
+            className="rounded p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
             onClick={onClose}
-            className="rounded p-1 text-muted-foreground/70 hover:bg-muted hover:text-foreground transition-colors"
+            type="button"
           >
             <X size={15} />
           </button>
@@ -68,7 +69,7 @@ export function ExportModal({
         <div className="flex-1 space-y-4 overflow-y-auto p-4 text-xs">
           {/* Pilihan Cakupan Ekspor */}
           <div>
-            <Label className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider block mb-2">
+            <Label className="mb-2 block font-semibold text-[11px] text-muted-foreground uppercase tracking-wider">
               Format Ekspor
             </Label>
             <div className="grid grid-cols-3 gap-2">
@@ -90,20 +91,20 @@ export function ExportModal({
                 },
               ].map((item) => (
                 <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setExportMode(item.id)}
                   className={cn(
-                    "flex flex-col items-start p-2.5 rounded-lg border text-left transition-all",
+                    "flex flex-col items-start rounded-lg border p-2.5 text-left transition-all",
                     exportMode === item.id
-                      ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold"
+                      ? "border-emerald-500 bg-emerald-500/10 font-semibold text-emerald-600 dark:text-emerald-400"
                       : "border-border bg-muted/40 text-muted-foreground hover:border-white/20"
                   )}
+                  key={item.id}
+                  onClick={() => setExportMode(item.id)}
+                  type="button"
                 >
                   <span className="font-semibold text-[11px] text-foreground">
                     {item.title}
                   </span>
-                  <span className="text-[10px] text-muted-foreground/70 mt-0.5">
+                  <span className="mt-0.5 text-[10px] text-muted-foreground/70">
                     {item.desc}
                   </span>
                 </button>
@@ -112,7 +113,7 @@ export function ExportModal({
           </div>
 
           {/* Opsi Tambahan */}
-          <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-2.5">
+          <div className="space-y-2.5 rounded-lg border border-border bg-muted/40 p-3">
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-[11px] text-foreground">
@@ -154,21 +155,21 @@ export function ExportModal({
                   Pratinjau SQL Hasil Ekspor:
                 </Label>
                 <Button
-                  size="sm"
-                  variant="ghost"
                   className="h-5 px-1.5 text-[10px] text-primary"
                   onClick={() => {
                     navigator.clipboard.writeText(exportPreviewSql);
                     toast.success("SQL disalin ke clipboard!");
                   }}
+                  size="sm"
+                  variant="ghost"
                 >
-                  <Copy size={10} className="mr-1" />
+                  <Copy className="mr-1" size={10} />
                   Salin Ulang
                 </Button>
               </div>
               <textarea
-                readOnly
                 className="h-28 w-full resize-none rounded-md border border-border bg-background p-2 font-mono text-[10px] text-emerald-500 focus:outline-none"
+                readOnly
                 value={exportPreviewSql}
               />
             </div>
@@ -176,35 +177,35 @@ export function ExportModal({
         </div>
 
         {/* Footer Modal */}
-        <div className="flex items-center justify-between border-t border-border bg-muted/40 px-4 py-3">
+        <div className="flex items-center justify-between border-border border-t bg-muted/40 px-4 py-3">
           <Button
-            variant="outline"
-            size="sm"
-            className="h-7 text-xs border-border text-muted-foreground hover:bg-muted"
+            className="h-7 border-border text-muted-foreground text-xs hover:bg-muted"
             onClick={onClose}
+            size="sm"
+            variant="outline"
           >
             Tutup
           </Button>
 
           <div className="flex items-center gap-2">
             <Button
-              variant="outline"
-              size="sm"
+              className="h-7 border-border text-foreground text-xs hover:bg-muted"
               disabled={isExporting}
-              className="h-7 text-xs border-border text-foreground hover:bg-muted"
               onClick={() => onExecuteExport(false)}
+              size="sm"
+              variant="outline"
             >
-              <Copy size={12} className="mr-1.5" />
+              <Copy className="mr-1.5" size={12} />
               Salin ke Clipboard
             </Button>
 
             <Button
-              size="sm"
+              className="h-7 bg-primary font-semibold text-primary-foreground text-xs hover:bg-primary/90"
               disabled={isExporting}
-              className="h-7 bg-primary text-primary-foreground font-semibold text-xs hover:bg-primary/90"
               onClick={() => onExecuteExport(true)}
+              size="sm"
             >
-              <Download size={12} className="mr-1.5" />
+              <Download className="mr-1.5" size={12} />
               {isExporting ? "Mengekspor..." : "Simpan Berkas .sql"}
             </Button>
           </div>

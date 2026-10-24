@@ -1,4 +1,3 @@
-import React from "react";
 import { Copy, Download, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -31,25 +30,25 @@ export function ExportTab({
   setExportMode,
 }: ExportTabProps) {
   return (
-    <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-background p-4 sm:p-6">
-      <div className="max-w-2xl mx-auto w-full space-y-4">
-        <div className="flex items-center justify-between border-b border-border pb-3">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background p-4 sm:p-6">
+      <div className="mx-auto w-full max-w-2xl space-y-4">
+        <div className="flex items-center justify-between border-border border-b pb-3">
           <div className="flex items-center gap-2.5">
-            <FileDown size={18} className="text-emerald-500" />
+            <FileDown className="text-emerald-500" size={18} />
             <div>
-              <h2 className="text-sm font-semibold text-foreground">
+              <h2 className="font-semibold text-foreground text-sm">
                 Ekspor Basis Data ({currentSelectedDatabase || "Pilih db"})
               </h2>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Cadangkan skema dan data tabel ke format SQL dump standar.
               </p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-lg border border-border bg-card p-4 space-y-4">
+        <div className="space-y-4 rounded-lg border border-border bg-card p-4">
           <div>
-            <Label className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider block mb-2">
+            <Label className="mb-2 block font-semibold text-[11px] text-muted-foreground uppercase tracking-wider">
               Pilih Format Ekspor
             </Label>
             <div className="grid grid-cols-3 gap-2">
@@ -71,20 +70,20 @@ export function ExportTab({
                 },
               ].map((item) => (
                 <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setExportMode(item.id)}
                   className={cn(
-                    "flex flex-col items-start p-3 rounded-lg border text-left transition-all",
+                    "flex flex-col items-start rounded-lg border p-3 text-left transition-all",
                     exportMode === item.id
-                      ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold"
+                      ? "border-emerald-500 bg-emerald-500/10 font-semibold text-emerald-600 dark:text-emerald-400"
                       : "border-border bg-muted/40 text-muted-foreground hover:border-white/20"
                   )}
+                  key={item.id}
+                  onClick={() => setExportMode(item.id)}
+                  type="button"
                 >
-                  <span className="font-semibold text-xs text-foreground">
+                  <span className="font-semibold text-foreground text-xs">
                     {item.title}
                   </span>
-                  <span className="text-[10px] text-muted-foreground/70 mt-0.5">
+                  <span className="mt-0.5 text-[10px] text-muted-foreground/70">
                     {item.desc}
                   </span>
                 </button>
@@ -92,10 +91,10 @@ export function ExportTab({
             </div>
           </div>
 
-          <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-3">
+          <div className="space-y-3 rounded-lg border border-border bg-muted/40 p-3">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-xs text-foreground">
+                <Label className="text-foreground text-xs">
                   Sertakan DROP TABLE IF EXISTS
                 </Label>
                 <p className="text-[10px] text-muted-foreground/70">
@@ -110,7 +109,7 @@ export function ExportTab({
             <div className="h-[1px] bg-border" />
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-xs text-foreground">
+                <Label className="text-foreground text-xs">
                   Nonaktifkan Foreign Key Checks Sementara
                 </Label>
                 <p className="text-[10px] text-muted-foreground/70">
@@ -130,32 +129,32 @@ export function ExportTab({
                 Pratinjau SQL Hasil Ekspor:
               </Label>
               <textarea
+                className="w-full resize-none rounded-md border border-border bg-background p-2.5 font-mono text-[11px] text-emerald-500 focus:outline-none"
                 readOnly
                 rows={6}
-                className="w-full resize-none rounded-md border border-border bg-background p-2.5 font-mono text-[11px] text-emerald-500 focus:outline-none"
                 value={exportPreviewSql}
               />
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+          <div className="flex items-center justify-end gap-2 border-border border-t pt-2">
             <Button
-              variant="outline"
-              size="sm"
-              disabled={isExporting}
               className="h-8 border-border text-foreground hover:bg-muted"
+              disabled={isExporting}
               onClick={() => onExecuteExport(false)}
+              size="sm"
+              variant="outline"
             >
-              <Copy size={13} className="mr-1.5" />
+              <Copy className="mr-1.5" size={13} />
               Salin ke Clipboard
             </Button>
             <Button
-              size="sm"
+              className="h-8 bg-primary font-semibold text-primary-foreground text-xs hover:bg-primary/90"
               disabled={isExporting}
-              className="h-8 bg-primary text-primary-foreground font-semibold text-xs hover:bg-primary/90"
               onClick={() => onExecuteExport(true)}
+              size="sm"
             >
-              <Download size={13} className="mr-1.5" />
+              <Download className="mr-1.5" size={13} />
               {isExporting ? "Mengekspor..." : "Simpan Berkas .sql"}
             </Button>
           </div>

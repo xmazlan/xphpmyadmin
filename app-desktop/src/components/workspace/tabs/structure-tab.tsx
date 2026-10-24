@@ -1,4 +1,3 @@
-import React from "react";
 import {
   CheckSquare,
   Columns,
@@ -11,12 +10,13 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import type React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/utils/tailwind";
 import type { TableItem } from "@/types/workspace";
+import { cn } from "@/utils/tailwind";
 
 interface StructureTabProps {
   bulkAction: string;
@@ -70,28 +70,28 @@ export function StructureTab({
   totalDatabaseRows,
 }: StructureTabProps) {
   return (
-    <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-background">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
       {/* Header Bar Struktur */}
-      <div className="flex items-center justify-between border-b border-border bg-card px-4 py-2.5 shrink-0 gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <TableIcon size={16} className="text-primary shrink-0" />
+      <div className="flex shrink-0 items-center justify-between gap-2 border-border border-b bg-card px-4 py-2.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <TableIcon className="shrink-0 text-primary" size={16} />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h2 className="text-xs font-semibold text-foreground truncate">
+              <h2 className="truncate font-semibold text-foreground text-xs">
                 Struktur Basis Data:{" "}
                 <span className="font-mono text-emerald-500">
                   {currentSelectedDatabase || "Belum dipilih"}
                 </span>
               </h2>
               <Badge
+                className="border-primary/30 bg-primary/10 font-mono text-[10px] text-primary"
                 variant="outline"
-                className="text-[10px] font-mono border-primary/30 text-primary bg-primary/10"
               >
                 {filteredDisplayTables.length} Tabel
               </Badge>
               <Badge
+                className="hidden border-emerald-500/30 bg-emerald-500/10 font-mono text-[10px] text-emerald-500 sm:inline-flex"
                 variant="outline"
-                className="text-[10px] font-mono border-emerald-500/30 text-emerald-500 bg-emerald-500/10 hidden sm:inline-flex"
               >
                 {totalDatabaseRows.toLocaleString()} Baris Total
               </Badge>
@@ -99,36 +99,38 @@ export function StructureTab({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex shrink-0 items-center gap-2">
           <div className="relative w-40 sm:w-56">
             <Search
+              className="absolute top-2 left-2.5 text-muted-foreground/70"
               size={12}
-              className="absolute left-2.5 top-2 text-muted-foreground/70"
             />
             <Input
-              className="h-7 text-xs pl-8 pr-2 border-border bg-muted/40 text-foreground placeholder:text-muted-foreground/70"
+              className="h-7 border-border bg-muted/40 pr-2 pl-8 text-foreground text-xs placeholder:text-muted-foreground/70"
+              onChange={(e) => setTableSearch(e.target.value)}
               placeholder="Saring tabel..."
               value={tableSearch}
-              onChange={(e) => setTableSearch(e.target.value)}
             />
           </div>
           <Button
-            size="sm"
-            className="h-7 bg-primary text-primary-foreground font-semibold text-xs hover:bg-primary/90 flex items-center gap-1.5 shadow-sm"
+            className="flex h-7 items-center gap-1.5 bg-primary font-semibold text-primary-foreground text-xs shadow-sm hover:bg-primary/90"
             onClick={() => {
               const elem = document.getElementById("create-table-card");
-              if (elem) elem.scrollIntoView({ behavior: "smooth" });
+              if (elem) {
+                elem.scrollIntoView({ behavior: "smooth" });
+              }
             }}
+            size="sm"
           >
             <Plus size={12} />
             <span className="hidden sm:inline">Buat Tabel</span>
           </Button>
           <Button
-            variant="outline"
-            size="sm"
             className="h-7 border-border bg-muted/40 text-muted-foreground hover:text-foreground"
             onClick={onRefreshTables}
+            size="sm"
             title="Segarkan daftar tabel"
+            variant="outline"
           >
             <RefreshCw size={12} />
           </Button>
@@ -136,42 +138,42 @@ export function StructureTab({
       </div>
 
       {/* Body: Tabel List Structure ala phpMyAdmin */}
-      <div className="flex-1 overflow-auto p-4 space-y-4">
+      <div className="flex-1 space-y-4 overflow-auto p-4">
         {filteredDisplayTables.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center space-y-3">
-            <TableIcon size={32} className="mx-auto text-muted-foreground/70" />
+          <div className="space-y-3 rounded-xl border border-border border-dashed bg-card p-8 text-center">
+            <TableIcon className="mx-auto text-muted-foreground/70" size={32} />
             <div className="space-y-1">
               <p className="font-semibold text-foreground text-xs">
                 Belum ada tabel pada basis data `{currentSelectedDatabase}`
               </p>
-              <p className="text-[11px] text-muted-foreground max-w-sm mx-auto">
-                Anda dapat membuat tabel baru menggunakan formulir di bawah atau mengimpor skrip berkas .sql.
+              <p className="mx-auto max-w-sm text-[11px] text-muted-foreground">
+                Anda dapat membuat tabel baru menggunakan formulir di bawah atau
+                mengimpor skrip berkas .sql.
               </p>
             </div>
             <Button
+              className="border-border text-primary text-xs hover:bg-primary/10"
+              onClick={() => onSwitchTab("import")}
               size="sm"
               variant="outline"
-              className="border-border text-primary hover:bg-primary/10 text-xs"
-              onClick={() => onSwitchTab("import")}
             >
-              <FileUp size={12} className="mr-1.5" />
+              <FileUp className="mr-1.5" size={12} />
               Impor Berkas SQL
             </Button>
           </div>
         ) : (
-          <div className="rounded-lg border border-border bg-card overflow-hidden">
-            <table className="w-full border-collapse text-left text-xs font-mono">
+          <div className="overflow-hidden rounded-lg border border-border bg-card">
+            <table className="w-full border-collapse text-left font-mono text-xs">
               <thead>
-                <tr className="border-b border-border bg-muted/40 text-muted-foreground">
-                  <th className="py-2.5 px-3 w-8 text-center">
+                <tr className="border-border border-b bg-muted/40 text-muted-foreground">
+                  <th className="w-8 px-3 py-2.5 text-center">
                     <input
-                      type="checkbox"
-                      className="rounded border-border bg-background text-primary cursor-pointer"
                       checked={
                         selectedTableCheckboxes.length ===
-                        filteredDisplayTables.length &&
+                          filteredDisplayTables.length &&
                         filteredDisplayTables.length > 0
                       }
+                      className="cursor-pointer rounded border-border bg-background text-primary"
                       onChange={(e) => {
                         if (e.target.checked) {
                           setSelectedTableCheckboxes(
@@ -181,20 +183,21 @@ export function StructureTab({
                           setSelectedTableCheckboxes([]);
                         }
                       }}
+                      type="checkbox"
                     />
                   </th>
-                  <th className="py-2.5 px-3 font-semibold">Tabel</th>
-                  <th className="py-2.5 px-3 font-semibold text-center">
+                  <th className="px-3 py-2.5 font-semibold">Tabel</th>
+                  <th className="px-3 py-2.5 text-center font-semibold">
                     Aksi (phpMyAdmin)
                   </th>
-                  <th className="py-2.5 px-3 font-semibold text-right">
+                  <th className="px-3 py-2.5 text-right font-semibold">
                     Baris
                   </th>
-                  <th className="py-2.5 px-3 font-semibold">Mesin</th>
-                  <th className="py-2.5 px-3 font-semibold">
+                  <th className="px-3 py-2.5 font-semibold">Mesin</th>
+                  <th className="px-3 py-2.5 font-semibold">
                     Penyortiran (Collation)
                   </th>
-                  <th className="py-2.5 px-3 font-semibold text-right">
+                  <th className="px-3 py-2.5 text-right font-semibold">
                     Ukuran
                   </th>
                 </tr>
@@ -204,17 +207,16 @@ export function StructureTab({
                   const isChecked = selectedTableCheckboxes.includes(tbl.name);
                   return (
                     <tr
-                      key={tbl.name}
                       className={cn(
-                        "hover:bg-muted transition-colors",
+                        "transition-colors hover:bg-muted",
                         isChecked && "bg-primary text-primary-foreground/5"
                       )}
+                      key={tbl.name}
                     >
-                      <td className="py-2 px-3 text-center">
+                      <td className="px-3 py-2 text-center">
                         <input
-                          type="checkbox"
-                          className="rounded border-border bg-background text-primary cursor-pointer"
                           checked={isChecked}
+                          className="cursor-pointer rounded border-border bg-background text-primary"
                           onChange={(e) => {
                             if (e.target.checked) {
                               setSelectedTableCheckboxes((prev) => [
@@ -227,90 +229,91 @@ export function StructureTab({
                               );
                             }
                           }}
+                          type="checkbox"
                         />
                       </td>
-                      <td className="py-2 px-3 font-medium text-foreground">
+                      <td className="px-3 py-2 font-medium text-foreground">
                         <button
-                          type="button"
+                          className="flex cursor-pointer items-center gap-1.5 text-left font-semibold text-foreground hover:text-primary hover:underline"
                           onClick={() => onBrowseTable(tbl.name)}
-                          className="flex items-center gap-1.5 font-semibold text-foreground hover:text-primary hover:underline text-left cursor-pointer"
                           title="Klik untuk menjelajahi data tabel"
+                          type="button"
                         >
                           <TableIcon
+                            className="shrink-0 text-primary"
                             size={13}
-                            className="text-primary shrink-0"
                           />
                           <span>{tbl.name}</span>
                         </button>
                       </td>
-                      <td className="py-2 px-3">
+                      <td className="px-3 py-2">
                         <div className="flex items-center justify-center gap-1">
                           <Button
-                            size="sm"
-                            variant="ghost"
                             className="h-6 px-1.5 text-[10px] text-emerald-500 hover:bg-emerald-500/10"
                             onClick={() => onBrowseTable(tbl.name)}
+                            size="sm"
                             title="Jelajahi Data (SELECT * FROM)"
+                            variant="ghost"
                           >
-                            <Play size={10} className="mr-1 fill-current" />
+                            <Play className="mr-1 fill-current" size={10} />
                             Jelajahi
                           </Button>
                           <Button
-                            size="sm"
-                            variant="ghost"
                             className="h-6 px-1.5 text-[10px] text-primary hover:bg-primary/10"
                             onClick={() => onViewTableStructure(tbl.name)}
+                            size="sm"
                             title="Struktur Kolom & Indeks (DESCRIBE)"
+                            variant="ghost"
                           >
-                            <Columns size={10} className="mr-1" />
+                            <Columns className="mr-1" size={10} />
                             Struktur
                           </Button>
                           <Button
-                            size="sm"
-                            variant="ghost"
                             className="h-6 px-1.5 text-[10px] text-amber-500 hover:bg-amber-500/10"
                             onClick={() => onOpenInsertModal(tbl.name)}
+                            size="sm"
                             title="Sisipkan Baris Baru (INSERT INTO)"
+                            variant="ghost"
                           >
-                            <Plus size={10} className="mr-1" />
+                            <Plus className="mr-1" size={10} />
                             Sisipkan
                           </Button>
                           <Button
-                            size="sm"
-                            variant="ghost"
                             className="h-6 px-1.5 text-[10px] text-destructive hover:bg-destructive/10"
                             onClick={() => onEmptyTable(tbl.name)}
+                            size="sm"
                             title="Kosongkan Tabel (TRUNCATE)"
+                            variant="ghost"
                           >
-                            <Trash2 size={10} className="mr-1" />
+                            <Trash2 className="mr-1" size={10} />
                             Kosongkan
                           </Button>
                           <Button
-                            size="sm"
-                            variant="ghost"
                             className="h-6 px-1 text-[10px] text-destructive hover:bg-destructive/10"
                             onClick={() => onDropTable(tbl.name)}
+                            size="sm"
                             title="Hapus Tabel (DROP TABLE)"
+                            variant="ghost"
                           >
                             <X size={10} />
                           </Button>
                         </div>
                       </td>
-                      <td className="py-2 px-3 text-right font-medium">
+                      <td className="px-3 py-2 text-right font-medium">
                         {tbl.rows.toLocaleString()}
                       </td>
-                      <td className="py-2 px-3">
+                      <td className="px-3 py-2">
                         <Badge
+                          className="border-border px-1.5 py-0 font-mono text-[9px] text-muted-foreground"
                           variant="outline"
-                          className="text-[9px] px-1.5 py-0 border-border text-muted-foreground font-mono"
                         >
                           {tbl.engine || "InnoDB"}
                         </Badge>
                       </td>
-                      <td className="py-2 px-3 text-[11px] text-muted-foreground">
+                      <td className="px-3 py-2 text-[11px] text-muted-foreground">
                         {tbl.collation || "utf8mb4_general_ci"}
                       </td>
-                      <td className="py-2 px-3 text-right text-foreground font-medium">
+                      <td className="px-3 py-2 text-right font-medium text-foreground">
                         {tbl.size}
                       </td>
                     </tr>
@@ -319,26 +322,24 @@ export function StructureTab({
               </tbody>
               {/* Summary Footer */}
               <tfoot>
-                <tr className="border-t-2 border-border bg-muted/40 font-semibold text-foreground text-[11px]">
-                  <td className="py-2.5 px-3 text-center">
-                    <CheckSquare size={12} className="mx-auto text-primary" />
+                <tr className="border-border border-t-2 bg-muted/40 font-semibold text-[11px] text-foreground">
+                  <td className="px-3 py-2.5 text-center">
+                    <CheckSquare className="mx-auto text-primary" size={12} />
                   </td>
-                  <td className="py-2.5 px-3">
+                  <td className="px-3 py-2.5">
                     {filteredDisplayTables.length} Tabel Total
                   </td>
-                  <td className="py-2.5 px-3 text-center text-muted-foreground">
+                  <td className="px-3 py-2.5 text-center text-muted-foreground">
                     —
                   </td>
-                  <td className="py-2.5 px-3 text-right text-emerald-500">
+                  <td className="px-3 py-2.5 text-right text-emerald-500">
                     {totalDatabaseRows.toLocaleString()}
                   </td>
-                  <td className="py-2.5 px-3 text-muted-foreground">
+                  <td className="px-3 py-2.5 text-muted-foreground">
                     InnoDB / MariaDB
                   </td>
-                  <td className="py-2.5 px-3 text-muted-foreground">
-                    utf8mb4
-                  </td>
-                  <td className="py-2.5 px-3 text-right text-primary">
+                  <td className="px-3 py-2.5 text-muted-foreground">utf8mb4</td>
+                  <td className="px-3 py-2.5 text-right text-primary">
                     {filteredDisplayTables.length > 0 ? "Tersedia" : "-"}
                   </td>
                 </tr>
@@ -346,15 +347,15 @@ export function StructureTab({
             </table>
 
             {/* With Selected Action Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-muted p-2.5 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-border border-t bg-muted p-2.5 text-xs">
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-[11px]">
+                <span className="text-[11px] text-muted-foreground">
                   Dengan yang terpilih ({selectedTableCheckboxes.length}):
                 </span>
                 <select
-                  value={bulkAction}
+                  className="h-7 rounded border border-border bg-card px-2 font-mono text-foreground text-xs focus:border-primary focus:outline-none"
                   onChange={(e) => setBulkAction(e.target.value)}
-                  className="h-7 text-xs bg-card border border-border text-foreground rounded px-2 font-mono focus:outline-none focus:border-primary"
+                  value={bulkAction}
                 >
                   <option value="empty">Kosongkan (TRUNCATE)</option>
                   <option value="drop">Hapus Tabel (DROP)</option>
@@ -362,31 +363,31 @@ export function StructureTab({
                   <option value="check">Periksa (CHECK)</option>
                 </select>
                 <Button
-                  size="sm"
+                  className="h-7 bg-primary font-semibold text-primary-foreground text-xs hover:bg-primary/90"
                   disabled={selectedTableCheckboxes.length === 0}
-                  className="h-7 bg-primary text-primary-foreground font-semibold text-xs hover:bg-primary/90"
                   onClick={onExecuteBulkAction}
+                  size="sm"
                 >
                   Jalankan
                 </Button>
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  type="button"
+                  className="text-[11px] text-primary hover:underline"
                   onClick={() =>
                     setSelectedTableCheckboxes(
                       filteredDisplayTables.map((t) => t.name)
                     )
                   }
-                  className="text-[11px] text-primary hover:underline"
+                  type="button"
                 >
                   Pilih Semua
                 </button>
                 <span className="text-muted-foreground/70">•</span>
                 <button
-                  type="button"
-                  onClick={() => setSelectedTableCheckboxes([])}
                   className="text-[11px] text-muted-foreground hover:underline"
+                  onClick={() => setSelectedTableCheckboxes([])}
+                  type="button"
                 >
                   Kosongkan Pilihan
                 </button>
@@ -397,26 +398,26 @@ export function StructureTab({
 
         {/* Form Buat Tabel Baru di Basis Data Ini */}
         <div
+          className="space-y-3 rounded-lg border border-border bg-card p-4"
           id="create-table-card"
-          className="rounded-lg border border-border bg-card p-4 space-y-3"
         >
           <div className="flex items-center gap-2">
-            <Plus size={14} className="text-emerald-500" />
+            <Plus className="text-emerald-500" size={14} />
             <h3 className="font-semibold text-foreground text-xs">
               Buat Tabel Baru pada Basis Data `{currentSelectedDatabase}`
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+          <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-3">
             <div className="space-y-1 sm:col-span-2">
               <Label className="text-[11px] text-muted-foreground">
                 Nama Tabel:
               </Label>
               <Input
-                className="h-7.5 border-border bg-muted/40 text-xs font-mono text-foreground placeholder:text-muted-foreground/70"
+                className="h-7.5 border-border bg-muted/40 font-mono text-foreground text-xs placeholder:text-muted-foreground/70"
+                onChange={(e) => setNewTableNameInput(e.target.value)}
                 placeholder="e.g. pelanggan, transaksi, log_kegiatan"
                 value={newTableNameInput}
-                onChange={(e) => setNewTableNameInput(e.target.value)}
               />
             </div>
             <div className="space-y-1">
@@ -425,22 +426,22 @@ export function StructureTab({
               </Label>
               <div className="flex items-center gap-2">
                 <Input
-                  type="number"
-                  min={1}
+                  className="h-7.5 w-20 border-border bg-muted/40 font-mono text-foreground text-xs"
                   max={50}
-                  className="h-7.5 border-border bg-muted/40 text-xs font-mono text-foreground w-20"
-                  value={newTableColumnsInput}
+                  min={1}
                   onChange={(e) =>
                     setNewTableColumnsInput(Number(e.target.value) || 4)
                   }
+                  type="number"
+                  value={newTableColumnsInput}
                 />
                 <Button
-                  size="sm"
+                  className="h-7.5 flex-1 bg-emerald-600 font-semibold text-foreground text-xs hover:bg-emerald-500"
                   disabled={isCreatingTable || !newTableNameInput.trim()}
-                  className="h-7.5 flex-1 bg-emerald-600 text-foreground font-semibold text-xs hover:bg-emerald-500"
                   onClick={onCreateTable}
+                  size="sm"
                 >
-                  <Plus size={12} className="mr-1" />
+                  <Plus className="mr-1" size={12} />
                   {isCreatingTable ? "Membuat..." : "Buat Tabel"}
                 </Button>
               </div>
