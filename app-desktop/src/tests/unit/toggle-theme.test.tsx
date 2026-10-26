@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import { expect, test } from "vitest";
 import ToggleTheme from "@/components/toggle-theme";
 
@@ -23,4 +23,15 @@ test("is moon icon", () => {
   const svg = getByRole("button").querySelector("svg");
 
   expect(svg?.classList).toContain(svgIconClassName);
+});
+
+test("toggles to sun icon when in light mode", async () => {
+  document.documentElement.classList.add("light");
+  document.documentElement.classList.remove("dark");
+  const { getByRole, unmount } = render(<ToggleTheme />);
+  const svg = getByRole("button").querySelector("svg");
+
+  expect(svg?.classList).toContain("lucide-sun");
+  unmount();
+  document.documentElement.classList.remove("light");
 });

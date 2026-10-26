@@ -2,16 +2,23 @@ import { os } from "@orpc/server";
 import { nativeTheme } from "electron";
 import { setThemeModeInputSchema } from "./schemas";
 
-export const getCurrentThemeMode = os.handler(() => nativeTheme.themeSource);
+export const getCurrentThemeMode = os.handler(() => {
+  if (nativeTheme.themeSource === "system") {
+    return nativeTheme.shouldUseDarkColors ? "dark" : "light";
+  }
+  return nativeTheme.themeSource;
+});
 
 export const toggleThemeMode = os.handler(() => {
-  if (nativeTheme.shouldUseDarkColors) {
-    nativeTheme.themeSource = "light";
-  } else {
-    nativeTheme.themeSource = "dark";
-  }
+  const currentIsDark =
+    nativeTheme.themeSource === "system"
+      ? nativeTheme.shouldUseDarkColors
+      : nativeTheme.themeSource === "dark";
 
-  return nativeTheme.shouldUseDarkColors;
+  const nextMode = currentIsDark ? "light" : "dark";
+  nativeTheme.themeSource = nextMode;
+
+  return nextMode === "dark";
 });
 
 export const setThemeMode = os

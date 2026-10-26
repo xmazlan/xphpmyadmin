@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SecondRouteImport } from './routes/second'
+import { Route as WorkspaceProfileIdRouteImport } from './routes/workspace/$profileId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +23,40 @@ const SecondRoute = SecondRouteImport.update({
   path: '/second',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkspaceProfileIdRoute = WorkspaceProfileIdRouteImport.update({
+  id: '/workspace/$profileId',
+  path: '/workspace/$profileId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/second': typeof SecondRoute
+  '/workspace/$profileId': typeof WorkspaceProfileIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/second': typeof SecondRoute
+  '/workspace/$profileId': typeof WorkspaceProfileIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/second': typeof SecondRoute
+  '/workspace/$profileId': typeof WorkspaceProfileIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/second'
+  fullPaths: '/' | '/second' | '/workspace/$profileId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/second'
-  id: '__root__' | '/' | '/second'
+  to: '/' | '/second' | '/workspace/$profileId'
+  id: '__root__' | '/' | '/second' | '/workspace/$profileId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SecondRoute: typeof SecondRoute
+  WorkspaceProfileIdRoute: typeof WorkspaceProfileIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +75,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SecondRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/workspace/$profileId': {
+      id: '/workspace/$profileId'
+      path: '/workspace/$profileId'
+      fullPath: '/workspace/$profileId'
+      preLoaderRoute: typeof WorkspaceProfileIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SecondRoute: SecondRoute,
+  WorkspaceProfileIdRoute: WorkspaceProfileIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
