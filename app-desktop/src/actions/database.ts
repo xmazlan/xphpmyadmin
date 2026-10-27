@@ -6,6 +6,7 @@ import type {
   ExportDatabaseInput,
   ImportDatabaseInput,
   PromptSqlFileInput,
+  SshConnectionInput,
 } from "@/ipc/database/schemas";
 
 export async function testDatabaseConnection(params: DatabaseConnectionInput) {
@@ -16,6 +17,20 @@ export async function testDatabaseConnection(params: DatabaseConnectionInput) {
       latencyMs: 0,
       ok: false,
       error: error?.message || "Gagal memanggil IPC database.testConnection",
+    };
+  }
+}
+
+export async function testSshTunnelAction(params: SshConnectionInput) {
+  try {
+    return await ipc.client.database.testSshTunnel(params);
+  } catch (error: any) {
+    return {
+      error: error?.message || "Gagal menguji koneksi SSH Tunnel",
+      fingerprint: "",
+      keyAlgorithm: "",
+      latencyMs: 0,
+      ok: false,
     };
   }
 }

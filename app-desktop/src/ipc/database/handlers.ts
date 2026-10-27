@@ -2,8 +2,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { os } from "@orpc/server";
 import { dialog } from "electron";
-import mysql from "mysql2/promise";
+import type mysql from "mysql2/promise";
 import { ipcContext } from "../context";
+import {
+  createDatabaseConnection,
+  inspectSshConnection,
+} from "./connection-helper";
 import {
   createDatabaseSchema,
   databaseConnectionSchema,
@@ -13,6 +17,7 @@ import {
   getTablesSchema,
   importDatabaseSchema,
   promptSqlFileSchema,
+  sshConnectionSchema,
 } from "./schemas";
 
 export const testConnection = os
@@ -20,13 +25,8 @@ export const testConnection = os
   .handler(async ({ input }) => {
     const startTime = Date.now();
     try {
-      const conn = await mysql.createConnection({
-        connectTimeout: 5000,
-        database: input.database || undefined,
-        host: input.host,
-        password: input.password,
-        port: input.port,
-        user: input.user,
+      const { conn, close } = await createDatabaseConnection(input, {
+        timeoutMs: 10000,
       });
 
       const [rows] = await conn.query("SELECT VERSION() as version");
@@ -41,7 +41,7 @@ export const testConnection = os
       const dbType = isMariaDB ? "MariaDB" : "MySQL";
       const version = `${dbType} ${versionRaw}`;
 
-      await conn.end();
+      await close();
 
       return {
         dbType,
@@ -58,20 +58,39 @@ export const testConnection = os
     }
   });
 
+export const testSshTunnel = os
+  .input(sshConnectionSchema)
+  .handler(async ({ input }) => {
+    const startTime = Date.now();
+    try {
+      const res = await inspectSshConnection(input, 10000);
+      return {
+        fingerprint: res.fingerprint,
+        keyAlgorithm: res.keyAlgorithm,
+        latencyMs: Date.now() - startTime,
+        ok: true,
+      };
+    } catch (err: any) {
+      return {
+        error: err?.message || String(err),
+        fingerprint: "",
+        keyAlgorithm: "",
+        latencyMs: Date.now() - startTime,
+        ok: false,
+      };
+    }
+  });
+
 export const getDatabases = os
   .input(databaseConnectionSchema)
   .handler(async ({ input }) => {
     try {
-      const conn = await mysql.createConnection({
-        connectTimeout: 5000,
-        host: input.host,
-        password: input.password,
-        port: input.port,
-        user: input.user,
+      const { conn, close } = await createDatabaseConnection(input, {
+        timeoutMs: 10000,
       });
 
       const [rows] = await conn.query("SHOW DATABASES;");
-      await conn.end();
+      await close();
 
       const databases: string[] = [];
       if (Array.isArray(rows)) {
@@ -93,14 +112,13 @@ export const getTables = os
   .input(getTablesSchema)
   .handler(async ({ input }) => {
     try {
-      const conn = await mysql.createConnection({
-        connectTimeout: 8000,
-        database: input.database,
-        host: input.connection.host,
-        password: input.connection.password,
-        port: input.connection.port,
-        user: input.connection.user,
-      });
+      const { conn, close } = await createDatabaseConnection(
+        {
+          ...input.connection,
+          database: input.database,
+        },
+        { timeoutMs: 12000 }
+      );
 
       let rows: any[] = [];
       try {
@@ -157,7 +175,7 @@ export const getTables = os
         }
       }
 
-      await conn.end();
+      await close();
 
       const tables: Array<{
         collation: string;
@@ -212,18 +230,17 @@ export const executeQuery = os
   .handler(async ({ input }) => {
     const startTime = Date.now();
     try {
-      const conn = await mysql.createConnection({
-        connectTimeout: 8000,
-        database: input.database || input.connection.database || undefined,
-        host: input.connection.host,
-        password: input.connection.password,
-        port: input.connection.port,
-        user: input.connection.user,
-      });
+      const { conn, close } = await createDatabaseConnection(
+        {
+          ...input.connection,
+          database: input.database || input.connection.database || undefined,
+        },
+        { timeoutMs: 15000 }
+      );
 
       const [result, fields] = await conn.query(input.query);
       const executionTimeMs = Date.now() - startTime;
-      await conn.end();
+      await close();
 
       if (Array.isArray(result)) {
         const columns = fields
@@ -353,14 +370,13 @@ export const exportDatabase = os
   .handler(async ({ input }) => {
     const startTime = Date.now();
     try {
-      const conn = await mysql.createConnection({
-        connectTimeout: 15000,
-        database: input.database,
-        host: input.connection.host,
-        password: input.connection.password,
-        port: input.connection.port,
-        user: input.connection.user,
-      });
+      const { conn, close } = await createDatabaseConnection(
+        {
+          ...input.connection,
+          database: input.database,
+        },
+        { timeoutMs: 25000 }
+      );
 
       const [vRows] = await conn.query("SELECT VERSION() as v");
       const srvVerRaw =
@@ -446,7 +462,7 @@ export const exportDatabase = os
       dump += `COMMIT;\n`;
       dump += `-- Ekspor selesai: ${tables.length} tabel, ${totalRowsExported} baris.\n`;
 
-      await conn.end();
+      await close();
 
       const durationMs = Date.now() - startTime;
       const sizeBytes = Buffer.byteLength(dump, "utf-8");
@@ -512,18 +528,16 @@ export const importDatabase = os
         };
       }
 
-      const conn = await mysql.createConnection({
-        connectTimeout: 30000,
-        database: input.database || input.connection.database || undefined,
-        host: input.connection.host,
-        multipleStatements: true,
-        password: input.connection.password,
-        port: input.connection.port,
-        user: input.connection.user,
-      });
+      const { conn, close } = await createDatabaseConnection(
+        {
+          ...input.connection,
+          database: input.database || input.connection.database || undefined,
+        },
+        { multipleStatements: true, timeoutMs: 60000 }
+      );
 
       await conn.query(sqlToExecute);
-      await conn.end();
+      await close();
 
       const durationMs = Date.now() - startTime;
       const statementsCount = sqlToExecute
@@ -551,17 +565,13 @@ export const getServerStatus = os
   .input(databaseConnectionSchema)
   .handler(async ({ input }) => {
     try {
-      const conn = await mysql.createConnection({
-        connectTimeout: 5000,
-        host: input.host,
-        password: input.password,
-        port: input.port,
-        user: input.user,
+      const { conn, close } = await createDatabaseConnection(input, {
+        timeoutMs: 8000,
       });
 
       const [statusRows] = await conn.query("SHOW GLOBAL STATUS;");
       const [processRows] = await conn.query("SHOW FULL PROCESSLIST;");
-      await conn.end();
+      await close();
 
       const statusMap: Record<string, string> = {};
       if (Array.isArray(statusRows)) {
@@ -616,12 +626,8 @@ export const getUserAccounts = os
   .input(databaseConnectionSchema)
   .handler(async ({ input }) => {
     try {
-      const conn = await mysql.createConnection({
-        connectTimeout: 5000,
-        host: input.host,
-        password: input.password,
-        port: input.port,
-        user: input.user,
+      const { conn, close } = await createDatabaseConnection(input, {
+        timeoutMs: 8000,
       });
 
       let users: Array<{
@@ -662,7 +668,7 @@ export const getUserAccounts = os
         }
       }
 
-      await conn.end();
+      await close();
       return { ok: true, users };
     } catch (err: any) {
       return { error: err?.message || String(err), ok: false, users: [] };
@@ -673,16 +679,12 @@ export const getServerVariables = os
   .input(databaseConnectionSchema)
   .handler(async ({ input }) => {
     try {
-      const conn = await mysql.createConnection({
-        connectTimeout: 5000,
-        host: input.host,
-        password: input.password,
-        port: input.port,
-        user: input.user,
+      const { conn, close } = await createDatabaseConnection(input, {
+        timeoutMs: 8000,
       });
 
       const [rows] = await conn.query("SHOW GLOBAL VARIABLES;");
-      await conn.end();
+      await close();
 
       const variables: Array<{ name: string; value: string }> = [];
       if (Array.isArray(rows)) {
@@ -704,16 +706,12 @@ export const getServerEngines = os
   .input(databaseConnectionSchema)
   .handler(async ({ input }) => {
     try {
-      const conn = await mysql.createConnection({
-        connectTimeout: 5000,
-        host: input.host,
-        password: input.password,
-        port: input.port,
-        user: input.user,
+      const { conn, close } = await createDatabaseConnection(input, {
+        timeoutMs: 8000,
       });
 
       const [rows] = await conn.query("SHOW ENGINES;");
-      await conn.end();
+      await close();
 
       const engines: Array<{
         comment: string;
@@ -746,16 +744,12 @@ export const getServerCharsets = os
   .input(databaseConnectionSchema)
   .handler(async ({ input }) => {
     try {
-      const conn = await mysql.createConnection({
-        connectTimeout: 5000,
-        host: input.host,
-        password: input.password,
-        port: input.port,
-        user: input.user,
+      const { conn, close } = await createDatabaseConnection(input, {
+        timeoutMs: 8000,
       });
 
       const [rows] = await conn.query("SHOW CHARACTER SET;");
-      await conn.end();
+      await close();
 
       const charsets: Array<{
         charset: string;
@@ -786,16 +780,12 @@ export const getServerPlugins = os
   .input(databaseConnectionSchema)
   .handler(async ({ input }) => {
     try {
-      const conn = await mysql.createConnection({
-        connectTimeout: 5000,
-        host: input.host,
-        password: input.password,
-        port: input.port,
-        user: input.user,
+      const { conn, close } = await createDatabaseConnection(input, {
+        timeoutMs: 8000,
       });
 
       const [rows] = await conn.query("SHOW PLUGINS;");
-      await conn.end();
+      await close();
 
       const plugins: Array<{
         library: string;
@@ -826,19 +816,16 @@ export const createDatabase = os
   .input(createDatabaseSchema)
   .handler(async ({ input }) => {
     try {
-      const conn = await mysql.createConnection({
-        connectTimeout: 5000,
-        host: input.connection.host,
-        password: input.connection.password,
-        port: input.connection.port,
-        user: input.connection.user,
-      });
+      const { conn, close } = await createDatabaseConnection(
+        input.connection,
+        { timeoutMs: 8000 }
+      );
 
       const collationClause = input.collation
         ? ` COLLATE ${input.collation}`
         : "";
       await conn.query(`CREATE DATABASE \`${input.name}\`${collationClause};`);
-      await conn.end();
+      await close();
 
       return { name: input.name, ok: true };
     } catch (err: any) {
@@ -854,16 +841,13 @@ export const dropDatabase = os
   .input(dropDatabaseSchema)
   .handler(async ({ input }) => {
     try {
-      const conn = await mysql.createConnection({
-        connectTimeout: 5000,
-        host: input.connection.host,
-        password: input.connection.password,
-        port: input.connection.port,
-        user: input.connection.user,
-      });
+      const { conn, close } = await createDatabaseConnection(
+        input.connection,
+        { timeoutMs: 8000 }
+      );
 
       await conn.query(`DROP DATABASE \`${input.name}\`;`);
-      await conn.end();
+      await close();
 
       return { name: input.name, ok: true };
     } catch (err: any) {

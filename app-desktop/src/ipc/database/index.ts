@@ -14,6 +14,7 @@ import {
   importDatabase,
   promptSqlFileDialog,
   testConnection,
+  testSshTunnel,
 } from "./handlers";
 
 export const database = {
@@ -32,4 +33,5 @@ export const database = {
   importDatabase,
   promptSqlFileDialog,
   testConnection,
+  testSshTunnel,
 };

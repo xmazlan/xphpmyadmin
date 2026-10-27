@@ -3,6 +3,7 @@ import {
   Database,
   Eye,
   EyeOff,
+  FolderOpen,
   Key,
   PanelRightClose,
   RefreshCw,
@@ -10,7 +11,7 @@ import {
   Terminal,
   Zap,
 } from "lucide-react";
-import type React from "react";
+import React, { useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,6 +68,8 @@ export function ConnectionInspector({
   showPassword,
   showSshPassword,
 }: ConnectionInspectorProps) {
+  const sshKeyFileInputRef = useRef<HTMLInputElement>(null);
+
   if (!isOpen) {
     return null;
   }
@@ -412,17 +415,45 @@ export function ConnectionInspector({
                   (Opsional jika pakai Password)
                 </span>
               </Label>
-              <Input
-                className="mt-1 h-7 border-border bg-background font-mono text-xs"
-                onChange={(e) =>
-                  setEditForm({
-                    ...editForm,
-                    ssh: { ...editForm.ssh!, key: e.target.value },
-                  })
-                }
-                placeholder="~/.ssh/id_rsa atau path berkas kunci privat"
-                value={editForm.ssh?.key || ""}
-              />
+              <div className="mt-1 flex items-center gap-1.5">
+                <Input
+                  className="h-7 flex-1 border-border bg-background font-mono text-xs"
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      ssh: { ...editForm.ssh!, key: e.target.value },
+                    })
+                  }
+                  placeholder="~/.ssh/id_rsa atau path berkas kunci privat"
+                  value={editForm.ssh?.key || ""}
+                />
+                <input
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const pathStr = (file as any).path || file.name;
+                      setEditForm({
+                        ...editForm,
+                        ssh: { ...editForm.ssh!, key: pathStr },
+                      });
+                    }
+                  }}
+                  ref={sshKeyFileInputRef}
+                  type="file"
+                />
+                <Button
+                  className="h-7 shrink-0 px-2 text-[10px]"
+                  onClick={() => sshKeyFileInputRef.current?.click()}
+                  size="sm"
+                  title="Pilih Berkas Kunci SSH"
+                  type="button"
+                  variant="outline"
+                >
+                  <FolderOpen size={12} />
+                  <span className="hidden sm:inline">Pilih</span>
+                </Button>
+              </div>
             </div>
           </div>
         )}

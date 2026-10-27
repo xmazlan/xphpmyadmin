@@ -1,7 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { fetchDatabases, testDatabaseConnection } from "@/actions/database";
+import {
+  fetchDatabases,
+  testDatabaseConnection,
+  testSshTunnelAction,
+} from "@/actions/database";
 import { ConnectionGrid } from "@/components/workspace/connection/connection-grid";
 import { ConnectionInspector } from "@/components/workspace/connection/connection-inspector";
 import { ConnectionSidebar } from "@/components/workspace/connection/connection-sidebar";
@@ -271,11 +275,55 @@ export function HomePage() {
     } else {
       activePass = savedPasswords[editForm.id] ?? "";
     }
+
+    let sshTrustStatus: "passed" | "failed" | "skipped" = "skipped";
+    let sshTrustMsg: string | undefined = undefined;
+
+    if (editForm.method === "ssh" && editForm.ssh) {
+      const sshRes = await testSshTunnelAction(editForm.ssh);
+      if (sshRes.ok) {
+        sshTrustStatus = "passed";
+        sshTrustMsg = `${sshRes.keyAlgorithm} • ${sshRes.fingerprint}`;
+      } else {
+        sshTrustStatus = "failed";
+        sshTrustMsg = sshRes.error;
+      }
+    }
+
+    if (editForm.method === "ssh" && sshTrustStatus === "failed") {
+      setDiagnostics([
+        { duration_ms: 12, stage: "local_validation", status: "passed" },
+        {
+          duration_ms: 0,
+          message: sshTrustMsg,
+          stage: "ssh_trust",
+          status: "failed",
+        },
+        {
+          duration_ms: 0,
+          stage: "ssh_authentication_forwarding",
+          status: "failed",
+        },
+        {
+          duration_ms: 0,
+          stage: "mysql_tls_authentication_initial_database",
+          status: "pending",
+        },
+      ]);
+      toast.error("Gagal Terhubung ke Bastion SSH", {
+        description: sshTrustMsg || "Periksa konfigurasi SSH Tunnel Anda.",
+      });
+      setIsTesting(false);
+      return;
+    }
+
     const testResult = await testDatabaseConnection({
       database: undefined,
       host: editForm.host,
+      method: editForm.method,
       password: activePass,
       port: Number(editForm.port),
+      ssh: editForm.method === "ssh" ? editForm.ssh : null,
       user: editForm.username,
     });
     if (testResult.ok) {
@@ -283,6 +331,7 @@ export function HomePage() {
         { duration_ms: 12, stage: "local_validation", status: "passed" },
         {
           duration_ms: 0,
+          message: sshTrustMsg,
           stage: "ssh_trust",
           status: editForm.method === "ssh" ? "passed" : "skipped",
         },
@@ -306,6 +355,7 @@ export function HomePage() {
         { duration_ms: 12, stage: "local_validation", status: "passed" },
         {
           duration_ms: 0,
+          message: sshTrustMsg,
           stage: "ssh_trust",
           status: editForm.method === "ssh" ? "passed" : "skipped",
         },
@@ -330,14 +380,24 @@ export function HomePage() {
   };
 
   const handleInspectSshKey = async () => {
+    if (!editForm.ssh?.host) {
+      toast.error("Host SSH belum diisi");
+      return;
+    }
     toast.info("Memindai Host Key SSH...", {
-      description: `Target: ${editForm.ssh?.host || "bastion.internal"}`,
+      description: `Target: ${editForm.ssh.host}:${editForm.ssh.port || 22}`,
     });
-    await new Promise((r) => setTimeout(r, 400));
-    toast.success("Host Key SSH Terverifikasi", {
-      description:
-        "Algoritma: ssh-ed25519 • Fingerprint: SHA256:7uK2Z9jH4wQ8xP3v1Lm0",
-    });
+    const res = await testSshTunnelAction(editForm.ssh);
+    if (res.ok) {
+      toast.success("Host Key SSH Terverifikasi!", {
+        description: `Algoritma: ${res.keyAlgorithm} • Fingerprint: ${res.fingerprint} (${res.latencyMs}ms)`,
+      });
+    } else {
+      toast.error("Gagal Memindai Host Key SSH", {
+        description:
+          res.error || "Pastikan server SSH aktif dan kredensial sudah benar.",
+      });
+    }
   };
 
   const handleConnect = async (targetProfile?: Profile) => {
@@ -361,8 +421,10 @@ export function HomePage() {
     const connParams = {
       database: undefined,
       host: prof.host,
+      method: prof.method,
       password: activePass,
       port: Number(prof.port),
+      ssh: prof.method === "ssh" ? prof.ssh : null,
       user: prof.username,
     };
     toast.loading("Mengambil daftar database dari server...", {
