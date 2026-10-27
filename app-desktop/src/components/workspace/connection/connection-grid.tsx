@@ -124,7 +124,7 @@ export function ConnectionGrid({
         <div className="flex items-center justify-between text-muted-foreground text-xs">
           <span>{filteredProfiles.length} koneksi tersimpan</span>
           <span className="hidden text-[11px] text-muted-foreground/70 sm:inline">
-            Tervalidasi siap terhubung ke MariaDB
+            Tervalidasi siap terhubung ke MySQL & MariaDB
           </span>
         </div>
         <div

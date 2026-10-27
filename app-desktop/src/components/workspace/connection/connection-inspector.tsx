@@ -178,8 +178,43 @@ export function ConnectionInspector({
         {/* Server Details */}
         <div className="space-y-2.5 rounded-lg border border-border bg-muted/40 p-3">
           <h4 className="font-semibold text-[11px] text-foreground">
-            Server Database MariaDB / MySQL
+            Server Database MySQL / MariaDB
           </h4>
+          <div>
+            <Label className="text-[10px] text-muted-foreground">
+              Tipe Database
+            </Label>
+            <Select
+              onValueChange={(val: "mysql" | "mariadb" | "auto") =>
+                setEditForm({ ...editForm, db_type: val })
+              }
+              value={editForm.db_type || "auto"}
+            >
+              <SelectTrigger className="mt-1 h-7 border-border text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="text-xs">
+                <SelectItem value="auto">
+                  <div className="flex items-center gap-2">
+                    <span>🔍</span>
+                    <span>Auto-Detect (MySQL & MariaDB)</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="mysql">
+                  <div className="flex items-center gap-2">
+                    <span>🐬</span>
+                    <span>MySQL</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="mariadb">
+                  <div className="flex items-center gap-2">
+                    <span>🦭</span>
+                    <span>MariaDB</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-2">
               <Label className="text-[10px] text-muted-foreground">

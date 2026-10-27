@@ -122,6 +122,7 @@ export function HomePage() {
       connection_revision: 1,
       created_at: new Date().toISOString(),
       database: "",
+      db_type: "auto",
       environment: "Local",
       favorite: false,
       has_saved_password: false,
@@ -289,7 +290,8 @@ export function HomePage() {
           status: "passed",
         },
       ]);
-      toast.success("Sambungan MariaDB Terverifikasi 100%!", {
+      const dbTypeLabel = testResult.dbType || "Database";
+      toast.success(`Sambungan ${dbTypeLabel} Terverifikasi 100%!`, {
         description: `Server: ${testResult.version} • Latensi: ${testResult.latencyMs}ms`,
       });
     } else {
@@ -312,7 +314,7 @@ export function HomePage() {
           status: "failed",
         },
       ]);
-      toast.error("Gagal Terhubung ke MariaDB", {
+      toast.error("Gagal Terhubung ke Database", {
         description:
           testResult.error || "Pastikan host, user, dan password benar.",
       });
@@ -347,14 +349,14 @@ export function HomePage() {
       port: Number(prof.port),
       user: prof.username,
     };
-    toast.loading("Mengambil daftar database dari MariaDB...", {
+    toast.loading("Mengambil daftar database dari server...", {
       id: "connect-toast",
     });
     const dbRes = await fetchDatabases(connParams);
     toast.dismiss("connect-toast");
     if (dbRes.ok && dbRes.databases.length > 0) {
       toast.success(
-        `Terhubung ke MariaDB: ${dbRes.databases.length} database ditemukan!`,
+        `Terhubung ke Database: ${dbRes.databases.length} database ditemukan!`,
         {
           description: `Server ${prof.host}:${prof.port} siap digunakan.`,
         }
@@ -362,7 +364,7 @@ export function HomePage() {
     } else {
       toast.error("Tidak dapat mengambil daftar database", {
         description:
-          dbRes.error || "Pastikan MariaDB aktif dan password sudah benar.",
+          dbRes.error || "Pastikan database server aktif dan password sudah benar.",
       });
     }
 

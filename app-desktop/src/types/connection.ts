@@ -23,6 +23,7 @@ export const profileSchema = z.object({
   connection_revision: z.number().int().min(1).default(1),
   created_at: z.string(),
   database: z.string().max(64).nullable().optional(),
+  db_type: z.enum(["mysql", "mariadb", "auto"]).default("auto"),
   environment: z
     .enum(["Local", "Staging", "Production", "Other"])
     .default("Other"),

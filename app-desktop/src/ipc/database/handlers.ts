@@ -31,16 +31,23 @@ export const testConnection = os
 
       const [rows] = await conn.query("SELECT VERSION() as version");
       const latencyMs = Date.now() - startTime;
-      const version =
+      const versionRaw =
         Array.isArray(rows) && rows[0] && (rows[0] as any).version
-          ? (rows[0] as any).version
-          : "MariaDB/MySQL";
+          ? String((rows[0] as any).version)
+          : "Unknown";
+
+      // Detect database type from version string
+      const isMariaDB = versionRaw.toLowerCase().includes("mariadb");
+      const dbType = isMariaDB ? "MariaDB" : "MySQL";
+      const version = `${dbType} ${versionRaw}`;
+
       await conn.end();
 
       return {
+        dbType,
         latencyMs,
         ok: true,
-        version: String(version),
+        version,
       };
     } catch (err: any) {
       return {
@@ -356,10 +363,15 @@ export const exportDatabase = os
       });
 
       const [vRows] = await conn.query("SELECT VERSION() as v");
-      const srvVer =
+      const srvVerRaw =
         Array.isArray(vRows) && vRows[0]
           ? (vRows[0] as any).v
-          : "MariaDB/MySQL";
+          : "Unknown";
+
+      // Detect database type from version string
+      const isMariaDB = String(srvVerRaw).toLowerCase().includes("mariadb");
+      const dbType = isMariaDB ? "MariaDB" : "MySQL";
+      const srvVer = `${dbType} ${srvVerRaw}`;
 
       const [tRows] = await conn.query(
         "SHOW FULL TABLES WHERE Table_type = 'BASE TABLE';"
@@ -862,4 +874,3 @@ export const dropDatabase = os
       };
     }
   });
-
