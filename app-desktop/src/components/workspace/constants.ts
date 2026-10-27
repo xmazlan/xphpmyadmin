@@ -9,7 +9,7 @@ export const INITIAL_PROFILES: Profile[] = [
     db_type: "mariadb",
     environment: "Local",
     favorite: true,
-    has_saved_password: true,
+    has_saved_password: false,
     host: "127.0.0.1",
     id: "a1c3d4e5-3333-4444-8888-3456789abcde",
     last_used_at: "2026-10-24T02:00:00.000000Z",

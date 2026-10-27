@@ -263,7 +263,14 @@ export function HomePage() {
         status: "running",
       },
     ]);
-    const activePass = passwordInput || savedPasswords[editForm.id] || "";
+    let activePass = "";
+    if (passwordAction === "remove") {
+      activePass = "";
+    } else if (passwordAction === "replace") {
+      activePass = passwordInput;
+    } else {
+      activePass = savedPasswords[editForm.id] ?? "";
+    }
     const testResult = await testDatabaseConnection({
       database: undefined,
       host: editForm.host,
@@ -335,12 +342,21 @@ export function HomePage() {
 
   const handleConnect = async (targetProfile?: Profile) => {
     const prof = targetProfile || editForm;
-    const activePass =
-      prof.id === editForm.id && passwordInput
-        ? passwordInput
-        : savedPasswords[prof.id] || "123";
-    if (passwordInput && prof.id === editForm.id) {
-      setSavedPasswords((prev) => ({ ...prev, [prof.id]: passwordInput }));
+    let activePass = "";
+    if (prof.id === editForm.id) {
+      if (passwordAction === "remove") {
+        activePass = "";
+      } else if (passwordAction === "replace") {
+        activePass = passwordInput;
+      } else {
+        activePass = savedPasswords[prof.id] ?? "";
+      }
+    } else {
+      activePass = savedPasswords[prof.id] ?? "";
+    }
+
+    if (prof.id === editForm.id) {
+      setSavedPasswords((prev) => ({ ...prev, [prof.id]: activePass }));
     }
     const connParams = {
       database: undefined,
@@ -359,6 +375,13 @@ export function HomePage() {
         `Terhubung ke Database: ${dbRes.databases.length} database ditemukan!`,
         {
           description: `Server ${prof.host}:${prof.port} siap digunakan.`,
+        }
+      );
+    } else if (dbRes.ok) {
+      toast.warning(
+        "Terhubung ke MariaDB, tetapi tidak ada database ditemukan.",
+        {
+          description: `Server ${prof.host}:${prof.port} berhasil dihubungi.`,
         }
       );
     } else {

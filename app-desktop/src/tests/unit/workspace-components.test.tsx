@@ -95,7 +95,7 @@ describe("Workspace Components", () => {
     );
 
     expect(getByText("Host Details")).toBeInTheDocument();
-    expect(getByText("Server Database MariaDB / MySQL")).toBeInTheDocument();
+    expect(getByText("Server Database MySQL / MariaDB")).toBeInTheDocument();
     expect(getByText("Hubungkan ke Database")).toBeInTheDocument();
   });
 
