@@ -13,6 +13,11 @@
   "items": [
     {
       "type": "new",
+      "id": "Pusat Langganan Cloud Berjenjang & Pilihan Siklus Tagihan: Pengguna kini dapat memilih dan memperbarui paket langganan cloud (Pro, Team, Business) dengan fleksibilitas siklus penagihan bulanan atau tahunan (hemat hingga 33%), integrasi sinkronisasi vault otomatis lintas perangkat, serta akses akun pengujian instan.",
+      "en": "Tiered Cloud Subscription Hub & Flexible Billing Cycles: Users can now select and upgrade cloud subscription plans (Pro, Team, Business) with monthly or annual billing cycles (saving up to 33%), multi-device automated vault synchronization, and instant test account access."
+    },
+    {
+      "type": "new",
       "id": "Penyelarasan Cloud & Pencatatan Transaksi Terpadu: Penambahan arsitektur serialisasi data berformat JSON resmi yang mencatat seluruh aksi pengguna (pembuatan koneksi, riwayat kueri, pemeliharaan tabel, dan operasi basis data), dilengkapi kemampuan ekspor cadangan mandiri, pemulihan instan, serta integrasi sinkronisasi cloud otomatis bagi pengguna ruang kerja berlangganan.",
       "en": "Cloud Synchronization & Unified Transaction Journaling: Implementation of official JSON data serialization capturing all user actions (connection provisioning, query history, table maintenance, and database operations), featuring offline backup export, instant recovery, and automated cloud synchronization for workspace subscribers."
     },
