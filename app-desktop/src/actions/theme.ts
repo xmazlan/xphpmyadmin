@@ -72,9 +72,33 @@ function updateDocumentTheme(isDarkMode: boolean) {
     if (isDarkMode) {
       document.documentElement.classList.add("dark");
       document.documentElement.classList.remove("light");
+      document.documentElement.style.colorScheme = "dark";
+      if (document.body) {
+        document.body.style.backgroundColor = "#07080a";
+        document.body.style.color = "#f4f4f6";
+      }
     } else {
       document.documentElement.classList.remove("dark");
       document.documentElement.classList.add("light");
+      document.documentElement.style.colorScheme = "light";
+      if (document.body) {
+        document.body.style.backgroundColor = "#ffffff";
+        document.body.style.color = "inherit";
+      }
     }
   }
+}
+
+if (typeof window !== "undefined" && window.matchMedia) {
+  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  mediaQuery.addEventListener?.("change", (e) => {
+    try {
+      const currentLocal = localStorage.getItem(LOCAL_STORAGE_KEYS.THEME);
+      if (currentLocal === "system") {
+        updateDocumentTheme(e.matches);
+      }
+    } catch {
+      // ignore
+    }
+  });
 }

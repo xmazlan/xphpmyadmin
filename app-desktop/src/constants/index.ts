@@ -1,10 +1,29 @@
 export const LOCAL_STORAGE_KEYS = {
+  CLOUD_SYNC_CONFIG: "xphpmyadmin_cloud_config",
+  CLOUD_SYNC_JOURNAL: "xphpmyadmin_cloud_journal",
+  CLOUD_SYNC_QUERY_HISTORY: "xphpmyadmin_query_history",
+  CLOUD_SYNC_SNIPPETS: "xphpmyadmin_saved_snippets",
   LANGUAGE: "lang",
   THEME: "theme",
 };
 
 export const IPC_CHANNELS = {
   START_ORPC_SERVER: "start-orpc-server",
+};
+
+export const CLOUD_ENDPOINTS = {
+  AUTH_URL:
+    (typeof import.meta !== "undefined" &&
+      import.meta.env?.VITE_CLOUD_AUTH_URL) ||
+    "https://www.er-service.duckdns.org/api/auth",
+  BACKEND_URL:
+    (typeof import.meta !== "undefined" &&
+      import.meta.env?.VITE_BACKEND_URL) ||
+    "https://www.er-service.duckdns.org",
+  SYNC_URL:
+    (typeof import.meta !== "undefined" &&
+      import.meta.env?.VITE_CLOUD_API_URL) ||
+    "https://www.er-service.duckdns.org/api/sync",
 };
 
 export const ENVIRONMENT_VARIABLES = {

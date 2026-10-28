@@ -307,27 +307,104 @@ function escapeSqlValue(val: any): string {
     .replace(/\x1a/g, "\\Z")}'`;
 }
 
+function escapeCsvValue(val: any): string {
+  if (val === null || val === undefined) return "";
+  let str = typeof val === "object" ? JSON.stringify(val) : String(val);
+  if (
+    str.includes(",") ||
+    str.includes('"') ||
+    str.includes("\n") ||
+    str.includes("\r")
+  ) {
+    str = `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+function escapeXml(val: any): string {
+  if (val === null || val === undefined) return "";
+  const str = typeof val === "object" ? JSON.stringify(val) : String(val);
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function parseCsv(text: string): string[][] {
+  const lines: string[][] = [];
+  let currentRow: string[] = [];
+  let currentField = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+
+    if (inQuotes) {
+      if (char === '"' && nextChar === '"') {
+        currentField += '"';
+        i++;
+      } else if (char === '"') {
+        inQuotes = false;
+      } else {
+        currentField += char;
+      }
+    } else {
+      if (char === '"') {
+        inQuotes = true;
+      } else if (char === ",") {
+        currentRow.push(currentField);
+        currentField = "";
+      } else if (char === "\r" && nextChar === "\n") {
+        currentRow.push(currentField);
+        currentField = "";
+        lines.push(currentRow);
+        currentRow = [];
+        i++;
+      } else if (char === "\n" || char === "\r") {
+        currentRow.push(currentField);
+        currentField = "";
+        lines.push(currentRow);
+        currentRow = [];
+      } else {
+        currentField += char;
+      }
+    }
+  }
+
+  if (currentField.length > 0 || currentRow.length > 0) {
+    currentRow.push(currentField);
+    lines.push(currentRow);
+  }
+
+  return lines.filter((r) => r.some((c) => c.trim().length > 0));
+}
+
 export const promptSqlFileDialog = os
   .input(promptSqlFileSchema)
   .handler(async ({ input }) => {
     const window = ipcContext.mainWindow;
+    const filterList = [
+      { extensions: ["sql"], name: "SQL Dump (*.sql)" },
+      { extensions: ["csv"], name: "Berkas CSV (*.csv)" },
+      { extensions: ["json"], name: "JSON Data (*.json)" },
+      { extensions: ["xml"], name: "XML Data (*.xml)" },
+      { extensions: ["*"], name: "Semua Berkas (*.*)" },
+    ];
+
     if (input.type === "save") {
       const res = window
         ? await dialog.showSaveDialog(window, {
             defaultPath: input.defaultFileName || "database_backup.sql",
-            filters: [
-              { extensions: ["sql"], name: "SQL Dump (*.sql)" },
-              { extensions: ["*"], name: "Semua Berkas (*.*)" },
-            ],
-            title: "Simpan Backup Database (.sql)",
+            filters: filterList,
+            title: "Simpan Berkas Ekspor Database",
           })
         : await dialog.showSaveDialog({
             defaultPath: input.defaultFileName || "database_backup.sql",
-            filters: [
-              { extensions: ["sql"], name: "SQL Dump (*.sql)" },
-              { extensions: ["*"], name: "Semua Berkas (*.*)" },
-            ],
-            title: "Simpan Backup Database (.sql)",
+            filters: filterList,
+            title: "Simpan Berkas Ekspor Database",
           });
       return {
         canceled: res.canceled,
@@ -337,20 +414,14 @@ export const promptSqlFileDialog = os
 
     const res = window
       ? await dialog.showOpenDialog(window, {
-          filters: [
-            { extensions: ["sql"], name: "SQL Dump (*.sql)" },
-            { extensions: ["*"], name: "Semua Berkas (*.*)" },
-          ],
+          filters: filterList,
           properties: ["openFile"],
-          title: "Pilih Berkas SQL untuk Diimpor",
+          title: "Pilih Berkas untuk Diimpor (SQL, CSV, JSON, XML)",
         })
       : await dialog.showOpenDialog({
-          filters: [
-            { extensions: ["sql"], name: "SQL Dump (*.sql)" },
-            { extensions: ["*"], name: "Semua Berkas (*.*)" },
-          ],
+          filters: filterList,
           properties: ["openFile"],
-          title: "Pilih Berkas SQL untuk Diimpor",
+          title: "Pilih Berkas untuk Diimpor (SQL, CSV, JSON, XML)",
         });
     if (res.canceled || !res.filePaths || res.filePaths.length === 0) {
       return { canceled: true };
@@ -375,7 +446,7 @@ export const exportDatabase = os
           ...input.connection,
           database: input.database,
         },
-        { timeoutMs: 25000 }
+        { timeoutMs: 30000 }
       );
 
       const [vRows] = await conn.query("SELECT VERSION() as v");
@@ -392,75 +463,138 @@ export const exportDatabase = os
       const [tRows] = await conn.query(
         "SHOW FULL TABLES WHERE Table_type = 'BASE TABLE';"
       );
-      const tables: string[] = [];
+      const allTables: string[] = [];
       if (Array.isArray(tRows)) {
         for (const r of tRows as any[]) {
           const vals = Object.values(r);
-          if (vals[0]) tables.push(String(vals[0]));
+          if (vals[0]) allTables.push(String(vals[0]));
         }
       }
 
-      const nowStr = new Date().toISOString().replace("T", " ").slice(0, 19);
-      let dump = `-- ==========================================================\n`;
-      dump += `-- xphpMyAdmin Desktop Database Export\n`;
-      dump += `-- Host: ${input.connection.host}:${input.connection.port}\n`;
-      dump += `-- Database: \`${input.database}\`\n`;
-      dump += `-- Server Version: ${srvVer}\n`;
-      dump += `-- Waktu Ekspor: ${nowStr}\n`;
-      dump += `-- ==========================================================\n\n`;
-      dump += `SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";\n`;
-      dump += `START TRANSACTION;\n`;
-      dump += `SET time_zone = "+00:00";\n`;
-      if (input.options.disableForeignKeyChecks) {
-        dump += `SET FOREIGN_KEY_CHECKS = 0;\n\n`;
-      }
+      // Filter tables if specified
+      const tablesToExport =
+        input.tables && input.tables.length > 0
+          ? allTables.filter((t) => input.tables!.includes(t))
+          : allTables;
 
+      const format = input.format || "sql";
+      const nowStr = new Date().toISOString().replace("T", " ").slice(0, 19);
+      let dump = "";
       let totalRowsExported = 0;
 
-      for (const tbl of tables) {
-        dump += `-- --------------------------------------------------------\n`;
-        dump += `-- Struktur tabel untuk \`${tbl}\`\n`;
-        dump += `-- --------------------------------------------------------\n`;
-
-        if (input.options.includeStructure) {
-          if (input.options.addDropTable) {
-            dump += `DROP TABLE IF EXISTS \`${tbl}\`;\n`;
-          }
-          const [cRows] = await conn.query(`SHOW CREATE TABLE \`${tbl}\`;`);
-          if (Array.isArray(cRows) && cRows[0]) {
-            const createSql = (cRows[0] as any)["Create Table"];
-            dump += `${createSql};\n\n`;
-          }
-        }
-
-        if (input.options.includeData) {
+      if (format === "csv") {
+        for (const tbl of tablesToExport) {
           const [dRows] = await conn.query(`SELECT * FROM \`${tbl}\`;`);
           if (Array.isArray(dRows) && dRows.length > 0) {
-            dump += `-- Dumping data untuk tabel \`${tbl}\` (${dRows.length} baris)\n`;
             totalRowsExported += dRows.length;
-
+            if (tablesToExport.length > 1) {
+              dump += `# Table: ${tbl}\n`;
+            }
             const cols = Object.keys(dRows[0]);
-            const colsEscaped = cols.map((c) => `\`${c}\``).join(", ");
+            dump += cols.map(escapeCsvValue).join(",") + "\n";
+            for (const row of dRows as any[]) {
+              dump += cols.map((c) => escapeCsvValue(row[c])).join(",") + "\n";
+            }
+            dump += "\n";
+          }
+        }
+      } else if (format === "json") {
+        const jsonExport: Record<string, any> = {
+          database: input.database,
+          exported_at: nowStr,
+          format: "json",
+          server: `${input.connection.host}:${input.connection.port}`,
+          server_version: srvVer,
+          tables: {},
+        };
+        for (const tbl of tablesToExport) {
+          const [dRows] = await conn.query(`SELECT * FROM \`${tbl}\`;`);
+          if (Array.isArray(dRows)) {
+            totalRowsExported += dRows.length;
+            jsonExport.tables[tbl] = dRows;
+          }
+        }
+        dump = JSON.stringify(jsonExport, null, 2);
+      } else if (format === "xml") {
+        dump += `<?xml version="1.0" encoding="utf-8"?>\n`;
+        dump += `<pma:phpmyadmin export_version="1.0" database="${escapeXml(input.database)}" exported_at="${nowStr}">\n`;
+        for (const tbl of tablesToExport) {
+          const [dRows] = await conn.query(`SELECT * FROM \`${tbl}\`;`);
+          if (Array.isArray(dRows)) {
+            totalRowsExported += dRows.length;
+            dump += `  <pma:table name="${escapeXml(tbl)}">\n`;
+            for (const row of dRows as any[]) {
+              dump += `    <pma:row>\n`;
+              for (const [k, v] of Object.entries(row)) {
+                dump += `      <pma:column name="${escapeXml(k)}">${escapeXml(v)}</pma:column>\n`;
+              }
+              dump += `    </pma:row>\n`;
+            }
+            dump += `  </pma:table>\n`;
+          }
+        }
+        dump += `</pma:phpmyadmin>\n`;
+      } else {
+        // Standar SQL Dump
+        dump += `-- ==========================================================\n`;
+        dump += `-- xphpMyAdmin Desktop Database Export\n`;
+        dump += `-- Host: ${input.connection.host}:${input.connection.port}\n`;
+        dump += `-- Database: \`${input.database}\`\n`;
+        dump += `-- Server Version: ${srvVer}\n`;
+        dump += `-- Waktu Ekspor: ${nowStr}\n`;
+        dump += `-- ==========================================================\n\n`;
+        dump += `SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";\n`;
+        dump += `START TRANSACTION;\n`;
+        dump += `SET time_zone = "+00:00";\n`;
+        if (input.options.disableForeignKeyChecks) {
+          dump += `SET FOREIGN_KEY_CHECKS = 0;\n\n`;
+        }
 
-            const chunkSize = 200;
-            for (let i = 0; i < dRows.length; i += chunkSize) {
-              const chunk = dRows.slice(i, i + chunkSize);
-              dump += `INSERT INTO \`${tbl}\` (${colsEscaped}) VALUES\n`;
-              const valueLines = chunk.map((row: any) => {
-                const vals = cols.map((c) => escapeSqlValue(row[c]));
-                return `(${vals.join(", ")})`;
-              });
-              dump += valueLines.join(",\n") + `;\n\n`;
+        for (const tbl of tablesToExport) {
+          dump += `-- --------------------------------------------------------\n`;
+          dump += `-- Struktur tabel untuk \`${tbl}\`\n`;
+          dump += `-- --------------------------------------------------------\n`;
+
+          if (input.options.includeStructure) {
+            if (input.options.addDropTable) {
+              dump += `DROP TABLE IF EXISTS \`${tbl}\`;\n`;
+            }
+            const [cRows] = await conn.query(`SHOW CREATE TABLE \`${tbl}\`;`);
+            if (Array.isArray(cRows) && cRows[0]) {
+              const createSql = (cRows[0] as any)["Create Table"];
+              dump += `${createSql};\n\n`;
+            }
+          }
+
+          if (input.options.includeData) {
+            const [dRows] = await conn.query(`SELECT * FROM \`${tbl}\`;`);
+            if (Array.isArray(dRows) && dRows.length > 0) {
+              dump += `-- Dumping data untuk tabel \`${tbl}\` (${dRows.length} baris)\n`;
+              totalRowsExported += dRows.length;
+
+              const cols = Object.keys(dRows[0]);
+              const colsEscaped = cols.map((c) => `\`${c}\``).join(", ");
+
+              const chunkSize = 200;
+              for (let i = 0; i < dRows.length; i += chunkSize) {
+                const chunk = dRows.slice(i, i + chunkSize);
+                dump += `INSERT INTO \`${tbl}\` (${colsEscaped}) VALUES\n`;
+                const valueLines = chunk.map((row: any) => {
+                  const vals = cols.map((c) => escapeSqlValue(row[c]));
+                  return `(${vals.join(", ")})`;
+                });
+                dump += valueLines.join(",\n") + `;\n\n`;
+              }
             }
           }
         }
-      }
 
-      if (input.options.disableForeignKeyChecks) {
-        dump += `SET FOREIGN_KEY_CHECKS = 1;\n`;
+        if (input.options.disableForeignKeyChecks) {
+          dump += `SET FOREIGN_KEY_CHECKS = 1;\n`;
+        }
+        dump += `COMMIT;\n`;
+        dump += `-- Ekspor selesai: ${tablesToExport.length} tabel, ${totalRowsExported} baris.\n`;
       }
-      dump += `COMMIT;\n`;
-      dump += `-- Ekspor selesai: ${tables.length} tabel, ${totalRowsExported} baris.\n`;
 
       await close();
 
@@ -479,7 +613,7 @@ export const exportDatabase = os
             dump.length > 100000
               ? dump.slice(0, 100000) + "\n-- [Truncated for preview]"
               : dump,
-          tableCount: tables.length,
+          tableCount: tablesToExport.length,
         };
       }
 
@@ -489,7 +623,7 @@ export const exportDatabase = os
         rowCount: totalRowsExported,
         sizeBytes,
         sqlDump: dump,
-        tableCount: tables.length,
+        tableCount: tablesToExport.length,
       };
     } catch (err: any) {
       return {
@@ -508,48 +642,144 @@ export const importDatabase = os
   .handler(async ({ input }) => {
     const startTime = Date.now();
     try {
-      let sqlToExecute = input.sqlContent || "";
+      let rawContent = input.sqlContent || "";
+      let detectedExt = "";
       if (input.filePath) {
+        detectedExt = path.extname(input.filePath).toLowerCase();
         try {
-          sqlToExecute = await fs.readFile(input.filePath, "utf-8");
+          rawContent = await fs.readFile(input.filePath, "utf-8");
         } catch {
-          if (!sqlToExecute && input.sqlContent) {
-            sqlToExecute = input.sqlContent;
+          if (!rawContent && input.sqlContent) {
+            rawContent = input.sqlContent;
           }
         }
       }
 
-      if (!sqlToExecute.trim()) {
+      if (!rawContent.trim()) {
         return {
           durationMs: 0,
-          error: "Konten SQL kosong atau berkas tidak dapat dibaca.",
+          error: "Konten berkas/skrip kosong atau tidak dapat dibaca.",
           ok: false,
           statementsExecuted: 0,
         };
       }
+
+      const format =
+        input.format ||
+        (detectedExt === ".csv"
+          ? "csv"
+          : detectedExt === ".json"
+            ? "json"
+            : detectedExt === ".xml"
+              ? "xml"
+              : "sql");
 
       const { conn, close } = await createDatabaseConnection(
         {
           ...input.connection,
           database: input.database || input.connection.database || undefined,
         },
-        { multipleStatements: true, timeoutMs: 60000 }
+        { multipleStatements: true, timeoutMs: 90000 }
       );
 
-      await conn.query(sqlToExecute);
+      let statementsExecuted = 0;
+
+      if (format === "csv") {
+        const rows = parseCsv(rawContent);
+        if (rows.length < 2) {
+          await close();
+          return {
+            durationMs: Date.now() - startTime,
+            error: "Format CSV membutuhkan setidaknya baris header dan 1 baris data.",
+            ok: false,
+            statementsExecuted: 0,
+          };
+        }
+
+        const headers = rows[0].map((h) =>
+          h.trim().replace(/^['"`]|['"`]$/g, "")
+        );
+        const dataRows = rows.slice(1);
+        const targetTbl =
+          input.targetTable ||
+          (input.filePath
+            ? path.basename(input.filePath, path.extname(input.filePath))
+            : "imported_table");
+
+        const colsEscaped = headers.map((h) => `\`${h}\``).join(", ");
+        const chunkSize = 100;
+
+        for (let i = 0; i < dataRows.length; i += chunkSize) {
+          const chunk = dataRows.slice(i, i + chunkSize);
+          const valueList = chunk.map((r) => {
+            const vals = headers.map((_, colIdx) =>
+              escapeSqlValue(r[colIdx] ?? null)
+            );
+            return `(${vals.join(", ")})`;
+          });
+          const insertSql = `INSERT INTO \`${targetTbl}\` (${colsEscaped}) VALUES ${valueList.join(", ")};`;
+          await conn.query(insertSql);
+          statementsExecuted += chunk.length;
+        }
+      } else if (format === "json") {
+        const parsed = JSON.parse(rawContent);
+        if (parsed.tables && typeof parsed.tables === "object") {
+          for (const [tblName, rows] of Object.entries(parsed.tables)) {
+            if (Array.isArray(rows) && rows.length > 0) {
+              const cols = Object.keys(rows[0]);
+              const colsEscaped = cols.map((c) => `\`${c}\``).join(", ");
+              const chunkSize = 100;
+              for (let i = 0; i < rows.length; i += chunkSize) {
+                const chunk = rows.slice(i, i + chunkSize);
+                const values = chunk.map((r: any) => {
+                  const vals = cols.map((c) => escapeSqlValue(r[c]));
+                  return `(${vals.join(", ")})`;
+                });
+                await conn.query(
+                  `INSERT INTO \`${tblName}\` (${colsEscaped}) VALUES ${values.join(", ")};`
+                );
+                statementsExecuted += chunk.length;
+              }
+            }
+          }
+        } else if (Array.isArray(parsed) && parsed.length > 0) {
+          const targetTbl =
+            input.targetTable ||
+            (input.filePath
+              ? path.basename(input.filePath, path.extname(input.filePath))
+              : "imported_table");
+          const cols = Object.keys(parsed[0]);
+          const colsEscaped = cols.map((c) => `\`${c}\``).join(", ");
+          const chunkSize = 100;
+          for (let i = 0; i < parsed.length; i += chunkSize) {
+            const chunk = parsed.slice(i, i + chunkSize);
+            const values = chunk.map((r: any) => {
+              const vals = cols.map((c) => escapeSqlValue(r[c]));
+              return `(${vals.join(", ")})`;
+            });
+            await conn.query(
+              `INSERT INTO \`${targetTbl}\` (${colsEscaped}) VALUES ${values.join(", ")};`
+            );
+            statementsExecuted += chunk.length;
+          }
+        }
+      } else {
+        // SQL Execution
+        await conn.query(rawContent);
+        statementsExecuted = rawContent
+          .split(";")
+          .map((s: string) => s.trim())
+          .filter((s: string) => s.length > 0 && !s.startsWith("--")).length;
+      }
+
       await close();
 
       const durationMs = Date.now() - startTime;
-      const statementsCount = sqlToExecute
-        .split(";")
-        .map((s: string) => s.trim())
-        .filter((s: string) => s.length > 0 && !s.startsWith("--")).length;
-
       return {
         durationMs,
         ok: true,
-        sizeBytes: Buffer.byteLength(sqlToExecute, "utf-8"),
-        statementsExecuted: statementsCount,
+        sizeBytes: Buffer.byteLength(rawContent, "utf-8"),
+        statementsExecuted,
       };
     } catch (err: any) {
       return {

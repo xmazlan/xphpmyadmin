@@ -32,19 +32,29 @@ import { ExportTab } from "@/components/workspace/tabs/export-tab";
 import { ImportTab } from "@/components/workspace/tabs/import-tab";
 import { OperationsTab } from "@/components/workspace/tabs/operations-tab";
 import { PluginsTab } from "@/components/workspace/tabs/plugins-tab";
+import { RoutinesTab } from "@/components/workspace/tabs/routines-tab";
+import { SearchTab } from "@/components/workspace/tabs/search-tab";
 import { SqlTab } from "@/components/workspace/tabs/sql-tab";
 import { StatusTab } from "@/components/workspace/tabs/status-tab";
 import { StructureTab } from "@/components/workspace/tabs/structure-tab";
 import { UsersTab } from "@/components/workspace/tabs/users-tab";
 import { VariablesTab } from "@/components/workspace/tabs/variables-tab";
-import type { TableItem, WorkspaceTabId } from "@/components/workspace/types";
+import type {
+  DatabaseSearchResult,
+  RoutineItem,
+  TableItem,
+  TriggerItem,
+  WorkspaceTabId,
+} from "@/components/workspace/types";
 import { WorkspaceNav } from "@/components/workspace/workspace-nav";
 import { useConnection } from "@/context/connection-context";
+import { useCloudSync } from "@/context/cloud-sync-context";
 
 export function WorkspaceStudioPage() {
   const { profileId } = Route.useParams();
   const navigate = useNavigate();
   const { profiles, savedPasswords, setActiveTabId } = useConnection();
+  const { recordAction, recordQuery } = useCloudSync();
 
   const profile = useMemo(
     () => profiles.find((p) => p.id === profileId) || profiles[0],
@@ -90,6 +100,11 @@ export function WorkspaceStudioPage() {
   // State Ekspor & Impor Database
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportFormat, setExportFormat] = useState<
+    "sql" | "csv" | "json" | "xml"
+  >("sql");
+  const [exportMethod, setExportMethod] = useState<"quick" | "custom">("quick");
+  const [exportSelectedTables, setExportSelectedTables] = useState<string[]>([]);
   const [exportMode, setExportMode] = useState<"full" | "structure" | "data">(
     "full"
   );
@@ -100,6 +115,7 @@ export function WorkspaceStudioPage() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importTab, setImportTab] = useState<"file" | "paste">("file");
+  const [importTargetTable, setImportTargetTable] = useState("");
   const [selectedImportFile, setSelectedImportFile] = useState<{
     fileName: string;
     filePath: string;
@@ -117,6 +133,15 @@ export function WorkspaceStudioPage() {
   const [newTableNameInput, setNewTableNameInput] = useState("");
   const [newTableColumnsInput, setNewTableColumnsInput] = useState(4);
   const [isCreatingTable, setIsCreatingTable] = useState(false);
+
+  // State untuk Search Tab
+  const [searchResults, setSearchResults] = useState<DatabaseSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  // State untuk Routines & Triggers Tab
+  const [routinesData, setRoutinesData] = useState<RoutineItem[]>([]);
+  const [triggersData, setTriggersData] = useState<TriggerItem[]>([]);
+  const [isLoadingRoutines, setIsLoadingRoutines] = useState(false);
 
   // Generic Confirm Dialog State
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -237,97 +262,94 @@ export function WorkspaceStudioPage() {
   const [pluginsSearch, setPluginsSearch] = useState("");
   const [isLoadingPlugins, setIsLoadingPlugins] = useState(false);
 
-  // State untuk Dialog Buat Database Baru
+  // State untuk Operasi Basis Data
+  const [newDbCollation, setNewDbCollation] = useState("utf8mb4_general_ci");
   const [isCreateDbModalOpen, setIsCreateDbModalOpen] = useState(false);
   const [newDbName, setNewDbName] = useState("");
-  const [newDbCollation, setNewDbCollation] = useState("utf8mb4_general_ci");
   const [isCreatingDb, setIsCreatingDb] = useState(false);
 
-  // Connection parameters
-  const getConnParams = (db?: string) => {
-    const activePass = savedPasswords[profile?.id] ?? "";
+  // Helper koneksi aktif
+  const getConnParams = (targetDb?: string) => {
     return {
-      database: db,
+      database: targetDb || profile?.database || undefined,
       host: profile?.host || "127.0.0.1",
       method: profile?.method || "direct",
-      password: activePass,
-      port: Number(profile?.port || 3306),
-      ssh: profile?.method === "ssh" ? profile?.ssh : null,
+      password:
+        (profile?.id && savedPasswords[profile.id]) ||
+        (profile as any)?.password ||
+        "",
+      port: profile?.port || 3306,
+      ssh: profile?.ssh || null,
       user: profile?.username || "root",
     };
   };
 
-  // Initial load on mount
+  // Muat basis data saat inisialisasi
   useEffect(() => {
-    async function initDatabases() {
+    if (!profile) return;
+    const loadDbs = async () => {
       const connParams = getConnParams();
-      const dbRes = await fetchDatabases(connParams);
-      if (dbRes.ok && dbRes.databases.length > 0) {
-        setAvailableDatabases(dbRes.databases);
-        const targetDb =
-          dbRes.databases.find(
-            (d) =>
-              ![
-                "information_schema",
-                "performance_schema",
-                "sys",
-                "mysql",
-              ].includes(d)
-          ) || dbRes.databases[0];
-        setCurrentSelectedDatabase(targetDb);
-        const tablesRes = await fetchTables(connParams, targetDb);
-        if (tablesRes.ok && tablesRes.tables.length > 0) {
-          setDatabaseTables(tablesRes.tables);
-          const firstTbl = tablesRes.tables[0].name;
-          setSelectedTable(firstTbl);
-          const q = `SELECT * FROM \`${firstTbl}\` LIMIT 25;`;
-          setSqlQuery(q);
-          const qRes = await executeSqlQuery(connParams, q, targetDb);
-          if (qRes.ok) {
-            setQueryResults(qRes);
-          }
+      const res = await fetchDatabases(connParams);
+      if (res.ok && res.databases) {
+        setAvailableDatabases(res.databases);
+        if (res.databases.length > 0 && !currentSelectedDatabase) {
+          setCurrentSelectedDatabase(res.databases[0]);
         }
-      } else if (dbRes.ok && dbRes.databases.length === 0) {
-        setAvailableDatabases([]);
-      } else if (!dbRes.ok) {
-        toast.error("Gagal memuat daftar basis data", {
-          description:
-            dbRes.error ||
-            "Pastikan MariaDB/MySQL aktif dan password sudah sesuai.",
-        });
       }
-    }
-    initDatabases();
-  }, [profile.id]);
+    };
+    loadDbs();
+  }, [profile]);
 
-  // Handlers
+  // Muat tabel saat database berubah
+  useEffect(() => {
+    if (!profile || !currentSelectedDatabase) return;
+    const loadTables = async () => {
+      setIsLoadingTables(true);
+      const connParams = getConnParams(currentSelectedDatabase);
+      const res = await fetchTables(connParams, currentSelectedDatabase);
+      setIsLoadingTables(false);
+      if (res.ok && res.tables) {
+        setDatabaseTables(res.tables);
+        if (res.tables.length > 0) {
+          const firstTbl = res.tables[0].name;
+          setSelectedTable(firstTbl);
+          setSqlQuery(`SELECT * FROM \`${firstTbl}\` LIMIT 25;`);
+          setSelectedTableCheckboxes([]);
+          setExportSelectedTables(res.tables.map((t) => t.name));
+        } else {
+          setSelectedTable("");
+          setSqlQuery(`-- Basis data \`${currentSelectedDatabase}\` kosong.`);
+          setSelectedTableCheckboxes([]);
+          setExportSelectedTables([]);
+        }
+      } else {
+        setDatabaseTables(FALLBACK_TABLES);
+      }
+    };
+    loadTables();
+  }, [profile, currentSelectedDatabase]);
+
   const handleSelectDatabase = async (dbName: string) => {
     setCurrentSelectedDatabase(dbName);
     setIsLoadingTables(true);
-    setSelectedTableCheckboxes([]);
     const connParams = getConnParams(dbName);
     const tablesRes = await fetchTables(connParams, dbName);
     setIsLoadingTables(false);
-    if (tablesRes.ok) {
+    if (tablesRes.ok && tablesRes.tables) {
       setDatabaseTables(tablesRes.tables);
+      setSelectedTableCheckboxes([]);
+      setExportSelectedTables(tablesRes.tables.map((t) => t.name));
       if (tablesRes.tables.length > 0) {
-        const firstTable = tablesRes.tables[0].name;
-        setSelectedTable(firstTable);
-        const q = `SELECT * FROM \`${firstTable}\` LIMIT 25;`;
-        setSqlQuery(q);
-        const qRes = await executeSqlQuery(connParams, q, dbName);
-        if (qRes.ok) {
-          setQueryResults(qRes);
-        }
+        const firstTbl = tablesRes.tables[0].name;
+        setSelectedTable(firstTbl);
+        setSqlQuery(`SELECT * FROM \`${firstTbl}\` LIMIT 25;`);
       } else {
         setSelectedTable("");
-        setQueryResults(null);
+        setSqlQuery(`-- Basis data \`${dbName}\` belum memiliki tabel.`);
       }
-      toast.info(`Beralih ke database: ${dbName}`, {
-        description: `${tablesRes.tables.length} tabel dimuat.`,
-      });
     } else {
-      toast.error(`Gagal memuat tabel database: ${dbName}`, {
+      setDatabaseTables(FALLBACK_TABLES);
+      toast.error(`Gagal memuat daftar tabel dari \`${dbName}\``, {
         description: tablesRes.error,
       });
     }
@@ -349,130 +371,49 @@ export function WorkspaceStudioPage() {
     setIsExecutingQuery(false);
     if (qRes.ok) {
       setQueryResults(qRes);
+    } else {
+      toast.error(`Gagal menjalankan query untuk \`${tableName}\``, {
+        description: qRes.error,
+      });
     }
   };
 
   const handleViewTableStructure = async (tableName: string) => {
     setSelectedTableForStructure(tableName);
-    setIsTableStructureModalOpen(true);
     setIsLoadingTableStructure(true);
+    setIsTableStructureModalOpen(true);
     const connParams = getConnParams(currentSelectedDatabase);
-    const [colRes, idxRes] = await Promise.all([
-      executeSqlQuery(
+    try {
+      const colRes = await executeSqlQuery(
         connParams,
         `SHOW FULL COLUMNS FROM \`${tableName}\`;`,
         currentSelectedDatabase
-      ),
-      executeSqlQuery(
+      );
+      const idxRes = await executeSqlQuery(
         connParams,
         `SHOW INDEX FROM \`${tableName}\`;`,
         currentSelectedDatabase
-      ),
-    ]);
-    setIsLoadingTableStructure(false);
-    if (colRes.ok) {
-      setTableStructureColumns(colRes.rows);
-    }
-    if (idxRes.ok) {
-      setTableStructureIndexes(idxRes.rows);
-    }
-  };
-
-  const handleEmptyTable = (tableName: string) => {
-    setConfirmDialog({
-      confirmText: "Kosongkan Tabel",
-      description: (
-        <span>
-          PERINGATAN: Apakah Anda yakin ingin <strong>MENGOSONGKAN</strong>{" "}
-          tabel{" "}
-          <code className="rounded bg-muted px-1 py-0.5 font-mono text-destructive">
-            {tableName}
-          </code>
-          ? Seluruh baris data di dalam tabel ini akan dihapus secara permanen!
-        </span>
-      ),
-      isOpen: true,
-      onConfirm: async () => {
-        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
-        const res = await executeSqlQuery(
-          getConnParams(currentSelectedDatabase),
-          `TRUNCATE TABLE \`${tableName}\`;`,
-          currentSelectedDatabase
-        );
-        if (res.ok) {
-          toast.success(`Tabel \`${tableName}\` berhasil dikosongkan.`);
-          handleSelectDatabase(currentSelectedDatabase);
-        } else {
-          toast.error(`Gagal mengosongkan tabel \`${tableName}\``, {
-            description: res.error,
-          });
-        }
-      },
-      title: "Kosongkan Tabel (TRUNCATE)",
-      variant: "destructive",
-    });
-  };
-
-  const handleDropTable = (tableName: string) => {
-    setConfirmDialog({
-      confirmText: "Hapus Tabel",
-      description: (
-        <span>
-          PERINGATAN TINGGI: Apakah Anda yakin ingin menghapus (
-          <strong>DROP</strong>) tabel{" "}
-          <code className="rounded bg-muted px-1 py-0.5 font-mono text-destructive">
-            {tableName}
-          </code>{" "}
-          beserta seluruh struktur, indeks, dan datanya secara permanen?
-        </span>
-      ),
-      isOpen: true,
-      onConfirm: async () => {
-        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
-        const res = await executeSqlQuery(
-          getConnParams(currentSelectedDatabase),
-          `DROP TABLE \`${tableName}\`;`,
-          currentSelectedDatabase
-        );
-        if (res.ok) {
-          toast.success(`Tabel \`${tableName}\` berhasil dihapus.`);
-          handleSelectDatabase(currentSelectedDatabase);
-        } else {
-          toast.error(`Gagal menghapus tabel \`${tableName}\``, {
-            description: res.error,
-          });
-        }
-      },
-      title: "Hapus Tabel (DROP)",
-      variant: "destructive",
-    });
-  };
-
-  const handleCreateTable = async () => {
-    if (!newTableNameInput.trim()) {
-      toast.warning("Masukkan nama tabel terlebih dahulu.");
-      return;
-    }
-    const connParams = getConnParams(currentSelectedDatabase);
-    setIsCreatingTable(true);
-    const q = `CREATE TABLE \`${newTableNameInput.trim()}\` (
-      \`id\` INT AUTO_INCREMENT PRIMARY KEY,
-      \`name\` VARCHAR(255) NOT NULL,
-      \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`;
-    const res = await executeSqlQuery(connParams, q, currentSelectedDatabase);
-    setIsCreatingTable(false);
-    if (res.ok) {
-      toast.success(`Tabel \`${newTableNameInput.trim()}\` berhasil dibuat!`);
-      setNewTableNameInput("");
-      handleSelectDatabase(currentSelectedDatabase);
-    } else {
-      toast.error("Gagal membuat tabel", { description: res.error });
+      );
+      if (colRes.ok) {
+        setTableStructureColumns(colRes.rows);
+      } else {
+        toast.error("Gagal memuat struktur kolom", {
+          description: colRes.error,
+        });
+      }
+      if (idxRes.ok) {
+        setTableStructureIndexes(idxRes.rows);
+      }
+    } catch (err: any) {
+      toast.error("Gagal memuat struktur tabel", { description: err?.message });
+    } finally {
+      setIsLoadingTableStructure(false);
     }
   };
 
   const handleOpenInsertModal = async (tableName: string) => {
     setSelectedTableForInsert(tableName);
+    setInsertColumnValues({});
     setIsInsertModalOpen(true);
     const connParams = getConnParams(currentSelectedDatabase);
     const colRes = await executeSqlQuery(
@@ -482,32 +423,29 @@ export function WorkspaceStudioPage() {
     );
     if (colRes.ok) {
       setTableStructureColumns(colRes.rows);
-      const initialVals: Record<string, string> = {};
-      colRes.rows.forEach((r: any) => {
-        initialVals[r.Field] = r.Default || "";
-      });
-      setInsertColumnValues(initialVals);
     }
   };
 
   const handleExecuteInsertRow = async () => {
-    if (!(selectedTableForInsert && currentSelectedDatabase)) {
-      return;
-    }
-    const connParams = getConnParams(currentSelectedDatabase);
-    const entries = Object.entries(insertColumnValues).filter(
-      ([, val]) => val !== undefined && val !== ""
+    if (!selectedTableForInsert) return;
+    const filledCols = Object.keys(insertColumnValues).filter(
+      (k) => insertColumnValues[k] !== undefined && insertColumnValues[k] !== ""
     );
-    if (entries.length === 0) {
-      toast.warning("Isi setidaknya satu kolom untuk disisipkan.");
+    if (filledCols.length === 0) {
+      toast.warning("Harap isi setidaknya satu kolom nilai.");
       return;
     }
-    const cols = entries.map(([k]) => `\`${k}\``).join(", ");
-    const vals = entries
-      .map(([, v]) => `'${String(v).replace(/'/g, "''")}'`)
+    const colsList = filledCols.map((c) => `\`${c}\``).join(", ");
+    const valsList = filledCols
+      .map((c) => {
+        const val = insertColumnValues[c];
+        return `'${String(val).replace(/'/g, "\\'")}'`;
+      })
       .join(", ");
-    const insertQuery = `INSERT INTO \`${selectedTableForInsert}\` (${cols}) VALUES (${vals});`;
+    const insertQuery = `INSERT INTO \`${selectedTableForInsert}\` (${colsList}) VALUES (${valsList});`;
+
     setIsInsertingRow(true);
+    const connParams = getConnParams(currentSelectedDatabase);
     const res = await executeSqlQuery(
       connParams,
       insertQuery,
@@ -525,6 +463,61 @@ export function WorkspaceStudioPage() {
     }
   };
 
+  const handleDeleteRow = (row: any) => {
+    if (!selectedTable) {
+      toast.error("Pilih tabel terlebih dahulu untuk menghapus baris.");
+      return;
+    }
+    const connParams = getConnParams(currentSelectedDatabase);
+    const whereConditions = Object.entries(row)
+      .slice(0, 3)
+      .map(([k, v]) => {
+        if (v === null || v === undefined) return `\`${k}\` IS NULL`;
+        return `\`${k}\` = '${String(v).replace(/'/g, "\\'")}'`;
+      })
+      .join(" AND ");
+
+    setConfirmDialog({
+      confirmText: "Hapus Baris",
+      description: (
+        <span>
+          Apakah Anda yakin ingin menghapus baris ini dari tabel{" "}
+          <strong>`{selectedTable}`</strong>?
+          <pre className="mt-2 max-h-32 overflow-auto rounded bg-muted p-2 font-mono text-[10px]">
+            {JSON.stringify(row, null, 2)}
+          </pre>
+        </span>
+      ),
+      isOpen: true,
+      onConfirm: async () => {
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+        const delSql = `DELETE FROM \`${selectedTable}\` WHERE ${whereConditions} LIMIT 1;`;
+        const res = await executeSqlQuery(
+          connParams,
+          delSql,
+          currentSelectedDatabase
+        );
+        if (res.ok) {
+          recordAction({
+            action: "row_delete",
+            category: "data",
+            database: currentSelectedDatabase,
+            details: { whereConditions },
+            profileId: profile?.id,
+            profileName: profile?.name,
+            table: selectedTable,
+          });
+          toast.success("1 baris berhasil dihapus!");
+          handleBrowseTable(selectedTable);
+        } else {
+          toast.error("Gagal menghapus baris", { description: res.error });
+        }
+      },
+      title: "Hapus Baris Data (DELETE)",
+      variant: "destructive",
+    });
+  };
+
   const handleExecuteBulkAction = async () => {
     if (selectedTableCheckboxes.length === 0) {
       toast.warning(
@@ -533,6 +526,7 @@ export function WorkspaceStudioPage() {
       return;
     }
     const connParams = getConnParams(currentSelectedDatabase);
+
     if (bulkAction === "drop") {
       setConfirmDialog({
         confirmText: `Hapus ${selectedTableCheckboxes.length} Tabel`,
@@ -596,9 +590,6 @@ export function WorkspaceStudioPage() {
         variant: "destructive",
       });
     } else if (bulkAction === "optimize") {
-      setSelectedTableCheckboxes([]);
-      handleSelectDatabase(currentSelectedDatabase);
-    } else if (bulkAction === "optimize") {
       const q = `OPTIMIZE TABLE ${selectedTableCheckboxes.map((t) => `\`${t}\``).join(", ")};`;
       const res = await executeSqlQuery(connParams, q, currentSelectedDatabase);
       if (res.ok) {
@@ -608,6 +599,8 @@ export function WorkspaceStudioPage() {
       } else {
         toast.error("Gagal mengoptimasi tabel", { description: res.error });
       }
+      setSelectedTableCheckboxes([]);
+      handleSelectDatabase(currentSelectedDatabase);
     } else if (bulkAction === "check") {
       const q = `CHECK TABLE ${selectedTableCheckboxes.map((t) => `\`${t}\``).join(", ")};`;
       const res = await executeSqlQuery(connParams, q, currentSelectedDatabase);
@@ -618,116 +611,187 @@ export function WorkspaceStudioPage() {
       } else {
         toast.error("Gagal memeriksa tabel", { description: res.error });
       }
+      setSelectedTableCheckboxes([]);
+    } else if (bulkAction === "analyze") {
+      const q = `ANALYZE TABLE ${selectedTableCheckboxes.map((t) => `\`${t}\``).join(", ")};`;
+      const res = await executeSqlQuery(connParams, q, currentSelectedDatabase);
+      if (res.ok) {
+        toast.success(
+          `Analisis ${selectedTableCheckboxes.length} tabel selesai!`
+        );
+      } else {
+        toast.error("Gagal menganalisis tabel", { description: res.error });
+      }
+      setSelectedTableCheckboxes([]);
+    } else if (bulkAction === "repair") {
+      const q = `REPAIR TABLE ${selectedTableCheckboxes.map((t) => `\`${t}\``).join(", ")};`;
+      const res = await executeSqlQuery(connParams, q, currentSelectedDatabase);
+      if (res.ok) {
+        toast.success(
+          `Perbaikan ${selectedTableCheckboxes.length} tabel selesai!`
+        );
+      } else {
+        toast.error("Gagal memperbaiki tabel", { description: res.error });
+      }
+      setSelectedTableCheckboxes([]);
+    } else if (bulkAction === "checksum") {
+      const q = `CHECKSUM TABLE ${selectedTableCheckboxes.map((t) => `\`${t}\``).join(", ")};`;
+      const res = await executeSqlQuery(connParams, q, currentSelectedDatabase);
+      if (res.ok) {
+        toast.success(
+          `Checksum ${selectedTableCheckboxes.length} tabel selesai!`
+        );
+      } else {
+        toast.error("Gagal menghitung checksum", { description: res.error });
+      }
+      setSelectedTableCheckboxes([]);
+    } else if (bulkAction === "export") {
+      setExportSelectedTables([...selectedTableCheckboxes]);
+      setExportMethod("custom");
+      setCurrentWorkspaceTab("export");
+      toast.info(
+        `Beralih ke tab Ekspor dengan ${selectedTableCheckboxes.length} tabel terpilih.`
+      );
     }
   };
 
   const handleRefreshDatabases = async () => {
     const connParams = getConnParams();
-    toast.loading("Memperbarui daftar basis data...", { id: "refresh-db" });
-    const dbRes = await fetchDatabases(connParams);
-    toast.dismiss("refresh-db");
-    if (dbRes.ok && dbRes.databases.length > 0) {
-      setAvailableDatabases(dbRes.databases);
+    const res = await fetchDatabases(connParams);
+    if (res.ok && res.databases) {
+      setAvailableDatabases(res.databases);
+      toast.success("Daftar basis data berhasil diperbarui.");
+    } else {
+      toast.error("Gagal menyegarkan basis data", { description: res.error });
+    }
+  };
+
+  const handleExecuteQuery = async () => {
+    if (!sqlQuery.trim()) {
+      toast.warning("Kueri SQL tidak boleh kosong.");
+      return;
+    }
+    const connParams = getConnParams(currentSelectedDatabase);
+    setIsExecutingQuery(true);
+    const start = Date.now();
+    const res = await executeSqlQuery(
+      connParams,
+      sqlQuery,
+      currentSelectedDatabase
+    );
+    setIsExecutingQuery(false);
+    const duration = Date.now() - start;
+    recordQuery({
+      database: currentSelectedDatabase,
+      durationMs: res.executionTimeMs || duration,
+      errorMessage: res.error,
+      profileId: profile?.id || "unknown",
+      profileName: profile?.name,
+      query: sqlQuery,
+      rowsAffected: res.rowCount,
+      success: res.ok,
+    });
+    recordAction({
+      action: "query_execute",
+      category: "data",
+      database: currentSelectedDatabase,
+      details: {
+        durationMs: res.executionTimeMs || duration,
+        rowCount: res.rowCount,
+        sql: sqlQuery.slice(0, 300),
+        success: res.ok,
+      },
+      profileId: profile?.id,
+      profileName: profile?.name,
+    });
+    if (res.ok) {
+      setQueryResults(res);
       toast.success(
-        `Daftar basis data diperbarui (${dbRes.databases.length} database ditemukan)`
+        `Eksekusi berhasil (${res.rowCount} baris, ${res.executionTimeMs}ms)`
       );
     } else {
-      toast.error("Gagal memperbarui daftar database", {
-        description: dbRes.error || "Gagal menghubungi server MariaDB",
+      toast.error("Kueri SQL Gagal Dieksekusi", {
+        description: res.error || "Periksa kembali sintaks kueri Anda.",
       });
     }
   };
 
-  const handleProcessChosenFile = async (file: File) => {
-    try {
-      const text = await file.text();
-      const filePath = (file as any).path || file.name;
+  const handlePickImportFile = async (isModal: boolean) => {
+    const res = await promptSqlFileDialog({ type: "open" });
+    if (!res.canceled && res.filePath) {
       setSelectedImportFile({
-        fileName: file.name,
-        filePath,
-        fileSize: file.size,
+        fileName: res.fileName || "unknown.sql",
+        filePath: res.filePath,
+        fileSize: res.fileSize || 0,
       });
-      setImportSqlContent(text);
-      toast.success(`Berkas siap diimpor: ${file.name}`, {
-        description: `Ukuran: ${(file.size / 1024).toFixed(1)} KB`,
-      });
-    } catch (err: any) {
-      toast.error("Gagal membaca berkas SQL", {
-        description: err?.message || String(err),
-      });
+      toast.info(`Berkas terpilih: ${res.fileName}`);
+    } else if (res.canceled) {
+      const inputRef = isModal ? modalFileInputRef : fileInputRef;
+      if (inputRef.current) {
+        inputRef.current.click();
+      }
     }
   };
 
-  const handlePickImportFile = async (isModal = false) => {
-    try {
-      const res = await promptSqlFileDialog({ type: "open" });
-      if (!res.canceled && res.filePath) {
-        setSelectedImportFile({
-          fileName: res.fileName || "database.sql",
-          filePath: res.filePath,
-          fileSize: res.fileSize || 0,
-        });
-        toast.info(`Berkas dipilih: ${res.fileName}`, {
-          description: `Ukuran: ${((res.fileSize || 0) / 1024).toFixed(1)} KB`,
-        });
-        return;
+  const handleProcessChosenFile = (file: File) => {
+    setSelectedImportFile({
+      fileName: file.name,
+      filePath: (file as any).path || file.name,
+      fileSize: file.size,
+    });
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      if (text) {
+        setImportSqlContent(text);
+        toast.success(`Berkas ${file.name} siap diimpor!`);
       }
-      if (res.canceled) {
-        return;
-      }
-    } catch {
-      /* fallback to HTML input */
-    }
-    if (isModal) {
-      modalFileInputRef.current?.click();
-    } else {
-      fileInputRef.current?.click();
-    }
+    };
+    reader.readAsText(file);
   };
 
   const handleExecuteImport = async () => {
-    const targetDb = currentSelectedDatabase || availableDatabases[0] || "";
+    const targetDb = currentSelectedDatabase || profile.database;
     if (!targetDb) {
-      toast.warning(
-        "Pilih basis data target terlebih dahulu sebelum mengimpor."
-      );
-      return;
-    }
-    if (importTab === "file" && !selectedImportFile) {
-      toast.warning(
-        "Silakan pilih berkas .sql terlebih dahulu untuk diimpor.",
-        {
-          description: "Membuka dialog pemilihan berkas...",
-        }
-      );
-      handlePickImportFile(isImportModalOpen);
-      return;
-    }
-    if (importTab === "paste" && !importSqlContent.trim()) {
-      toast.warning(
-        "Silakan ketik atau tempel perintah SQL yang ingin diimpor."
-      );
+      toast.error("Pilih target basis data terlebih dahulu sebelum mengimpor.");
       return;
     }
     const connParams = getConnParams(targetDb);
     setIsImporting(true);
-    toast.loading(`Sedang mengeksekusi impor SQL ke \`${targetDb}\`...`, {
+    toast.loading(`Mengimpor ke basis data \`${targetDb}\`...`, {
       id: "import-toast",
     });
     const res = await importDatabase({
       connection: connParams,
       database: targetDb,
-      filePath: importTab === "file" ? selectedImportFile?.filePath : undefined,
+      filePath:
+        importTab === "file" && selectedImportFile
+          ? selectedImportFile.filePath
+          : undefined,
       sqlContent:
         importTab === "paste"
           ? importSqlContent
           : importSqlContent || undefined,
+      targetTable: importTargetTable || undefined,
     });
     setIsImporting(false);
     toast.dismiss("import-toast");
     if (res.ok) {
+      recordAction({
+        action: "import",
+        category: "export_import",
+        database: targetDb,
+        details: {
+          durationMs: res.durationMs,
+          fileName: selectedImportFile?.fileName,
+          statementsExecuted: res.statementsExecuted,
+          targetTable: importTargetTable || undefined,
+        },
+        profileId: profile?.id,
+        profileName: profile?.name,
+      });
       toast.success("Impor Database Berhasil!", {
-        description: `${res.statementsExecuted} perintah SQL dieksekusi dalam ${res.durationMs}ms ke basis data \`${targetDb}\`.`,
+        description: `${res.statementsExecuted} perintah/baris dieksekusi dalam ${res.durationMs}ms ke basis data \`${targetDb}\`.`,
       });
       setIsImportModalOpen(false);
       setSelectedImportFile(null);
@@ -748,8 +812,17 @@ export function WorkspaceStudioPage() {
     }
     const connParams = getConnParams(currentSelectedDatabase);
     let targetFilePath: string | undefined;
+    const defaultExt =
+      exportFormat === "csv"
+        ? "csv"
+        : exportFormat === "json"
+          ? "json"
+          : exportFormat === "xml"
+            ? "xml"
+            : "sql";
+
     if (saveToFile) {
-      const defaultName = `${currentSelectedDatabase}_${new Date().toISOString().slice(0, 10)}.sql`;
+      const defaultName = `${currentSelectedDatabase}_${new Date().toISOString().slice(0, 10)}.${defaultExt}`;
       const fileRes = await promptSqlFileDialog({
         defaultFileName: defaultName,
         type: "save",
@@ -760,23 +833,45 @@ export function WorkspaceStudioPage() {
       targetFilePath = fileRes.filePath;
     }
     setIsExporting(true);
-    toast.loading(`Mengekspor basis data \`${currentSelectedDatabase}\`...`, {
-      id: "export-toast",
-    });
+    toast.loading(
+      `Mengekspor basis data \`${currentSelectedDatabase}\` (${exportFormat.toUpperCase()})...`,
+      {
+        id: "export-toast",
+      }
+    );
     const res = await exportDatabase({
       connection: connParams,
       database: currentSelectedDatabase,
       filePath: targetFilePath,
+      format: exportFormat,
       options: {
         addDropTable: exportAddDropTable,
         disableForeignKeyChecks: exportDisableFk,
         includeData: exportMode === "full" || exportMode === "data",
         includeStructure: exportMode === "full" || exportMode === "structure",
       },
+      tables:
+        exportMethod === "custom" && exportSelectedTables.length > 0
+          ? exportSelectedTables
+          : undefined,
     });
     setIsExporting(false);
     toast.dismiss("export-toast");
     if (res.ok) {
+      recordAction({
+        action: "export",
+        category: "export_import",
+        database: currentSelectedDatabase,
+        details: {
+          filePath: res.filePath,
+          format: exportFormat,
+          method: exportMethod,
+          rowCount: res.rowCount,
+          tableCount: res.tableCount,
+        },
+        profileId: profile?.id,
+        profileName: profile?.name,
+      });
       if (saveToFile && res.filePath) {
         toast.success("Ekspor Database Berhasil Disimpan!", {
           description: `${res.tableCount} tabel (${res.rowCount} baris) disimpan ke ${res.filePath}`,
@@ -785,14 +880,471 @@ export function WorkspaceStudioPage() {
       } else if (res.sqlDump) {
         setExportPreviewSql(res.sqlDump);
         navigator.clipboard.writeText(res.sqlDump);
-        toast.success("SQL Dump Berhasil Dihasilkan & Disalin!", {
-          description: `${res.tableCount} tabel (${(res.sizeBytes / 1024).toFixed(1)} KB) disalin ke clipboard.`,
-        });
+        toast.success(
+          `Hasil Ekspor (${exportFormat.toUpperCase()}) Berhasil Dihasilkan & Disalin!`,
+          {
+            description: `${res.tableCount} tabel (${(res.sizeBytes / 1024).toFixed(1)} KB) disalin ke clipboard.`,
+          }
+        );
       }
     } else {
       toast.error("Gagal Mengekspor Database", {
-        description: res.error || "Gagal menghasilkan SQL dump.",
+        description: res.error || "Gagal menghasilkan berkas ekspor.",
       });
+    }
+  };
+
+  // Search Tab Handlers
+  const handleExecuteSearch = async (
+    searchWord: string,
+    searchMode: "like" | "exact" | "regexp",
+    targetTables: string[]
+  ) => {
+    if (!currentSelectedDatabase) return;
+    const connParams = getConnParams(currentSelectedDatabase);
+    setIsSearching(true);
+    const results: DatabaseSearchResult[] = [];
+
+    for (const tbl of targetTables) {
+      try {
+        const colRes = await executeSqlQuery(
+          connParams,
+          `SHOW COLUMNS FROM \`${tbl}\`;`,
+          currentSelectedDatabase
+        );
+        if (colRes.ok && colRes.rows.length > 0) {
+          const textCols = (colRes.rows as any[])
+            .map((r: any) => r.Field)
+            .filter(Boolean);
+
+          if (textCols.length === 0) {
+            results.push({ count: 0, table: tbl });
+            continue;
+          }
+
+          const escapedWord = searchWord.replace(/'/g, "\\'");
+          let condition = "";
+          if (searchMode === "exact") {
+            condition = textCols
+              .map((c: string) => `\`${c}\` = '${escapedWord}'`)
+              .join(" OR ");
+          } else if (searchMode === "regexp") {
+            condition = textCols
+              .map((c: string) => `\`${c}\` REGEXP '${escapedWord}'`)
+              .join(" OR ");
+          } else {
+            condition = textCols
+              .map((c: string) => `\`${c}\` LIKE '%${escapedWord}%'`)
+              .join(" OR ");
+          }
+
+          const countRes = await executeSqlQuery(
+            connParams,
+            `SELECT COUNT(*) as cnt FROM \`${tbl}\` WHERE ${condition};`,
+            currentSelectedDatabase
+          );
+
+          const cnt =
+            countRes.ok && countRes.rows[0]
+              ? Number((countRes.rows[0] as any).cnt ?? 0)
+              : 0;
+          results.push({ count: cnt, table: tbl });
+        } else {
+          results.push({ count: 0, table: tbl });
+        }
+      } catch {
+        results.push({ count: 0, table: tbl });
+      }
+    }
+
+    setIsSearching(false);
+    setSearchResults(results);
+  };
+
+  const handleBrowseTableMatches = (
+    tableName: string,
+    searchWord: string,
+    searchMode: "like" | "exact" | "regexp"
+  ) => {
+    setSelectedTable(tableName);
+    setCurrentWorkspaceTab("sql");
+    const connParams = getConnParams(currentSelectedDatabase);
+    executeSqlQuery(
+      connParams,
+      `SHOW COLUMNS FROM \`${tableName}\`;`,
+      currentSelectedDatabase
+    ).then((colRes) => {
+      const escapedWord = searchWord.replace(/'/g, "\\'");
+      let where = "";
+      if (colRes.ok && colRes.rows.length > 0) {
+        const textCols = (colRes.rows as any[])
+          .map((r: any) => r.Field)
+          .filter(Boolean);
+        if (searchMode === "exact") {
+          where = textCols
+            .map((c: string) => `\`${c}\` = '${escapedWord}'`)
+            .join(" OR ");
+        } else if (searchMode === "regexp") {
+          where = textCols
+            .map((c: string) => `\`${c}\` REGEXP '${escapedWord}'`)
+            .join(" OR ");
+        } else {
+          where = textCols
+            .map((c: string) => `\`${c}\` LIKE '%${escapedWord}%'`)
+            .join(" OR ");
+        }
+      }
+      const q = where
+        ? `SELECT * FROM \`${tableName}\` WHERE ${where} LIMIT 50;`
+        : `SELECT * FROM \`${tableName}\` LIMIT 50;`;
+      setSqlQuery(q);
+      setIsExecutingQuery(true);
+      executeSqlQuery(connParams, q, currentSelectedDatabase).then((qRes) => {
+        setIsExecutingQuery(false);
+        if (qRes.ok) setQueryResults(qRes);
+      });
+    });
+  };
+
+  // Routines & Triggers Handlers
+  const handleLoadRoutines = async () => {
+    if (!currentSelectedDatabase) return;
+    const connParams = getConnParams(currentSelectedDatabase);
+    setIsLoadingRoutines(true);
+    try {
+      const procRes = await executeSqlQuery(
+        connParams,
+        `SHOW PROCEDURE STATUS WHERE Db = '${currentSelectedDatabase}';`,
+        currentSelectedDatabase
+      );
+      const funcRes = await executeSqlQuery(
+        connParams,
+        `SHOW FUNCTION STATUS WHERE Db = '${currentSelectedDatabase}';`,
+        currentSelectedDatabase
+      );
+      const trigRes = await executeSqlQuery(
+        connParams,
+        `SHOW TRIGGERS FROM \`${currentSelectedDatabase}\`;`,
+        currentSelectedDatabase
+      );
+
+      const routines: RoutineItem[] = [];
+      if (procRes.ok && procRes.rows) {
+        for (const r of procRes.rows as any[]) {
+          routines.push({
+            comment: r.Comment,
+            created: r.Created,
+            definer: r.Definer,
+            modified: r.Modified,
+            name: r.Name,
+            securityType: r.Security_type,
+            type: "PROCEDURE",
+          });
+        }
+      }
+      if (funcRes.ok && funcRes.rows) {
+        for (const r of funcRes.rows as any[]) {
+          routines.push({
+            comment: r.Comment,
+            created: r.Created,
+            definer: r.Definer,
+            modified: r.Modified,
+            name: r.Name,
+            securityType: r.Security_type,
+            type: "FUNCTION",
+          });
+        }
+      }
+      setRoutinesData(routines);
+
+      const triggers: TriggerItem[] = [];
+      if (trigRes.ok && trigRes.rows) {
+        for (const t of trigRes.rows as any[]) {
+          triggers.push({
+            actionOrder: t.Action_order,
+            event: t.Event,
+            name: t.Trigger,
+            statement: t.Statement,
+            table: t.Table,
+            timing: t.Timing,
+          });
+        }
+      }
+      setTriggersData(triggers);
+    } catch (err: any) {
+      toast.error("Gagal memuat rutin dan trigger", {
+        description: err?.message,
+      });
+    } finally {
+      setIsLoadingRoutines(false);
+    }
+  };
+
+  const handleExecuteRoutine = async (routineName: string) => {
+    const connParams = getConnParams(currentSelectedDatabase);
+    const q = `CALL \`${routineName}\`();`;
+    setSqlQuery(q);
+    setCurrentWorkspaceTab("sql");
+    setIsExecutingQuery(true);
+    const res = await executeSqlQuery(connParams, q, currentSelectedDatabase);
+    setIsExecutingQuery(false);
+    if (res.ok) {
+      setQueryResults(res);
+      toast.success(`Rutin \`${routineName}\` berhasil dieksekusi!`);
+    } else {
+      toast.error(`Gagal mengeksekusi rutin \`${routineName}\``, {
+        description: res.error,
+      });
+    }
+  };
+
+  const handleViewRoutineCode = async (
+    name: string,
+    type: "PROCEDURE" | "FUNCTION" | "TRIGGER"
+  ) => {
+    const connParams = getConnParams(currentSelectedDatabase);
+    const q =
+      type === "TRIGGER"
+        ? `SHOW CREATE TRIGGER \`${name}\`;`
+        : `SHOW CREATE ${type} \`${name}\`;`;
+    const res = await executeSqlQuery(connParams, q, currentSelectedDatabase);
+    if (res.ok && res.rows[0]) {
+      const row0 = res.rows[0] as any;
+      const code =
+        row0["SQL Original Statement"] ||
+        row0[`Create ${type.charAt(0) + type.slice(1).toLowerCase()}`] ||
+        JSON.stringify(row0, null, 2);
+      setSqlQuery(code);
+      setCurrentWorkspaceTab("sql");
+      toast.info(`Definisi ${type} dimuat ke tab SQL Runner.`);
+    } else {
+      toast.error(`Gagal mengambil definisi ${type}`, {
+        description: res.error,
+      });
+    }
+  };
+
+  const handleDropRoutine = (name: string, type: "PROCEDURE" | "FUNCTION") => {
+    setConfirmDialog({
+      confirmText: `Hapus ${type}`,
+      description: `Apakah Anda yakin ingin menghapus ${type} \`${name}\` dari basis data?`,
+      isOpen: true,
+      onConfirm: async () => {
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+        const connParams = getConnParams(currentSelectedDatabase);
+        const res = await executeSqlQuery(
+          connParams,
+          `DROP ${type} IF EXISTS \`${name}\`;`,
+          currentSelectedDatabase
+        );
+        if (res.ok) {
+          toast.success(`${type} \`${name}\` berhasil dihapus!`);
+          handleLoadRoutines();
+        } else {
+          toast.error(`Gagal menghapus ${type}`, { description: res.error });
+        }
+      },
+      title: `Hapus ${type} (DROP)`,
+      variant: "destructive",
+    });
+  };
+
+  const handleDropTrigger = (triggerName: string) => {
+    setConfirmDialog({
+      confirmText: "Hapus Trigger",
+      description: `Apakah Anda yakin ingin menghapus Trigger \`${triggerName}\`?`,
+      isOpen: true,
+      onConfirm: async () => {
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+        const connParams = getConnParams(currentSelectedDatabase);
+        const res = await executeSqlQuery(
+          connParams,
+          `DROP TRIGGER IF EXISTS \`${triggerName}\`;`,
+          currentSelectedDatabase
+        );
+        if (res.ok) {
+          toast.success(`Trigger \`${triggerName}\` berhasil dihapus!`);
+          handleLoadRoutines();
+        } else {
+          toast.error("Gagal menghapus trigger", { description: res.error });
+        }
+      },
+      title: "Hapus Trigger (DROP TRIGGER)",
+      variant: "destructive",
+    });
+  };
+
+  // Operations Tab Database Handlers
+  const handleRenameDatabase = async (newDbName: string) => {
+    if (!currentSelectedDatabase || !newDbName.trim()) return;
+    const oldDb = currentSelectedDatabase;
+    const newDb = newDbName.trim();
+    const connParams = getConnParams();
+    toast.loading(`Memindahkan basis data \`${oldDb}\` ke \`${newDb}\`...`, {
+      id: "rename-db-toast",
+    });
+    try {
+      const cRes = await executeSqlQuery(
+        connParams,
+        `CREATE DATABASE \`${newDb}\`;`
+      );
+      if (!cRes.ok) {
+        toast.dismiss("rename-db-toast");
+        toast.error("Gagal membuat basis data target", {
+          description: cRes.error,
+        });
+        return;
+      }
+      for (const t of databaseTables) {
+        await executeSqlQuery(
+          connParams,
+          `RENAME TABLE \`${oldDb}\`.\`${t.name}\` TO \`${newDb}\`.\`${t.name}\`;`
+        );
+      }
+      await executeSqlQuery(connParams, `DROP DATABASE \`${oldDb}\`;`);
+      toast.dismiss("rename-db-toast");
+      toast.success(`Basis data berhasil diubah namanya menjadi \`${newDb}\`!`);
+      await handleRefreshDatabases();
+      handleSelectDatabase(newDb);
+    } catch (err: any) {
+      toast.dismiss("rename-db-toast");
+      toast.error("Terjadi kegagalan saat mengubah nama basis data", {
+        description: err?.message,
+      });
+    }
+  };
+
+  const handleCopyDatabase = async (
+    targetDbName: string,
+    includeData: boolean
+  ) => {
+    if (!currentSelectedDatabase || !targetDbName.trim()) return;
+    const targetDb = targetDbName.trim();
+    const connParams = getConnParams();
+    toast.loading(
+      `Menyalin basis data \`${currentSelectedDatabase}\` ke \`${targetDb}\`...`,
+      {
+        id: "copy-db-toast",
+      }
+    );
+    try {
+      const cRes = await executeSqlQuery(
+        connParams,
+        `CREATE DATABASE \`${targetDb}\`;`
+      );
+      if (!cRes.ok) {
+        toast.dismiss("copy-db-toast");
+        toast.error("Gagal membuat basis data salinan", {
+          description: cRes.error,
+        });
+        return;
+      }
+      for (const t of databaseTables) {
+        await executeSqlQuery(
+          connParams,
+          `CREATE TABLE \`${targetDb}\`.\`${t.name}\` LIKE \`${currentSelectedDatabase}\`.\`${t.name}\`;`
+        );
+        if (includeData) {
+          await executeSqlQuery(
+            connParams,
+            `INSERT INTO \`${targetDb}\`.\`${t.name}\` SELECT * FROM \`${currentSelectedDatabase}\`.\`${t.name}\`;`
+          );
+        }
+      }
+      toast.dismiss("copy-db-toast");
+      toast.success(
+        `Basis data berhasil disalin ke \`${targetDb}\` (${includeData ? "Struktur & Data" : "Hanya Struktur"})!`
+      );
+      await handleRefreshDatabases();
+    } catch (err: any) {
+      toast.dismiss("copy-db-toast");
+      toast.error("Gagal menyalin basis data", { description: err?.message });
+    }
+  };
+
+  const handleRenameTable = async (oldName: string, newName: string) => {
+    const connParams = getConnParams(currentSelectedDatabase);
+    const q = `RENAME TABLE \`${currentSelectedDatabase}\`.\`${oldName}\` TO \`${currentSelectedDatabase}\`.\`${newName}\`;`;
+    const res = await executeSqlQuery(connParams, q, currentSelectedDatabase);
+    if (res.ok) {
+      toast.success(
+        `Tabel \`${oldName}\` berhasil diubah menjadi \`${newName}\`!`
+      );
+      handleSelectDatabase(currentSelectedDatabase);
+    } else {
+      toast.error("Gagal mengubah nama tabel", { description: res.error });
+    }
+  };
+
+  const handleCopyTable = async (
+    sourceTable: string,
+    targetTable: string,
+    includeData: boolean
+  ) => {
+    const connParams = getConnParams(currentSelectedDatabase);
+    const qLike = `CREATE TABLE \`${currentSelectedDatabase}\`.\`${targetTable}\` LIKE \`${currentSelectedDatabase}\`.\`${sourceTable}\`;`;
+    const res = await executeSqlQuery(connParams, qLike, currentSelectedDatabase);
+    if (res.ok) {
+      if (includeData) {
+        await executeSqlQuery(
+          connParams,
+          `INSERT INTO \`${currentSelectedDatabase}\`.\`${targetTable}\` SELECT * FROM \`${currentSelectedDatabase}\`.\`${sourceTable}\`;`,
+          currentSelectedDatabase
+        );
+      }
+      toast.success(
+        `Tabel \`${sourceTable}\` berhasil disalin ke \`${targetTable}\`!`
+      );
+      handleSelectDatabase(currentSelectedDatabase);
+    } else {
+      toast.error("Gagal menyalin tabel", { description: res.error });
+    }
+  };
+
+  const handleMaintainTable = async (
+    tableName: string,
+    action: "OPTIMIZE" | "CHECK" | "ANALYZE" | "REPAIR" | "CHECKSUM"
+  ) => {
+    const connParams = getConnParams(currentSelectedDatabase);
+    const q = `${action} TABLE \`${currentSelectedDatabase}\`.\`${tableName}\`;`;
+    const res = await executeSqlQuery(connParams, q, currentSelectedDatabase);
+    if (res.ok) {
+      recordAction({
+        action: "table_maintenance",
+        category: "table",
+        database: currentSelectedDatabase,
+        details: { action },
+        profileId: profile?.id,
+        profileName: profile?.name,
+        table: tableName,
+      });
+      toast.success(`Perintah ${action} TABLE pada \`${tableName}\` berhasil!`);
+    } else {
+      toast.error(`Gagal menjalankan ${action} TABLE`, {
+        description: res.error,
+      });
+    }
+  };
+
+  const handleUpdateTableOptions = async (
+    tableName: string,
+    options: { autoIncrement?: number; collation?: string; engine?: string }
+  ) => {
+    const connParams = getConnParams(currentSelectedDatabase);
+    const parts: string[] = [];
+    if (options.engine) parts.push(`ENGINE = ${options.engine}`);
+    if (options.collation) parts.push(`COLLATE = ${options.collation}`);
+    if (typeof options.autoIncrement === "number" && options.autoIncrement > 0) {
+      parts.push(`AUTO_INCREMENT = ${options.autoIncrement}`);
+    }
+    if (parts.length === 0) return;
+    const q = `ALTER TABLE \`${currentSelectedDatabase}\`.\`${tableName}\` ${parts.join(", ")};`;
+    const res = await executeSqlQuery(connParams, q, currentSelectedDatabase);
+    if (res.ok) {
+      toast.success(`Opsi tabel \`${tableName}\` berhasil diperbarui!`);
+      handleSelectDatabase(currentSelectedDatabase);
+    } else {
+      toast.error("Gagal memperbarui opsi tabel", { description: res.error });
     }
   };
 
@@ -880,6 +1432,8 @@ export function WorkspaceStudioPage() {
       handleRefreshDatabases();
     } else if (tabId === "structure" && currentSelectedDatabase) {
       handleSelectDatabase(currentSelectedDatabase);
+    } else if (tabId === "routines" && currentSelectedDatabase) {
+      handleLoadRoutines();
     } else if (tabId === "status") {
       handleLoadServerStatus();
     } else if (tabId === "users") {
@@ -930,12 +1484,9 @@ export function WorkspaceStudioPage() {
       confirmText: "Hapus Basis Data",
       description: (
         <span>
-          PERINGATAN KRITIKAL: Apakah Anda yakin ingin menghapus basis data{" "}
-          <code className="rounded bg-muted px-1 py-0.5 font-mono text-destructive">
-            {dbName}
-          </code>
-          ? Seluruh tabel, relasi, dan data di dalamnya akan dimusnahkan secara
-          permanen!
+          PERINGATAN: Apakah Anda yakin ingin menghapus permanen basis data{" "}
+          <strong>`{dbName}`</strong> beserta seluruh tabel dan data di
+          dalamnya? Tindakan ini tidak dapat dibatalkan.
         </span>
       ),
       isOpen: true,
@@ -946,104 +1497,156 @@ export function WorkspaceStudioPage() {
           name: dbName,
         });
         if (res.ok) {
-          toast.success(`Basis data \`${dbName}\` berhasil dihapus.`);
-          if (currentSelectedDatabase === dbName) {
-            setCurrentSelectedDatabase("");
-          }
+          toast.success(`Basis data \`${res.name}\` berhasil dihapus!`);
           handleRefreshDatabases();
+          if (currentSelectedDatabase === dbName) {
+            const nextDb =
+              availableDatabases.find((d) => d !== dbName) || "mysql";
+            handleSelectDatabase(nextDb);
+          }
         } else {
-          toast.error(`Gagal menghapus basis data \`${dbName}\``, {
-            description: res.error,
-          });
+          toast.error("Gagal menghapus basis data", { description: res.error });
         }
       },
-      title: "Hapus Basis Data (DROP DATABASE)",
+      title: `Hapus Basis Data \`${dbName}\``,
       variant: "destructive",
     });
   };
 
-  const handleSelectTable = async (tableName: string) => {
-    setSelectedTable(tableName);
-    const q = `SELECT * FROM \`${tableName}\` LIMIT 25;`;
-    setSqlQuery(q);
-    const connParams = getConnParams(currentSelectedDatabase);
-    setIsExecutingQuery(true);
-    const qRes = await executeSqlQuery(connParams, q, currentSelectedDatabase);
-    setIsExecutingQuery(false);
-    if (qRes.ok) {
-      setQueryResults(qRes);
-    } else {
-      toast.error("Gagal membaca tabel", { description: qRes.error });
-    }
+  const handleEmptyTable = (tableName: string) => {
+    setConfirmDialog({
+      confirmText: "Kosongkan Tabel",
+      description: (
+        <span>
+          Apakah Anda yakin ingin mengosongkan seluruh baris data dari tabel{" "}
+          <strong>`{tableName}`</strong>? Seluruh data akan terhapus namun
+          struktur tabel tetap dipertahankan.
+        </span>
+      ),
+      isOpen: true,
+      onConfirm: async () => {
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+        const connParams = getConnParams(currentSelectedDatabase);
+        const res = await executeSqlQuery(
+          connParams,
+          `TRUNCATE TABLE \`${tableName}\`;`,
+          currentSelectedDatabase
+        );
+        if (res.ok) {
+          toast.success(`Tabel \`${tableName}\` berhasil dikosongkan!`);
+          handleSelectDatabase(currentSelectedDatabase);
+        } else {
+          toast.error("Gagal mengosongkan tabel", { description: res.error });
+        }
+      },
+      title: `Kosongkan Tabel \`${tableName}\` (TRUNCATE)`,
+      variant: "destructive",
+    });
   };
 
-  const handleExecuteQuery = async () => {
-    setIsExecutingQuery(true);
-    const connParams = getConnParams(currentSelectedDatabase);
-    const qRes = await executeSqlQuery(
-      connParams,
-      sqlQuery,
-      currentSelectedDatabase
-    );
-    setIsExecutingQuery(false);
-    if (qRes.ok) {
-      setQueryResults(qRes);
-      toast.success("Query Berhasil Dieksekusi!", {
-        description: `${qRes.rowCount} baris dikembalikan dalam ${qRes.executionTimeMs}ms.`,
-      });
-    } else {
-      toast.error("Query Error", {
-        description: qRes.error || "Gagal mengeksekusi SQL.",
-      });
-    }
+  const handleDropTable = (tableName: string) => {
+    setConfirmDialog({
+      confirmText: "Hapus Tabel",
+      description: (
+        <span>
+          PERINGATAN: Apakah Anda yakin ingin menghapus tabel{" "}
+          <strong>`{tableName}`</strong> secara permanen? Struktur dan seluruh
+          data di dalamnya akan dihancurkan.
+        </span>
+      ),
+      isOpen: true,
+      onConfirm: async () => {
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+        const connParams = getConnParams(currentSelectedDatabase);
+        const res = await executeSqlQuery(
+          connParams,
+          `DROP TABLE \`${tableName}\`;`,
+          currentSelectedDatabase
+        );
+        if (res.ok) {
+          toast.success(`Tabel \`${tableName}\` berhasil dihapus!`);
+          handleSelectDatabase(currentSelectedDatabase);
+        } else {
+          toast.error("Gagal menghapus tabel", { description: res.error });
+        }
+      },
+      title: `Hapus Tabel \`${tableName}\` (DROP TABLE)`,
+      variant: "destructive",
+    });
   };
 
   const handleChangeCollation = async () => {
-    const res = await executeSqlQuery(
-      getConnParams(currentSelectedDatabase),
-      `ALTER DATABASE \`${currentSelectedDatabase}\` COLLATE ${newDbCollation};`,
-      currentSelectedDatabase
-    );
+    if (!currentSelectedDatabase) return;
+    const connParams = getConnParams(currentSelectedDatabase);
+    const q = `ALTER DATABASE \`${currentSelectedDatabase}\` CHARACTER SET utf8mb4 COLLATE ${newDbCollation};`;
+    const res = await executeSqlQuery(connParams, q, currentSelectedDatabase);
     if (res.ok) {
-      toast.success("Collation basis data berhasil diubah!");
+      toast.success(
+        `Collation basis data berhasil diubah ke \`${newDbCollation}\`!`
+      );
     } else {
       toast.error("Gagal mengubah collation", { description: res.error });
     }
   };
 
-  // Filtered computed values
-  const filteredDatabases = useMemo(() => {
-    if (!databaseSearch.trim()) {
-      return availableDatabases;
+  const handleCreateTable = async () => {
+    if (!newTableNameInput.trim()) {
+      toast.error("Nama tabel tidak boleh kosong.");
+      return;
     }
-    const q = databaseSearch.toLowerCase();
-    return availableDatabases.filter((db) => db.toLowerCase().includes(q));
+    const connParams = getConnParams(currentSelectedDatabase);
+    setIsCreatingTable(true);
+    const createQuery = `CREATE TABLE \`${newTableNameInput.trim()}\` (
+      \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+      \`name\` VARCHAR(255) NULL,
+      \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`;
+
+    const res = await executeSqlQuery(
+      connParams,
+      createQuery,
+      currentSelectedDatabase
+    );
+    setIsCreatingTable(false);
+    if (res.ok) {
+      toast.success(
+        `Tabel \`${newTableNameInput.trim()}\` berhasil dibuat dengan ${newTableColumnsInput} kolom awal!`
+      );
+      setNewTableNameInput("");
+      handleSelectDatabase(currentSelectedDatabase);
+    } else {
+      toast.error("Gagal membuat tabel", { description: res.error });
+    }
+  };
+
+  const totalDatabaseRows = useMemo(() => {
+    return databaseTables.reduce((sum, item) => sum + (item.rows || 0), 0);
+  }, [databaseTables]);
+
+  const filteredDisplayTables = useMemo(() => {
+    if (!tableSearch) return databaseTables;
+    return databaseTables.filter((t) =>
+      t.name.toLowerCase().includes(tableSearch.toLowerCase())
+    );
+  }, [databaseTables, tableSearch]);
+
+  const filteredDatabases = useMemo(() => {
+    if (!databaseSearch) return availableDatabases;
+    return availableDatabases.filter((d) =>
+      d.toLowerCase().includes(databaseSearch.toLowerCase())
+    );
   }, [availableDatabases, databaseSearch]);
 
-  const displayTables = profile ? databaseTables : FALLBACK_TABLES;
-  const filteredDisplayTables = displayTables.filter((t) =>
-    t.name.toLowerCase().includes(tableSearch.toLowerCase())
-  );
-  const totalDatabaseRows = useMemo(
-    () => databaseTables.reduce((acc, curr) => acc + (curr.rows || 0), 0),
-    [databaseTables]
-  );
-
   const filteredVariables = useMemo(() => {
-    if (!variablesSearch.trim()) {
-      return serverVariablesData;
-    }
+    if (!variablesSearch) return serverVariablesData;
     const q = variablesSearch.toLowerCase();
     return serverVariablesData.filter(
-      (v) =>
-        v.name.toLowerCase().includes(q) || v.value.toLowerCase().includes(q)
+      (v) => v.name.toLowerCase().includes(q) || v.value.toLowerCase().includes(q)
     );
   }, [serverVariablesData, variablesSearch]);
 
   const filteredCharsets = useMemo(() => {
-    if (!charsetsSearch.trim()) {
-      return serverCharsetsData;
-    }
+    if (!charsetsSearch) return serverCharsetsData;
     const q = charsetsSearch.toLowerCase();
     return serverCharsetsData.filter(
       (c) =>
@@ -1054,85 +1657,57 @@ export function WorkspaceStudioPage() {
   }, [serverCharsetsData, charsetsSearch]);
 
   const filteredPlugins = useMemo(() => {
-    if (!pluginsSearch.trim()) {
-      return serverPluginsData;
-    }
+    if (!pluginsSearch) return serverPluginsData;
     const q = pluginsSearch.toLowerCase();
     return serverPluginsData.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
-        p.type.toLowerCase().includes(q) ||
-        p.status.toLowerCase().includes(q)
+        p.status.toLowerCase().includes(q) ||
+        p.type.toLowerCase().includes(q)
     );
   }, [serverPluginsData, pluginsSearch]);
 
   return (
-    <div className="flex min-h-0 flex-1 overflow-hidden">
-      {/* Hidden file inputs for browser fallback */}
-      <input
-        accept=".sql"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) {
-            handleProcessChosenFile(file);
-          }
-        }}
-        ref={fileInputRef}
-        type="file"
-      />
-      <input
-        accept=".sql"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) {
-            handleProcessChosenFile(file);
-          }
-        }}
-        ref={modalFileInputRef}
-        type="file"
-      />
-
-      {/* Explorer Sidebar */}
-      <ExplorerSidebar
+    <div className="flex h-screen w-screen flex-col overflow-hidden bg-background text-foreground font-sans antialiased">
+      <WorkspaceNav
         activeConnectedProfile={profile}
-        availableDatabases={availableDatabases}
+        availableDatabasesCount={availableDatabases.length}
         currentSelectedDatabase={currentSelectedDatabase}
-        databaseSearch={databaseSearch}
-        filteredDatabases={filteredDatabases}
-        filteredDisplayTables={filteredDisplayTables}
-        isLoadingTables={isLoadingTables}
-        isOpen={isWorkspaceSidebarOpen}
-        onClose={() => setIsWorkspaceSidebarOpen(false)}
-        onOpenCreateDbModal={() => {
-          setNewDbName("");
-          setIsCreateDbModalOpen(true);
-        }}
-        onOpenDatabase={handleOpenDatabase}
-        onRefreshDatabases={handleRefreshDatabases}
-        onSelectTable={handleSelectTable}
-        onSwitchToHub={() => navigate({ to: "/" })}
+        currentWorkspaceTab={currentWorkspaceTab}
+        isWorkspaceSidebarOpen={isWorkspaceSidebarOpen}
+        onOpenWorkspaceSidebar={() => setIsWorkspaceSidebarOpen(true)}
+        onSwitchWorkspaceTab={handleSwitchWorkspaceTab}
         selectedTable={selectedTable}
-        setDatabaseSearch={setDatabaseSearch}
-        setTableSearch={setTableSearch}
-        tableSearch={tableSearch}
       />
 
-      {/* Main Studio Viewport */}
-      <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
-        <WorkspaceNav
+      {/* Main Studio Body */}
+      <section className="flex min-h-0 flex-1 overflow-hidden">
+        {/* Left Tree Explorer */}
+        <ExplorerSidebar
           activeConnectedProfile={profile}
-          availableDatabasesCount={availableDatabases.length}
+          availableDatabases={availableDatabases}
           currentSelectedDatabase={currentSelectedDatabase}
-          currentWorkspaceTab={currentWorkspaceTab}
-          isWorkspaceSidebarOpen={isWorkspaceSidebarOpen}
-          onOpenWorkspaceSidebar={() => setIsWorkspaceSidebarOpen(true)}
-          onSwitchWorkspaceTab={handleSwitchWorkspaceTab}
+          databaseSearch={databaseSearch}
+          filteredDatabases={filteredDatabases}
+          filteredDisplayTables={filteredDisplayTables}
+          isLoadingTables={isLoadingTables}
+          isOpen={isWorkspaceSidebarOpen}
+          onClose={() => setIsWorkspaceSidebarOpen(false)}
+          onOpenCreateDbModal={() => {
+            setNewDbName("");
+            setIsCreateDbModalOpen(true);
+          }}
+          onOpenDatabase={handleOpenDatabase}
+          onRefreshDatabases={handleRefreshDatabases}
+          onSelectTable={handleBrowseTable}
+          onSwitchToHub={() => navigate({ to: "/" })}
           selectedTable={selectedTable}
+          setDatabaseSearch={setDatabaseSearch}
+          setTableSearch={setTableSearch}
+          tableSearch={tableSearch}
         />
 
-        {/* Tab Contents */}
+        {/* Tab Views */}
         {currentWorkspaceTab === "databases" && (
           <DatabasesTab
             availableDatabases={availableDatabases}
@@ -1170,6 +1745,10 @@ export function WorkspaceStudioPage() {
             onRefreshTables={() =>
               handleSelectDatabase(currentSelectedDatabase)
             }
+            onSearchTable={(tblName) => {
+              setSelectedTable(tblName);
+              setCurrentWorkspaceTab("search");
+            }}
             onSwitchTab={(tab) => setCurrentWorkspaceTab(tab)}
             onViewTableStructure={handleViewTableStructure}
             selectedTableCheckboxes={selectedTableCheckboxes}
@@ -1188,6 +1767,7 @@ export function WorkspaceStudioPage() {
             isExecutingQuery={isExecutingQuery}
             isLoadingTables={isLoadingTables}
             isSqlConsoleExpanded={isSqlConsoleExpanded}
+            onDeleteRow={handleDeleteRow}
             onExecuteQuery={handleExecuteQuery}
             queryResults={queryResults}
             selectedTable={selectedTable}
@@ -1196,13 +1776,88 @@ export function WorkspaceStudioPage() {
             sqlQuery={sqlQuery}
           />
         )}
+        {currentWorkspaceTab === "search" && (
+          <SearchTab
+            availableTables={databaseTables}
+            currentSelectedDatabase={currentSelectedDatabase}
+            isSearching={isSearching}
+            onBrowseTableMatches={handleBrowseTableMatches}
+            onExecuteSearch={handleExecuteSearch}
+            searchResults={searchResults}
+          />
+        )}
         {currentWorkspaceTab === "operations" && (
           <OperationsTab
+            availableTables={databaseTables}
             currentSelectedDatabase={currentSelectedDatabase}
             newDbCollation={newDbCollation}
             onChangeCollation={handleChangeCollation}
+            onCopyDatabase={handleCopyDatabase}
+            onCopyTable={handleCopyTable}
             onDropDatabase={handleDropDatabase}
+            onDropTable={handleDropTable}
+            onEmptyTable={handleEmptyTable}
+            onMaintainTable={handleMaintainTable}
+            onRenameDatabase={handleRenameDatabase}
+            onRenameTable={handleRenameTable}
+            onUpdateTableOptions={handleUpdateTableOptions}
+            selectedTable={selectedTable}
             setNewDbCollation={setNewDbCollation}
+          />
+        )}
+        {currentWorkspaceTab === "export" && (
+          <ExportTab
+            availableTables={databaseTables}
+            currentSelectedDatabase={currentSelectedDatabase}
+            exportAddDropTable={exportAddDropTable}
+            exportDisableFk={exportDisableFk}
+            exportFormat={exportFormat}
+            exportMethod={exportMethod}
+            exportMode={exportMode}
+            exportPreviewSql={exportPreviewSql}
+            exportSelectedTables={exportSelectedTables}
+            isExporting={isExporting}
+            onExecuteExport={handleExecuteExport}
+            setExportAddDropTable={setExportAddDropTable}
+            setExportDisableFk={setExportDisableFk}
+            setExportFormat={setExportFormat}
+            setExportMethod={setExportMethod}
+            setExportMode={setExportMode}
+            setExportSelectedTables={setExportSelectedTables}
+          />
+        )}
+        {currentWorkspaceTab === "import" && (
+          <ImportTab
+            availableDatabases={availableDatabases}
+            availableTables={databaseTables}
+            currentSelectedDatabase={currentSelectedDatabase}
+            importSqlContent={importSqlContent}
+            importTab={importTab}
+            importTargetTable={importTargetTable}
+            isImporting={isImporting}
+            onExecuteImport={handleExecuteImport}
+            onPickImportFile={handlePickImportFile}
+            onProcessChosenFile={handleProcessChosenFile}
+            onSelectDatabase={handleSelectDatabase}
+            selectedImportFile={selectedImportFile}
+            setCurrentSelectedDatabase={setCurrentSelectedDatabase}
+            setImportSqlContent={setImportSqlContent}
+            setImportTab={setImportTab}
+            setImportTargetTable={setImportTargetTable}
+            setSelectedImportFile={setSelectedImportFile}
+          />
+        )}
+        {currentWorkspaceTab === "routines" && (
+          <RoutinesTab
+            currentSelectedDatabase={currentSelectedDatabase}
+            isLoadingRoutines={isLoadingRoutines}
+            onDropRoutine={handleDropRoutine}
+            onDropTrigger={handleDropTrigger}
+            onExecuteRoutine={handleExecuteRoutine}
+            onLoadRoutines={handleLoadRoutines}
+            onViewRoutineCode={handleViewRoutineCode}
+            routinesData={routinesData}
+            triggersData={triggersData}
           />
         )}
         {currentWorkspaceTab === "status" && (
@@ -1218,38 +1873,6 @@ export function WorkspaceStudioPage() {
             isLoadingUsers={isLoadingUsers}
             onLoadUserAccounts={handleLoadUserAccounts}
             userAccountsData={userAccountsData}
-          />
-        )}
-        {currentWorkspaceTab === "export" && (
-          <ExportTab
-            currentSelectedDatabase={currentSelectedDatabase}
-            exportAddDropTable={exportAddDropTable}
-            exportDisableFk={exportDisableFk}
-            exportMode={exportMode}
-            exportPreviewSql={exportPreviewSql}
-            isExporting={isExporting}
-            onExecuteExport={handleExecuteExport}
-            setExportAddDropTable={setExportAddDropTable}
-            setExportDisableFk={setExportDisableFk}
-            setExportMode={setExportMode}
-          />
-        )}
-        {currentWorkspaceTab === "import" && (
-          <ImportTab
-            availableDatabases={availableDatabases}
-            currentSelectedDatabase={currentSelectedDatabase}
-            importSqlContent={importSqlContent}
-            importTab={importTab}
-            isImporting={isImporting}
-            onExecuteImport={handleExecuteImport}
-            onPickImportFile={handlePickImportFile}
-            onProcessChosenFile={handleProcessChosenFile}
-            onSelectDatabase={handleSelectDatabase}
-            selectedImportFile={selectedImportFile}
-            setCurrentSelectedDatabase={setCurrentSelectedDatabase}
-            setImportSqlContent={setImportSqlContent}
-            setImportTab={setImportTab}
-            setSelectedImportFile={setSelectedImportFile}
           />
         )}
         {currentWorkspaceTab === "variables" && (
@@ -1296,6 +1919,7 @@ export function WorkspaceStudioPage() {
         currentSelectedDatabase={currentSelectedDatabase}
         exportAddDropTable={exportAddDropTable}
         exportDisableFk={exportDisableFk}
+        exportFormat={exportFormat}
         exportMode={exportMode}
         exportPreviewSql={exportPreviewSql}
         isExporting={isExporting}
@@ -1304,13 +1928,16 @@ export function WorkspaceStudioPage() {
         onExecuteExport={handleExecuteExport}
         setExportAddDropTable={setExportAddDropTable}
         setExportDisableFk={setExportDisableFk}
+        setExportFormat={setExportFormat}
         setExportMode={setExportMode}
       />
 
       <ImportModal
+        availableTables={databaseTables}
         currentSelectedDatabase={currentSelectedDatabase}
         importSqlContent={importSqlContent}
         importTab={importTab}
+        importTargetTable={importTargetTable}
         isImporting={isImporting}
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
@@ -1320,6 +1947,7 @@ export function WorkspaceStudioPage() {
         selectedImportFile={selectedImportFile}
         setImportSqlContent={setImportSqlContent}
         setImportTab={setImportTab}
+        setImportTargetTable={setImportTargetTable}
         setSelectedImportFile={setSelectedImportFile}
       />
 

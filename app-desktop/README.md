@@ -68,13 +68,13 @@ Or use it as a template on GitHub
 2. Install dependencies
 
 ```bash
-npm install
+yarn install
 ```
 
 3. Run the app
 
 ```bash
-npm run start
+yarn start
 ```
 
 Now you can go directly to `/src/routes/index.tsx` and modify the app as you want.

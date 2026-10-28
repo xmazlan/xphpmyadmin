@@ -323,11 +323,11 @@ export function ConnectionCard({ profile, isActive, onSelect, onToggleFavorite, 
 cd app-desktop
 
 # Jalankan server pengembangan lokal (Vite + Electron)
-npm run start
+yarn start
 
 # Menjalankan pengujian unit & integrasi
-npm run test
+yarn test
 
 # Memeriksa kepatuhan kode dan linting
-npm run check
+yarn check
 ```

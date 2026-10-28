@@ -7,3 +7,25 @@ declare const MAIN_WINDOW_VITE_NAME: string;
 declare module 'lucide-react';
 declare module '@tanstack/router-plugin/vite';
 
+interface ImportMetaEnv {
+  readonly VITE_BACKEND_URL?: string;
+  readonly VITE_CLOUD_API_URL?: string;
+  readonly VITE_CLOUD_AUTH_URL?: string;
+}
+
+interface ImportMeta {
+  readonly env?: ImportMetaEnv;
+}
+
+interface ElectronOAuthApi {
+  onOAuthCallback: (
+    callback: (data: { provider?: string; token: string; user: any }) => void
+  ) => () => void;
+  startOAuth: (
+    provider: string
+  ) => Promise<{ error?: string; port?: number; success: boolean }>;
+}
+
+interface Window {
+  electronOAuth?: ElectronOAuthApi;
+}

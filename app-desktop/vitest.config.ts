@@ -20,6 +20,7 @@ export default defineConfig({
     dir: "./src/tests/unit",
     environment: "jsdom",
     globals: true,
+    pool: "threads",
     reporters: ["verbose"],
     setupFiles: "./src/tests/unit/setup.ts",
   },

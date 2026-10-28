@@ -1,15 +1,18 @@
-import { Database, FileCode2, FileUp, Zap } from "lucide-react";
+import { Database, FileCode2, FileUp, Table as TableIcon, Zap } from "lucide-react";
 import { useRef, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import type { ImportFileInfo } from "@/types/workspace";
+import type { ImportFileInfo, TableItem } from "@/types/workspace";
 import { cn } from "@/utils/tailwind";
 
 interface ImportTabProps {
   availableDatabases: string[];
+  availableTables?: TableItem[];
   currentSelectedDatabase: string;
   importSqlContent: string;
   importTab: "file" | "paste";
+  importTargetTable?: string;
   isImporting: boolean;
   onExecuteImport: () => void;
   onPickImportFile: (isModal: boolean) => void;
@@ -19,14 +22,17 @@ interface ImportTabProps {
   setCurrentSelectedDatabase: (val: string) => void;
   setImportSqlContent: (val: string) => void;
   setImportTab: (val: "file" | "paste") => void;
+  setImportTargetTable?: (val: string) => void;
   setSelectedImportFile: (val: ImportFileInfo | null) => void;
 }
 
 export function ImportTab({
   availableDatabases,
+  availableTables = [],
   currentSelectedDatabase,
   importSqlContent,
   importTab,
+  importTargetTable = "",
   isImporting,
   onExecuteImport,
   onPickImportFile,
@@ -36,26 +42,42 @@ export function ImportTab({
   setCurrentSelectedDatabase,
   setImportSqlContent,
   setImportTab,
+  setImportTargetTable,
   setSelectedImportFile,
 }: ImportTabProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDraggingImport, setIsDraggingImport] = useState(false);
 
+  const isCsvOrJson =
+    selectedImportFile?.fileName?.toLowerCase().endsWith(".csv") ||
+    selectedImportFile?.fileName?.toLowerCase().endsWith(".json");
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background p-4 sm:p-6">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-background p-4 sm:p-6">
       <div className="mx-auto w-full max-w-2xl space-y-4">
         <div className="flex items-center justify-between border-border border-b pb-3">
           <div className="flex items-center gap-2.5">
             <FileUp className="text-primary" size={18} />
             <div>
               <h2 className="font-semibold text-foreground text-sm">
-                Impor Script SQL ke Database (`{currentSelectedDatabase}`)
+                Impor Data ke Database (
+                <span className="font-mono text-primary">
+                  {currentSelectedDatabase || "Pilih database"}
+                </span>
+                )
               </h2>
               <p className="text-muted-foreground text-xs">
-                Pulihkan atau jalankan skrip SQL langsung ke basis data aktif.
+                Pulihkan atau masukkan data dari berkas SQL, CSV, atau JSON
+                langsung ke basis data.
               </p>
             </div>
           </div>
+          <Badge
+            className="border-primary/30 bg-primary/10 text-[10px] text-primary"
+            variant="outline"
+          >
+            Mendukung .sql, .csv, .json
+          </Badge>
         </div>
 
         <div className="space-y-4 rounded-lg border border-border bg-card p-4">
@@ -71,7 +93,7 @@ export function ImportTab({
               onClick={() => setImportTab("file")}
               type="button"
             >
-              Pilih Berkas .sql
+              Pilih Berkas (.sql, .csv, .json)
             </button>
             <button
               className={cn(
@@ -83,7 +105,7 @@ export function ImportTab({
               onClick={() => setImportTab("paste")}
               type="button"
             >
-              Tempel Script SQL
+              Tempel Script SQL Mentah
             </button>
           </div>
 
@@ -111,10 +133,32 @@ export function ImportTab({
             </div>
           )}
 
+          {/* Target Tabel jika berkas CSV / JSON */}
+          {isCsvOrJson && availableTables.length > 0 && (
+            <div className="flex items-center justify-between rounded-md border border-border bg-muted px-3 py-2 text-xs">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <TableIcon className="text-primary" size={13} />
+                <span>Tabel Target (untuk CSV/JSON):</span>
+              </div>
+              <select
+                className="rounded border border-border bg-card px-2.5 py-1 font-mono text-foreground text-xs focus:border-primary focus:outline-none"
+                onChange={(e) => setImportTargetTable?.(e.target.value)}
+                value={importTargetTable}
+              >
+                <option value="">[Otomatis berdasarkan nama berkas]</option>
+                {availableTables.map((tbl) => (
+                  <option key={tbl.name} value={tbl.name}>
+                    {tbl.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {importTab === "file" ? (
             <div className="space-y-3">
               <input
-                accept=".sql,text/plain"
+                accept=".sql,.csv,.json,.xml,text/plain"
                 className="hidden"
                 onChange={(e) => {
                   if (e.target.files && e.target.files.length > 0) {
@@ -148,56 +192,37 @@ export function ImportTab({
                 }}
               >
                 <FileUp
-                  className={cn(
-                    "mb-2 transition-transform",
-                    isDraggingImport
-                      ? "scale-110 text-foreground"
-                      : "text-primary"
-                  )}
-                  size={32}
+                  className="mb-2 text-muted-foreground/70"
+                  size={28}
                 />
-                <p className="font-medium text-foreground text-xs">
-                  {isDraggingImport
-                    ? "Lepaskan berkas .sql di sini..."
-                    : "Pilih berkas dump database (.sql)"}
+                <p className="font-semibold text-foreground text-xs">
+                  {selectedImportFile
+                    ? selectedImportFile.fileName
+                    : "Tarik berkas .sql, .csv, atau .json ke sini, atau klik untuk memilih"}
                 </p>
-                <p className="mt-1 mb-3 text-[11px] text-muted-foreground/70">
-                  Klik di mana saja pada kotak ini atau seret berkas SQL dari
-                  komputer Anda.
+                <p className="mt-1 text-[11px] text-muted-foreground/70">
+                  {selectedImportFile
+                    ? `Ukuran berkas: ${(selectedImportFile.fileSize / 1024).toFixed(1)} KB • Klik untuk mengganti`
+                    : "Mendukung SQL Dump, format CSV (tabel baris), dan JSON terstruktur"}
                 </p>
-                <Button
-                  className="pointer-events-auto bg-primary font-semibold text-primary-foreground text-xs shadow-sm hover:bg-primary/90"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onPickImportFile(false);
-                  }}
-                  size="sm"
-                  type="button"
-                >
-                  Jelajahi Berkas (.sql)
-                </Button>
               </div>
 
               {selectedImportFile && (
-                <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary p-3 text-primary-foreground/5">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <FileCode2 className="shrink-0 text-primary" size={16} />
-                    <div className="min-w-0">
-                      <p className="truncate font-medium font-mono text-foreground text-xs">
+                <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+                  <div className="flex items-center gap-2 text-xs">
+                    <FileCode2 className="text-emerald-500" size={16} />
+                    <div>
+                      <span className="font-semibold text-foreground">
                         {selectedImportFile.fileName}
-                      </p>
-                      <p className="font-mono text-[10px] text-muted-foreground">
-                        {(selectedImportFile.fileSize / 1024).toFixed(1)} KB •{" "}
-                        {selectedImportFile.filePath}
-                      </p>
+                      </span>
+                      <span className="ml-2 font-mono text-[10px] text-muted-foreground/70">
+                        ({(selectedImportFile.fileSize / 1024).toFixed(1)} KB)
+                      </span>
                     </div>
                   </div>
                   <Button
-                    className="h-6 text-[10px] text-destructive hover:bg-destructive/10"
-                    onClick={() => {
-                      setSelectedImportFile(null);
-                      setImportSqlContent("");
-                    }}
+                    className="h-6 px-2 text-[11px] text-destructive hover:bg-destructive/10"
+                    onClick={() => setSelectedImportFile(null)}
                     size="sm"
                     variant="ghost"
                   >
@@ -209,27 +234,30 @@ export function ImportTab({
           ) : (
             <div className="space-y-1.5">
               <Label className="text-[11px] text-muted-foreground">
-                Perintah SQL untuk Dieksekusi:
+                Ketik atau Tempel Perintah SQL:
               </Label>
               <textarea
-                className="w-full resize-none rounded-md border border-border bg-background p-3 font-mono text-primary text-xs focus:border-white/30 focus:outline-none"
+                className="h-44 w-full resize-none rounded-md border border-border bg-background p-2.5 font-mono text-foreground text-xs focus:border-white/30 focus:outline-none"
                 onChange={(e) => setImportSqlContent(e.target.value)}
-                placeholder="CREATE TABLE `contoh` (...);&#10;INSERT INTO `contoh` VALUES (...);"
-                rows={8}
+                placeholder="-- Tempel query SQL di sini (misal: CREATE TABLE, INSERT INTO)..."
                 value={importSqlContent}
               />
             </div>
           )}
 
-          <div className="flex items-center justify-end border-border border-t pt-2">
+          <div className="flex items-center justify-end border-border border-t pt-3">
             <Button
               className="h-8 bg-primary font-semibold text-primary-foreground text-xs hover:bg-primary/90"
-              disabled={isImporting}
+              disabled={
+                isImporting ||
+                (importTab === "file" && !selectedImportFile) ||
+                (importTab === "paste" && !importSqlContent.trim())
+              }
               onClick={onExecuteImport}
               size="sm"
             >
-              <Zap className="mr-1.5 fill-black" size={13} />
-              {isImporting ? "Mengeksekusi SQL..." : "Jalankan Impor SQL"}
+              <Zap className="mr-1.5 fill-current" size={13} />
+              {isImporting ? "Mengimpor Data..." : "Jalankan Proses Impor"}
             </Button>
           </div>
         </div>

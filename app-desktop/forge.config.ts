@@ -1,5 +1,6 @@
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
 import { MakerDeb } from "@electron-forge/maker-deb";
+import { MakerDMG } from "@electron-forge/maker-dmg";
 import { MakerRpm } from "@electron-forge/maker-rpm";
 import { MakerSquirrel } from "@electron-forge/maker-squirrel";
 import { MakerZIP } from "@electron-forge/maker-zip";
@@ -9,13 +10,35 @@ import type { ForgeConfig } from "@electron-forge/shared-types";
 
 const config: ForgeConfig = {
   makers: [
-    new MakerSquirrel({}),
-    new MakerZIP({}, ["darwin"]),
-    new MakerRpm({}),
-    new MakerDeb({}),
+    new MakerDMG(
+      {
+        name: "xphpMyAdmin",
+      },
+      ["darwin"]
+    ),
+    new MakerZIP({}, ["darwin", "win32", "linux"]),
+    new MakerSquirrel({
+      name: "xphpmyadmin",
+    }),
+    new MakerDeb({
+      options: {
+        bin: "xphpmyadmin",
+        name: "xphpmyadmin",
+        productName: "xphpMyAdmin",
+      },
+    }),
+    new MakerRpm({
+      options: {
+        bin: "xphpmyadmin",
+        name: "xphpmyadmin",
+        productName: "xphpMyAdmin",
+      },
+    }),
   ],
   packagerConfig: {
     asar: true,
+    executableName: "xphpmyadmin-desktop",
+    name: "xphpMyAdmin",
   },
   plugins: [
     new VitePlugin({
@@ -41,6 +64,7 @@ const config: ForgeConfig = {
 
     new FusesPlugin({
       version: FuseVersion.V1,
+      resetAdHocDarwinSignature: process.platform === "darwin",
       [FuseV1Options.RunAsNode]: false,
       [FuseV1Options.EnableCookieEncryption]: true,
       [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
@@ -55,14 +79,10 @@ const config: ForgeConfig = {
         draft: true,
         prerelease: false,
         repository: {
-          name: "electron-shadcn",
-          owner: "LuanRoger",
+          name: "xphpmyadmin",
+          owner: "ajoroby",
         },
       },
-      /*
-       * Publish release on GitHub as draft.
-       * Remember to manually publish it on GitHub website after verifying everything is correct.
-       */
       name: "@electron-forge/publisher-github",
     },
   ],
