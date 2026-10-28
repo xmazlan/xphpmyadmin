@@ -3,22 +3,27 @@
   "type": "feature",
   "status": "published",
   "title": {
-    "id": "Dukungan Multi-Platform, Fitur Manajemen Database Mandiri, & Sinkronisasi Cloud",
-    "en": "Multi-Platform Support, Comprehensive Database Capabilities, & Cloud Sync"
+    "id": "Otorisasi Peramban Eksternal, Brankas Lokal Gratis Tanpa Hambatan, & Sinkronisasi Cloud",
+    "en": "External Browser Authorization, Frictionless Local Vault, & Cloud Synchronization"
   },
   "body": {
-    "id": "Pembaruan komprehensif menghadirkan paket installer multi-platform siap pasang, penyempurnaan tema gelap obsidian, kelengkapan fitur manajemen database (ekspor-impor multi-format, operasi pemeliharaan, pencarian mendalam, manajemen prosedur), serta arsitektur sinkronisasi cloud dan pencatatan riwayat transaksi resmi dalam format JSON.",
-    "en": "A comprehensive release introducing ready-to-install multi-platform packages, refined obsidian dark theme, full database management capabilities (multi-format export-import, maintenance operations, deep search, routines management), and cloud synchronization architecture with official JSON transaction journaling."
+    "id": "Pembaruan komprehensif menghadirkan integrasi otorisasi akun Google dan GitHub melalui peramban eksternal dengan pengalihan balik otomatis ke aplikasi desktop, penyederhanaan pendaftaran akun gratis dengan brankas lokal mandiri, paket installer multi-platform siap pasang, penyempurnaan tema gelap obsidian, kelengkapan fitur manajemen database (ekspor-impor multi-format, operasi pemeliharaan, pencarian mendalam, manajemen prosedur), serta arsitektur sinkronisasi cloud dengan pencatatan riwayat transaksi resmi dalam format JSON.",
+    "en": "A comprehensive release introducing external browser Google and GitHub account authorization with automatic redirection back into the desktop app, frictionless free user registration with standalone local vaults, ready-to-install multi-platform packages, refined obsidian dark theme, full database management capabilities (multi-format export-import, maintenance operations, deep search, routines management), and cloud synchronization architecture with official JSON transaction journaling."
   },
   "items": [
     {
       "type": "new",
-      "id": "Cegat Masuk dengan Autentikasi Google, GitHub, dan Kredensial Email: Antarmuka aplikasi kini diamankan oleh sistem gerbang autentikasi visual (Auth Gate) yang mencegat pengguna sebelum masuk ke workspace. Mendukung login instan via Google Workspace, GitHub OAuth, pendaftaran/masuk email & kata sandi dengan pilihan paket berlangganan, tombol akses cepat akun pengujian, serta opsi mode lokal mandiri.",
-      "en": "Access Interception with Google, GitHub, and Email Credentials: The application is now safeguarded by an interactive Authentication Gate before granting workspace access. Features instant OAuth login via Google Workspace and GitHub, email & password registration/login with tiered plan selection, quick 1-click test accounts, and standalone local offline mode."
+      "id": "Otorisasi Masuk via Peramban Eksternal & Pembukaan Balik Otomatis: Saat pengguna memilih masuk dengan Google atau GitHub, aplikasi kini secara otomatis membuka peramban web bawaan sistem ke portal otorisasi resmi yang aman. Setelah proses masuk selesai di peramban, tautan balik secara instan memanggil dan memfokuskan kembali aplikasi desktop xphpMyAdmin, mengautentikasi sesi secara otomatis, dan langsung mengarahkan pengguna ke ruang kerja.",
+      "en": "External Browser Authorization & Automatic Desktop Reopen: When users sign in with Google or GitHub, the application now automatically launches the system's default web browser to the secure official authorization portal. Upon completion in the browser, an intelligent callback instantly invokes and re-focuses the xphpMyAdmin desktop app, authenticates the session automatically, and grants immediate workspace access."
     },
     {
       "type": "new",
-      "id": "Pusat Langganan Cloud Berjenjang & Pilihan Siklus Tagihan: Pengguna kini dapat memilih dan memperbarui paket langganan cloud (Pro, Team, Business) dengan fleksibilitas siklus penagihan bulanan atau tahunan (hemat hingga 33%), integrasi sinkronisasi vault otomatis lintas perangkat, serta akses akun pengujian instan.",
+      "id": "Pendaftaran Akun Baru Tanpa Hambatan & Brankas Lokal Gratis: Pengguna baru kini dapat mendaftar tanpa harus memilih paket pembayaran di awal dan langsung menikmati brankas koneksi lokal mandiri secara gratis tanpa batasan waktu. Akses sinkronisasi cloud terpusat dilindungi dengan pemeriksaan status langganan cerdas, menampilkan dialog edukasi pembaruan paket saat pengguna akun gratis mencoba melakukan sinkronisasi awan.",
+      "en": "Frictionless User Registration & Free Local Vault: New users can now register without being prompted for payment plans upfront, enjoying a fully functional local connection vault for free indefinitely. Centralized cloud synchronization access is protected with intelligent subscription verification, guiding free-tier users with an upgrade educational modal whenever cloud sync is requested."
+    },
+    {
+      "type": "new",
+      "id": "Pusat Langganan Cloud Berjenjang & Pilihan Siklus Tagihan: Pengguna kini dapat memilih dan memperbarui paket langganan cloud (Pro, Team, Business) dengan fleksibilitas siklus penagihan bulanan atau tahunan (hemat hingga 33%), integrasi sinkronisasi brankas otomatis lintas perangkat, serta akses akun pengujian instan.",
       "en": "Tiered Cloud Subscription Hub & Flexible Billing Cycles: Users can now select and upgrade cloud subscription plans (Pro, Team, Business) with monthly or annual billing cycles (saving up to 33%), multi-device automated vault synchronization, and instant test account access."
     },
     {
