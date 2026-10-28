@@ -21,6 +21,7 @@ import {
   updateCloudSyncConfig,
   upgradeSubscriptionPlan,
   oauthLoginCloudBackend,
+  saveAuthSession,
 } from "@/services/cloud-sync";
 import type {
   BillingCycle,
@@ -77,6 +78,7 @@ interface CloudSyncContextValue {
   recordQuery: (
     query: Omit<QueryHistoryEntry, "id" | "timestamp">
   ) => QueryHistoryEntry;
+  setSessionFromOAuth: (token: string, user: any, provider?: string) => void;
   refreshState: () => void;
   register: (
     name: string,
@@ -209,6 +211,15 @@ export function CloudSyncProvider({
     return res;
   };
 
+  const handleSetSessionFromOAuth = (
+    token: string,
+    user: any,
+    provider?: string
+  ) => {
+    saveAuthSession(token, user, provider);
+    refreshState();
+  };
+
   const handleOAuthLogin = async (
     provider: "google" | "github",
     email: string,
@@ -253,6 +264,7 @@ export function CloudSyncProvider({
         login: handleLogin,
         logout: handleLogout,
         oauthLogin: handleOAuthLogin,
+        setSessionFromOAuth: handleSetSessionFromOAuth,
         mergeWithCloud: handleMergeWithCloud,
         pullFromCloud: handlePullFromCloud,
         queryHistory,

@@ -859,6 +859,41 @@ export async function oauthLoginCloudBackend(
   }
 }
 
+export function saveAuthSession(
+  token: string,
+  user: any,
+  provider?: string
+): void {
+  const userTier: SubscriptionTier =
+    user?.plan === "business"
+      ? "business"
+      : user?.plan === "team"
+      ? "team"
+      : user?.plan === "pro"
+      ? "pro"
+      : "free";
+
+  const userBilling: BillingCycle =
+    user?.billingCycle === "monthly" ? "monthly" : "annual";
+
+  const maxVaults =
+    user?.maxVaults ||
+    (userTier === "business" ? 50 : userTier === "team" ? 20 : userTier === "pro" ? 10 : 1);
+
+  updateCloudSyncConfig({
+    apiToken: token,
+    billingCycle: userBilling,
+    maxVaults,
+    planExpiresAt: user?.planExpiresAt,
+    subscriptionTier: userTier,
+    userAvatar: user?.image,
+    userEmail: user?.email,
+    userId: user?.id ? String(user.id) : undefined,
+    userName: user?.name,
+    userProvider: provider || user?.provider || "oauth",
+  });
+}
+
 export function logoutCloudBackend(): void {
   updateCloudSyncConfig({
     apiToken: undefined,

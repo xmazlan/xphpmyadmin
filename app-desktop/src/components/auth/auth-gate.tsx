@@ -2,6 +2,7 @@ import {
   Check,
   CheckCircle2,
   Database,
+  ExternalLink,
   Eye,
   EyeOff,
   Globe,
@@ -14,7 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SiGithub, SiGoogle } from "@icons-pack/react-simple-icons";
 import { useCloudSync } from "@/context/cloud-sync-context";
 import { cn } from "@/utils/tailwind";
@@ -24,7 +25,7 @@ interface AuthGateProps {
 }
 
 export function AuthGate({ onBypassLocal }: AuthGateProps) {
-  const { login, oauthLogin, register } = useCloudSync();
+  const { login, oauthLogin, register, setSessionFromOAuth } = useCloudSync();
 
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
@@ -39,6 +40,49 @@ export function AuthGate({ onBypassLocal }: AuthGateProps) {
   const [oauthDialog, setOauthDialog] = useState<"google" | "github" | null>(null);
   const [oauthEmail, setOauthEmail] = useState("");
   const [oauthName, setOauthName] = useState("");
+
+  // External browser OAuth state
+  const [isWaitingBrowserAuth, setIsWaitingBrowserAuth] = useState(false);
+  const [browserAuthProvider, setBrowserAuthProvider] = useState<"google" | "github">("google");
+
+  // Listen for OAuth callback redirected from external browser
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.electronOAuth?.onOAuthCallback) {
+      const unsubscribe = window.electronOAuth.onOAuthCallback((data) => {
+        setSessionFromOAuth(data.token, data.user, data.provider);
+        setIsWaitingBrowserAuth(false);
+        setSuccessMsg(
+          `Berhasil masuk via ${data.provider === "github" ? "GitHub" : "Google"}! Mengalihkan ke workspace...`
+        );
+      });
+      return unsubscribe;
+    }
+  }, [setSessionFromOAuth]);
+
+  const handleOAuthClick = async (provider: "google" | "github") => {
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    if (typeof window !== "undefined" && window.electronOAuth?.startOAuth) {
+      setIsWaitingBrowserAuth(true);
+      setBrowserAuthProvider(provider);
+      try {
+        const res = await window.electronOAuth.startOAuth(provider);
+        if (!res.success) {
+          setErrorMsg(res.error || "Gagal membuka peramban web eksternal");
+          setIsWaitingBrowserAuth(false);
+        }
+      } catch (err: any) {
+        setErrorMsg(err?.message || "Gagal membuka peramban web eksternal");
+        setIsWaitingBrowserAuth(false);
+      }
+    } else {
+      // Fallback for tests & environments without Electron main IPC
+      setOauthEmail(provider === "google" ? "robyfull.dev@gmail.com" : "robyajo@users.noreply.github.com");
+      setOauthName(provider === "google" ? "Roby Developer" : "Roby Ajo GitHub");
+      setOauthDialog(provider);
+    }
+  };
 
   const handleCredentialsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,16 +204,48 @@ export function AuthGate({ onBypassLocal }: AuthGateProps) {
           </div>
         )}
 
+        {/* External Browser OAuth Waiting Notification */}
+        {isWaitingBrowserAuth && (
+          <div className="mb-4 rounded-xl border border-primary/30 bg-primary/10 p-3.5 text-center">
+            <div className="mx-auto mb-2 flex size-9 items-center justify-center rounded-full bg-primary/20 text-primary animate-pulse">
+              {browserAuthProvider === "google" ? (
+                <SiGoogle size={16} color="#EA4335" />
+              ) : (
+                <SiGithub size={16} />
+              )}
+            </div>
+            <div className="font-semibold text-foreground text-xs">
+              Menunggu Autentikasi di Peramban Web...
+            </div>
+            <p className="mt-1 text-muted-foreground text-[11px] leading-relaxed">
+              Peramban sistem telah dibuka. Selesaikan proses masuk di halaman web, dan aplikasi ini akan otomatis mendeteksi dan membuka sesi Anda.
+            </p>
+            <div className="mt-2.5 flex items-center justify-center gap-2">
+              <button
+                className="flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1 font-medium text-[11px] text-foreground hover:bg-muted"
+                onClick={() => handleOAuthClick(browserAuthProvider)}
+                type="button"
+              >
+                <ExternalLink size={11} />
+                <span>Buka Peramban Lagi</span>
+              </button>
+              <button
+                className="rounded-md border border-destructive/30 bg-destructive/10 px-2.5 py-1 font-medium text-[11px] text-destructive hover:bg-destructive/20"
+                onClick={() => setIsWaitingBrowserAuth(false)}
+                type="button"
+              >
+                Batalkan
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Social / OAuth Buttons (Google & GitHub) */}
         <div className="space-y-2.5">
           <button
             className="flex h-10 w-full items-center justify-center gap-2.5 rounded-lg border border-border bg-background/80 font-medium text-foreground text-xs shadow-xs transition-colors hover:border-primary/50 hover:bg-muted disabled:opacity-60"
-            disabled={isLoading}
-            onClick={() => {
-              setOauthEmail("robyfull.dev@gmail.com");
-              setOauthName("Roby Developer");
-              setOauthDialog("google");
-            }}
+            disabled={isLoading || isWaitingBrowserAuth}
+            onClick={() => handleOAuthClick("google")}
             type="button"
           >
             <SiGoogle size={15} color="#EA4335" />
@@ -178,12 +254,8 @@ export function AuthGate({ onBypassLocal }: AuthGateProps) {
 
           <button
             className="flex h-10 w-full items-center justify-center gap-2.5 rounded-lg border border-border bg-background/80 font-medium text-foreground text-xs shadow-xs transition-colors hover:border-primary/50 hover:bg-muted disabled:opacity-60"
-            disabled={isLoading}
-            onClick={() => {
-              setOauthEmail("github_user@xphpmyadmin.dev");
-              setOauthName("GitHub Dev User");
-              setOauthDialog("github");
-            }}
+            disabled={isLoading || isWaitingBrowserAuth}
+            onClick={() => handleOAuthClick("github")}
             type="button"
           >
             <SiGithub size={15} />
@@ -278,7 +350,7 @@ export function AuthGate({ onBypassLocal }: AuthGateProps) {
             <div className="relative">
               <Lock className="absolute top-2.5 left-3 text-muted-foreground/70" size={14} />
               <input
-                className="h-9 w-full rounded-lg border border-border bg-background pr-9 pl-9 text-foreground text-xs placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none"
+                className="h-9 w-full rounded-lg border border-border bg-background px-9 text-foreground text-xs placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none"
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
@@ -287,7 +359,7 @@ export function AuthGate({ onBypassLocal }: AuthGateProps) {
               />
               <button
                 className="absolute top-2.5 right-3 text-muted-foreground/70 hover:text-foreground"
-                onClick={() => setShowPassword((prev) => !prev)}
+                onClick={() => setShowPassword(!showPassword)}
                 type="button"
               >
                 {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -295,25 +367,26 @@ export function AuthGate({ onBypassLocal }: AuthGateProps) {
             </div>
           </div>
 
+          {/* Registration Information Banner: Free Starter Plan */}
           {mode === "register" && (
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-center text-xs">
-              <span className="font-semibold text-foreground">Paket Starter Gratis (Full Lokal)</span>
-              <p className="mt-0.5 text-[11px] text-muted-foreground/80">
-                Semua fitur manajemen database remote dapat dinikmati secara lokal tanpa biaya. Brankas cloud dapat diaktifkan kapan saja dengan berlangganan.
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs leading-relaxed">
+              <div className="flex items-center gap-1.5 font-semibold text-primary">
+                <Shield size={13} />
+                <span>Paket Starter Gratis (Full Lokal)</span>
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Pendaftaran baru otomatis menikmati brankas koneksi lokal mandiri tanpa batasan waktu. Fitur sinkronisasi cloud dapat diaktifkan kapan saja dengan berlangganan.
               </p>
             </div>
           )}
 
           <button
-            className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary font-semibold text-primary-foreground text-xs shadow-md transition-all hover:bg-primary/90 disabled:opacity-50"
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary font-medium text-primary-foreground text-xs shadow-md transition-all hover:bg-primary/90 disabled:opacity-60"
             disabled={isLoading}
             type="submit"
           >
             {isLoading ? (
-              <span className="flex items-center gap-2">
-                <span className="size-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                <span>Memproses...</span>
-              </span>
+              <span>Memproses Autentikasi...</span>
             ) : mode === "login" ? (
               <>
                 <KeyRound size={14} />
@@ -328,15 +401,14 @@ export function AuthGate({ onBypassLocal }: AuthGateProps) {
           </button>
         </form>
 
-        {/* Quick Test Accounts for instant verification */}
-        <div className="mt-5 rounded-xl border border-border/70 bg-muted/30 p-3">
+        {/* Quick Testing Accounts Section */}
+        <div className="mt-5 rounded-xl border border-border/70 bg-muted/20 p-3">
           <div className="mb-2 flex items-center justify-between">
-            <span className="flex items-center gap-1 font-semibold text-[11px] text-foreground">
-              <Shield size={12} className="text-primary" />
-              <span>Akun Uji Coba Cepat (1-Klik)</span>
+            <span className="font-semibold text-[11px] text-muted-foreground">
+              Akun Uji Coba Cepat
             </span>
             <span className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[9px] text-primary">
-              Pass: Password@123
+              Dev Mode
             </span>
           </div>
           <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
@@ -394,7 +466,7 @@ export function AuthGate({ onBypassLocal }: AuthGateProps) {
         </div>
       </div>
 
-      {/* OAuth Email/Name Confirmation Modal */}
+      {/* OAuth Email/Name Confirmation Modal (Fallback / Development) */}
       {oauthDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
           <div className="w-full max-w-sm rounded-xl border border-border bg-card p-5 shadow-2xl">

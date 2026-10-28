@@ -8,12 +8,56 @@ import {
 import { UpdateSourceType, updateElectronApp } from "update-electron-app";
 import { ipcContext } from "@/ipc/context";
 import { IPC_CHANNELS, inDevelopment } from "./constants";
+import {
+  PROTOCOL_NAME,
+  handleProtocolUrl,
+  registerOAuthIpcHandlers,
+  registerProtocolClient,
+} from "./main/oauth";
 import { getBasePath } from "./utils/path";
+
+let mainWindow: BrowserWindow | null = null;
+
+// Register custom deep link protocol: xphpmyadmin://
+registerProtocolClient();
+
+// Ensure single instance lock for deep links
+const isPrimaryInstance = app.requestSingleInstanceLock();
+
+if (!isPrimaryInstance) {
+  app.quit();
+} else {
+  app.on("second-instance", (_event, commandLine) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+
+      const urlArg = commandLine.find((arg) =>
+        arg.startsWith(`${PROTOCOL_NAME}://`)
+      );
+      if (urlArg) {
+        handleProtocolUrl(urlArg, mainWindow);
+      }
+    }
+  });
+
+  // macOS protocol open-url handler
+  app.on("open-url", (event, url) => {
+    event.preventDefault();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+      handleProtocolUrl(url, mainWindow);
+    }
+  });
+}
 
 function createWindow() {
   const basePath = getBasePath();
   const preload = path.join(basePath, "preload.js");
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     backgroundColor: "#07080a",
     height: 780,
     minHeight: 520,
@@ -41,6 +85,20 @@ function createWindow() {
       path.join(basePath, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
     );
   }
+
+  // Check launch argv for custom protocol deep link
+  const urlArg = process.argv.find((arg) =>
+    arg.startsWith(`${PROTOCOL_NAME}://`)
+  );
+  if (urlArg) {
+    mainWindow.webContents.once("did-finish-load", () => {
+      handleProtocolUrl(urlArg, mainWindow);
+    });
+  }
+
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
 }
 
 async function installExtensions() {
@@ -76,6 +134,7 @@ app.whenReady().then(async () => {
   try {
     nativeTheme.themeSource = "dark";
     createWindow();
+    registerOAuthIpcHandlers(() => mainWindow);
     await installExtensions();
     checkForUpdates();
     await setupORPC();

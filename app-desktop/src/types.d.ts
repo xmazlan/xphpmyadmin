@@ -16,3 +16,16 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env?: ImportMetaEnv;
 }
+
+interface ElectronOAuthApi {
+  onOAuthCallback: (
+    callback: (data: { provider?: string; token: string; user: any }) => void
+  ) => () => void;
+  startOAuth: (
+    provider: string
+  ) => Promise<{ error?: string; port?: number; success: boolean }>;
+}
+
+interface Window {
+  electronOAuth?: ElectronOAuthApi;
+}
