@@ -2,11 +2,13 @@ export type WorkspaceTabId =
   | "databases"
   | "structure"
   | "sql"
+  | "search"
   | "operations"
   | "status"
   | "users"
   | "export"
   | "import"
+  | "routines"
   | "variables"
   | "charsets"
   | "engines"
@@ -104,4 +106,28 @@ export interface ImportFileInfo {
   fileName: string;
   filePath: string;
   fileSize: number;
+}
+
+export interface RoutineItem {
+  comment?: string;
+  created?: string;
+  definer?: string;
+  modified?: string;
+  name: string;
+  securityType?: string;
+  type: "PROCEDURE" | "FUNCTION";
+}
+
+export interface TriggerItem {
+  actionOrder?: number;
+  event: string;
+  name: string;
+  statement?: string;
+  table: string;
+  timing: string;
+}
+
+export interface DatabaseSearchResult {
+  count: number;
+  table: string;
 }

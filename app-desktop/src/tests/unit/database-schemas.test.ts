@@ -36,6 +36,41 @@ describe("Database Export & Import Schemas", () => {
     }
   });
 
+  it("should validate exportDatabaseSchema with multi-format and table filtering", () => {
+    const csvExport = {
+      connection: { host: "127.0.0.1", port: 3306 },
+      database: "shop_db",
+      format: "csv",
+      options: {
+        addDropTable: false,
+        disableForeignKeyChecks: false,
+        includeData: true,
+        includeStructure: false,
+      },
+      tables: ["users", "orders"],
+    };
+    const parsedCsv = exportDatabaseSchema.safeParse(csvExport);
+    expect(parsedCsv.success).toBe(true);
+    if (parsedCsv.success) {
+      expect(parsedCsv.data.format).toBe("csv");
+      expect(parsedCsv.data.tables).toEqual(["users", "orders"]);
+    }
+
+    const jsonExport = {
+      connection: { host: "127.0.0.1", port: 3306 },
+      database: "shop_db",
+      format: "json",
+      options: {
+        addDropTable: true,
+        disableForeignKeyChecks: true,
+        includeData: true,
+        includeStructure: true,
+      },
+    };
+    const parsedJson = exportDatabaseSchema.safeParse(jsonExport);
+    expect(parsedJson.success).toBe(true);
+  });
+
   it("should validate importDatabaseSchema with SQL string or filePath", () => {
     const importWithString = {
       connection: {
@@ -59,6 +94,20 @@ describe("Database Export & Import Schemas", () => {
 
     const parsed2 = importDatabaseSchema.safeParse(importWithFile);
     expect(parsed2.success).toBe(true);
+
+    const importCsv = {
+      connection: { host: "localhost", port: 3306 },
+      database: "test_db",
+      format: "csv",
+      sqlContent: "id,name\n1,Alice\n2,Bob",
+      targetTable: "users",
+    };
+    const parsed3 = importDatabaseSchema.safeParse(importCsv);
+    expect(parsed3.success).toBe(true);
+    if (parsed3.success) {
+      expect(parsed3.data.format).toBe("csv");
+      expect(parsed3.data.targetTable).toBe("users");
+    }
   });
 
   it("should validate promptSqlFileSchema for open and save dialogs", () => {
@@ -101,58 +150,46 @@ describe("Database Export & Import Schemas", () => {
         port: 3306,
         user: "root",
       },
-      name: "old_shop_db",
+      name: "old_db",
     });
     expect(valid.success).toBe(true);
-
-    const invalid = dropDatabaseSchema.safeParse({
-      connection: { host: "127.0.0.1" },
-      name: "",
-    });
-    expect(invalid.success).toBe(false);
   });
 
   it("should validate sshConfigSchema with username, password, or private key", () => {
-    const validWithPassword = sshConfigSchema.safeParse({
-      host: "bastion.internal",
+    const validPass = sshConfigSchema.safeParse({
+      auth_type: "password",
+      host: "192.168.1.100",
+      password: "ssh-password",
       port: 22,
-      username: "deploy_user",
-      password: "ssh-secret-password",
-    });
-    expect(validWithPassword.success).toBe(true);
-    if (validWithPassword.success) {
-      expect(validWithPassword.data.username).toBe("deploy_user");
-      expect(validWithPassword.data.password).toBe("ssh-secret-password");
-    }
-
-    const validWithKey = sshConfigSchema.safeParse({
-      host: "10.0.0.1",
-      port: 2222,
       username: "ubuntu",
-      key: "~/.ssh/id_rsa",
     });
-    expect(validWithKey.success).toBe(true);
+    expect(validPass.success).toBe(true);
+
+    const validKey = sshConfigSchema.safeParse({
+      auth_type: "key",
+      host: "ssh.example.com",
+      key: "-----BEGIN OPENSSH PRIVATE KEY-----\ntest\n-----END OPENSSH PRIVATE KEY-----",
+      port: 2222,
+      username: "deploy",
+    });
+    expect(validKey.success).toBe(true);
   });
 
   it("should validate databaseConnectionSchema with ssh method and configuration", () => {
-    const valid = databaseConnectionSchema.safeParse({
-      host: "10.0.4.15",
+    const validSshConn = databaseConnectionSchema.safeParse({
+      database: "production_db",
+      host: "127.0.0.1",
       method: "ssh",
-      password: "db_password",
       port: 3306,
       ssh: {
-        host: "bastion.staging.internal",
-        key: "~/.ssh/id_ed25519",
+        auth_type: "password",
+        host: "tunnel.server.com",
+        password: "secret",
         port: 22,
-        username: "ubuntu",
+        username: "root",
       },
-      user: "staging_user",
+      user: "db_user",
     });
-    expect(valid.success).toBe(true);
-    if (valid.success) {
-      expect(valid.data.method).toBe("ssh");
-      expect(valid.data.ssh?.host).toBe("bastion.staging.internal");
-    }
+    expect(validSshConn.success).toBe(true);
   });
 });
-

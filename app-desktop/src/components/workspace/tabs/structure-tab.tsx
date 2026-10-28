@@ -32,7 +32,8 @@ interface StructureTabProps {
   onExecuteBulkAction: () => void;
   onOpenInsertModal: (tableName: string) => void;
   onRefreshTables: () => void;
-  onSwitchTab: (tabId: "import") => void;
+  onSearchTable?: (tableName: string) => void;
+  onSwitchTab: (tabId: "import" | "export") => void;
   onViewTableStructure: (tableName: string) => void;
   selectedTableCheckboxes: string[];
   setBulkAction: (val: string) => void;
@@ -58,6 +59,7 @@ export function StructureTab({
   onExecuteBulkAction,
   onOpenInsertModal,
   onRefreshTables,
+  onSearchTable,
   onSwitchTab,
   onViewTableStructure,
   selectedTableCheckboxes,
@@ -123,13 +125,13 @@ export function StructureTab({
             size="sm"
           >
             <Plus size={12} />
-            <span className="hidden sm:inline">Buat Tabel</span>
+            <span className="hidden sm:inline">Buat Tabel Baru</span>
           </Button>
           <Button
             className="h-7 border-border bg-muted/40 text-muted-foreground hover:text-foreground"
             onClick={onRefreshTables}
             size="sm"
-            title="Segarkan daftar tabel"
+            title="Segarkan Daftar Tabel"
             variant="outline"
           >
             <RefreshCw size={12} />
@@ -137,29 +139,42 @@ export function StructureTab({
         </div>
       </div>
 
-      {/* Body: Tabel List Structure ala phpMyAdmin */}
-      <div className="flex-1 space-y-4 overflow-auto p-4">
+      {/* Konten Utama Tabel */}
+      <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
         {filteredDisplayTables.length === 0 ? (
-          <div className="space-y-3 rounded-xl border border-border border-dashed bg-card p-8 text-center">
-            <TableIcon className="mx-auto text-muted-foreground/70" size={32} />
-            <div className="space-y-1">
-              <p className="font-semibold text-foreground text-xs">
-                Belum ada tabel pada basis data `{currentSelectedDatabase}`
-              </p>
-              <p className="mx-auto max-w-sm text-[11px] text-muted-foreground">
-                Anda dapat membuat tabel baru menggunakan formulir di bawah atau
-                mengimpor skrip berkas .sql.
-              </p>
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border p-12 text-center">
+            <div className="flex size-12 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground">
+              <TableIcon size={24} />
             </div>
-            <Button
-              className="border-border text-primary text-xs hover:bg-primary/10"
-              onClick={() => onSwitchTab("import")}
-              size="sm"
-              variant="outline"
-            >
-              <FileUp className="mr-1.5" size={12} />
-              Impor Berkas SQL
-            </Button>
+            <h3 className="mt-4 font-semibold text-foreground text-sm">
+              Belum Ada Tabel di Basis Data `{currentSelectedDatabase}`
+            </h3>
+            <p className="mt-1 max-w-sm text-muted-foreground text-xs leading-relaxed">
+              Buat tabel pertama Anda menggunakan formulir di bawah atau pulihkan
+              skema dari berkas cadangan melalui menu Impor.
+            </p>
+            <div className="mt-4 flex items-center gap-2">
+              <Button
+                className="h-8 bg-primary font-semibold text-primary-foreground text-xs hover:bg-primary/90"
+                onClick={() => {
+                  const elem = document.getElementById("create-table-card");
+                  if (elem) elem.scrollIntoView({ behavior: "smooth" });
+                }}
+                size="sm"
+              >
+                <Plus className="mr-1.5" size={13} />
+                Buat Tabel Baru
+              </Button>
+              <Button
+                className="h-8 border-border text-foreground hover:bg-muted"
+                onClick={() => onSwitchTab("import")}
+                size="sm"
+                variant="outline"
+              >
+                <FileUp className="mr-1.5" size={13} />
+                Impor Skrip SQL
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="overflow-hidden rounded-lg border border-border bg-card">
@@ -169,9 +184,9 @@ export function StructureTab({
                   <th className="w-8 px-3 py-2.5 text-center">
                     <input
                       checked={
+                        filteredDisplayTables.length > 0 &&
                         selectedTableCheckboxes.length ===
-                          filteredDisplayTables.length &&
-                        filteredDisplayTables.length > 0
+                          filteredDisplayTables.length
                       }
                       className="cursor-pointer rounded border-border bg-background text-primary"
                       onChange={(e) => {
@@ -186,17 +201,15 @@ export function StructureTab({
                       type="checkbox"
                     />
                   </th>
-                  <th className="px-3 py-2.5 font-semibold">Tabel</th>
+                  <th className="px-3 py-2.5 font-semibold">Nama Tabel</th>
                   <th className="px-3 py-2.5 text-center font-semibold">
-                    Aksi (phpMyAdmin)
+                    Aksi
                   </th>
                   <th className="px-3 py-2.5 text-right font-semibold">
-                    Baris
+                    Jumlah Baris
                   </th>
                   <th className="px-3 py-2.5 font-semibold">Mesin</th>
-                  <th className="px-3 py-2.5 font-semibold">
-                    Penyortiran (Collation)
-                  </th>
+                  <th className="px-3 py-2.5 font-semibold">Collation</th>
                   <th className="px-3 py-2.5 text-right font-semibold">
                     Ukuran
                   </th>
@@ -267,6 +280,16 @@ export function StructureTab({
                           >
                             <Columns className="mr-1" size={10} />
                             Struktur
+                          </Button>
+                          <Button
+                            className="h-6 px-1.5 text-[10px] text-muted-foreground hover:text-foreground"
+                            onClick={() => onSearchTable?.(tbl.name)}
+                            size="sm"
+                            title="Cari di Tabel Ini"
+                            variant="ghost"
+                          >
+                            <Search className="mr-1" size={10} />
+                            Cari
                           </Button>
                           <Button
                             className="h-6 px-1.5 text-[10px] text-amber-500 hover:bg-amber-500/10"
@@ -361,6 +384,10 @@ export function StructureTab({
                   <option value="drop">Hapus Tabel (DROP)</option>
                   <option value="optimize">Optimalkan (OPTIMIZE)</option>
                   <option value="check">Periksa (CHECK)</option>
+                  <option value="analyze">Analisis (ANALYZE)</option>
+                  <option value="repair">Perbaiki (REPAIR)</option>
+                  <option value="checksum">Checksum (CHECKSUM)</option>
+                  <option value="export">Ekspor Terpilih (EXPORT)</option>
                 </select>
                 <Button
                   className="h-7 bg-primary font-semibold text-primary-foreground text-xs hover:bg-primary/90"
@@ -408,45 +435,49 @@ export function StructureTab({
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-4">
             <div className="space-y-1 sm:col-span-2">
               <Label className="text-[11px] text-muted-foreground">
-                Nama Tabel:
+                Nama Tabel Baru:
               </Label>
               <Input
-                className="h-7.5 border-border bg-muted/40 font-mono text-foreground text-xs placeholder:text-muted-foreground/70"
+                className="h-8 border-border bg-background font-mono text-foreground text-xs focus-visible:border-white/30 focus-visible:ring-0"
                 onChange={(e) => setNewTableNameInput(e.target.value)}
-                placeholder="e.g. pelanggan, transaksi, log_kegiatan"
+                placeholder="misal: users, orders, logs..."
                 value={newTableNameInput}
               />
             </div>
             <div className="space-y-1">
               <Label className="text-[11px] text-muted-foreground">
-                Jumlah Kolom:
+                Jumlah Kolom Standar:
               </Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  className="h-7.5 w-20 border-border bg-muted/40 font-mono text-foreground text-xs"
-                  max={50}
-                  min={1}
-                  onChange={(e) =>
-                    setNewTableColumnsInput(Number(e.target.value) || 4)
-                  }
-                  type="number"
-                  value={newTableColumnsInput}
-                />
-                <Button
-                  className="h-7.5 flex-1 bg-emerald-600 font-semibold text-foreground text-xs hover:bg-emerald-500"
-                  disabled={isCreatingTable || !newTableNameInput.trim()}
-                  onClick={onCreateTable}
-                  size="sm"
-                >
-                  <Plus className="mr-1" size={12} />
-                  {isCreatingTable ? "Membuat..." : "Buat Tabel"}
-                </Button>
-              </div>
+              <Input
+                className="h-8 border-border bg-background font-mono text-foreground text-xs focus-visible:border-white/30 focus-visible:ring-0"
+                max={50}
+                min={1}
+                onChange={(e) =>
+                  setNewTableColumnsInput(Number(e.target.value) || 1)
+                }
+                type="number"
+                value={newTableColumnsInput}
+              />
+            </div>
+            <div>
+              <Button
+                className="h-8 w-full bg-primary font-semibold text-primary-foreground text-xs hover:bg-primary/90"
+                disabled={!newTableNameInput.trim() || isCreatingTable}
+                onClick={onCreateTable}
+                size="sm"
+              >
+                <Plus className="mr-1.5" size={13} />
+                {isCreatingTable ? "Membuat..." : "Buat Tabel"}
+              </Button>
             </div>
           </div>
+          <p className="text-[11px] text-muted-foreground/70">
+            Secara default, tabel baru akan diinisialisasi dengan primary key `id`
+            AUTO_INCREMENT dan timestamp `created_at`.
+          </p>
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import path from "node:path";
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, nativeTheme } from "electron";
 import { ipcMain } from "electron/main";
 import {
   installExtension,
@@ -14,9 +14,11 @@ function createWindow() {
   const basePath = getBasePath();
   const preload = path.join(basePath, "preload.js");
   const mainWindow = new BrowserWindow({
+    backgroundColor: "#07080a",
     height: 780,
     minHeight: 520,
     minWidth: 780,
+    title: "xphpMyAdmin Desktop",
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "hidden",
     trafficLightPosition:
       process.platform === "darwin" ? { x: 5, y: 5 } : undefined,
@@ -72,6 +74,7 @@ async function setupORPC() {
 
 app.whenReady().then(async () => {
   try {
+    nativeTheme.themeSource = "dark";
     createWindow();
     await installExtensions();
     checkForUpdates();

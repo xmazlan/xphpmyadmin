@@ -36,6 +36,7 @@ Seluruh AI Agent **WAJIB MENGEKSEKUSI** panduan dari 3 skill inti berikut saat m
    - Runtime desktop adalah **Electron 44 / Node.js 22**.
    - Driver database menggunakan `mysql2/promise` murni (pure JavaScript) untuk menjamin kompatibilitas cross-platform tanpa memerlukan kompilasi native C++ (`node-gyp`).
    - SSH Tunneling menggunakan pustaka `ssh2` murni.
+   - Manajemen paket menggunakan **Yarn** (`yarn.lock`).
 2. **Kriptografi & Password Lifecycle**:
    - Master Key disimpan secara aman pada OS Keychain / DPAPI (`keytar` / `safeStorage`).
    - Kredensial database dienkripsi menggunakan AES-256-GCM.
@@ -56,8 +57,8 @@ Seluruh AI Agent **WAJIB MENGEKSEKUSI** panduan dari 3 skill inti berikut saat m
 
 Sebelum menyelesaikan tugas atau menjawab pengguna, AI Agent **WAJIB MEMASTIKAN**:
 - [x] Antarmuka mematuhi **Raycast Design System** (hairline borders 1px, continuous dark canvas, high-contrast primary CTA).
-- [x] Komponen UI memanfaatkan pustaka `@/components/ui/*` melalui `cn()`.
+- [x] Komponen UI memanfaatkan pustaka `@/components/ui/*` melalui `cn()` .
 - [x] Validasi data dilakukan dengan skema Zod.
-- [x] Tidak ada warning `ERESOLVE` pada dependency npm.
-- [x] Seluruh unit test (`npm test`) lolos dengan status 100% hijau.
+- [x] Tidak ada konflik atau warning dependency pada Yarn (`yarn.lock`).
+- [x] Seluruh unit test (`yarn test`) lolos dengan status 100% hijau.
 - [x] **Activity Sync**: Jika terdapat perubahan yang dirasakan pengguna, buat/perbarui berkas rilis harian di `releases/` dan kirimkan entri kegiatan ke portfolio via API.

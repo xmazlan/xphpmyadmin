@@ -1,8 +1,9 @@
 {
-  "name": "electron-shadcn",
+  "name": "xphpmyadmin-desktop",
   "version": "1.4.1",
   "private": true,
-  "description": "Electron Forge with shadcn-ui (Vite + Typescript)",
+  "packageManager": "yarn@1.22.22",
+  "description": "xphpMyAdmin Desktop — Modern database manager with SSH tunneling for macOS (Apple Silicon & Intel), Windows, and Linux",
   "license": "MIT",
   "author": "ROG <luanroger.dev@gmail.com>",
   "main": ".vite/build/main.js",
@@ -13,17 +14,29 @@
     "make": "electron-forge make",
     "package": "electron-forge package",
     "publish": "electron-forge publish",
-    "start": "electron-forge start",
+    "start": "electron-forge start -- --no-sandbox",
     "test": "vitest run",
     "test:all": "vitest run && playwright test",
     "test:e2e": "playwright test",
     "test:unit": "vitest",
-    "test:watch": "vitest watch"
+    "test:watch": "vitest watch",
+    "package:mac": "electron-forge package --platform=darwin --arch=arm64",
+    "package:mac-intel": "electron-forge package --platform=darwin --arch=x64",
+    "package:win": "electron-forge package --platform=win32 --arch=x64",
+    "package:linux": "electron-forge package --platform=linux --arch=x64",
+    "package:linux-arm": "electron-forge package --platform=linux --arch=arm64",
+    "package:all": "yarn package:mac && yarn package:mac-intel && yarn package:win && yarn package:linux && yarn package:linux-arm",
+    "make:mac": "electron-forge make --platform=darwin --arch=arm64",
+    "make:win": "electron-forge make --platform=win32 --arch=x64",
+    "make:linux": "electron-forge make --platform=linux --arch=x64"
   },
   "overrides": {
     "@electron-forge/plugin-fuses": {
       "@electron/fuses": "^2"
     }
+  },
+  "resolutions": {
+    "@electron/fuses": "^2"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -67,9 +80,10 @@
   },
   "devDependencies": {
     "@babel/core": "^7.26.9",
-    "@biomejs/biome": "^2.5.14",
+    "@biomejs/biome": "2.5.15",
     "@electron-forge/cli": "^7.11.2",
     "@electron-forge/maker-deb": "^7.11.2",
+    "@electron-forge/maker-dmg": "^7.11.2",
     "@electron-forge/maker-rpm": "^7.11.2",
     "@electron-forge/maker-squirrel": "^7.11.2",
     "@electron-forge/maker-zip": "^7.11.2",
@@ -82,6 +96,7 @@
     "@playwright/test": "^1.63.0",
     "@rolldown/plugin-babel": "^0.2.4",
     "@tanstack/router-plugin": "^1.168.40",
+    "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",
@@ -108,5 +123,5 @@
     "vite": "^8.3.2",
     "vitest": "^5.0.5"
   },
-  "productName": "electron-shadcn"
+  "productName": "xphpMyAdmin Desktop"
 }

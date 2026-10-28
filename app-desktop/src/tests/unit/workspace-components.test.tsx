@@ -5,6 +5,11 @@ import { ConnectionInspector } from "@/components/workspace/connection/connectio
 import { ConnectionSidebar } from "@/components/workspace/connection/connection-sidebar";
 import { INITIAL_PROFILES } from "@/components/workspace/constants";
 import { ExplorerSidebar } from "@/components/workspace/explorer/explorer-sidebar";
+import { ExportTab } from "@/components/workspace/tabs/export-tab";
+import { ImportTab } from "@/components/workspace/tabs/import-tab";
+import { OperationsTab } from "@/components/workspace/tabs/operations-tab";
+import { RoutinesTab } from "@/components/workspace/tabs/routines-tab";
+import { SearchTab } from "@/components/workspace/tabs/search-tab";
 import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import { WorkspaceNav } from "@/components/workspace/workspace-nav";
 
@@ -129,7 +134,7 @@ describe("Workspace Components", () => {
     expect(getByText("Ganti Host")).toBeInTheDocument();
   });
 
-  it("renders WorkspaceNav tabs correctly", () => {
+  it("renders WorkspaceNav tabs correctly including Search and Routines", () => {
     const { getByText } = render(
       <WorkspaceNav
         activeConnectedProfile={INITIAL_PROFILES[0]}
@@ -146,10 +151,137 @@ describe("Workspace Components", () => {
     expect(getByText("Databases")).toBeInTheDocument();
     expect(getByText("Structure (test_db)")).toBeInTheDocument();
     expect(getByText("SQL")).toBeInTheDocument();
+    expect(getByText("Search")).toBeInTheDocument();
     expect(getByText("Operations")).toBeInTheDocument();
-    expect(getByText("Status")).toBeInTheDocument();
-    expect(getByText("User accounts")).toBeInTheDocument();
     expect(getByText("Export")).toBeInTheDocument();
     expect(getByText("Import")).toBeInTheDocument();
+    expect(getByText("Routines")).toBeInTheDocument();
+    expect(getByText("Status")).toBeInTheDocument();
+    expect(getByText("User accounts")).toBeInTheDocument();
+  });
+
+  it("renders ExportTab with multi-format and custom table selection", () => {
+    const { getByText } = render(
+      <ExportTab
+        availableTables={[{ name: "users", rows: 5, size: "16 KB" }]}
+        currentSelectedDatabase="test_db"
+        exportAddDropTable={true}
+        exportDisableFk={true}
+        exportFormat="sql"
+        exportMethod="custom"
+        exportMode="full"
+        exportPreviewSql=""
+        exportSelectedTables={["users"]}
+        isExporting={false}
+        onExecuteExport={vi.fn()}
+        setExportAddDropTable={vi.fn()}
+        setExportDisableFk={vi.fn()}
+        setExportFormat={vi.fn()}
+        setExportMethod={vi.fn()}
+        setExportMode={vi.fn()}
+        setExportSelectedTables={vi.fn()}
+      />
+    );
+
+    expect(getByText(/Ekspor Basis Data/i)).toBeInTheDocument();
+    expect(getByText("SQL Dump")).toBeInTheDocument();
+    expect(getByText("CSV")).toBeInTheDocument();
+    expect(getByText("JSON")).toBeInTheDocument();
+    expect(getByText("XML")).toBeInTheDocument();
+    expect(getByText("Pilih Tabel yang Diekspor")).toBeInTheDocument();
+  });
+
+  it("renders ImportTab correctly", () => {
+    const { getByText } = render(
+      <ImportTab
+        availableDatabases={["test_db"]}
+        availableTables={[{ name: "users", rows: 5, size: "16 KB" }]}
+        currentSelectedDatabase="test_db"
+        importSqlContent=""
+        importTab="file"
+        isImporting={false}
+        onExecuteImport={vi.fn()}
+        onPickImportFile={vi.fn()}
+        onProcessChosenFile={vi.fn()}
+        onSelectDatabase={vi.fn()}
+        selectedImportFile={null}
+        setCurrentSelectedDatabase={vi.fn()}
+        setImportSqlContent={vi.fn()}
+        setImportTab={vi.fn()}
+        setSelectedImportFile={vi.fn()}
+      />
+    );
+
+    expect(getByText("Pilih Berkas (.sql, .csv, .json)")).toBeInTheDocument();
+    expect(getByText("Tempel Script SQL Mentah")).toBeInTheDocument();
+    expect(getByText("Basis Data Target:")).toBeInTheDocument();
+  });
+
+  it("renders OperationsTab and SearchTab correctly", () => {
+    const { getByText: getOpText } = render(
+      <OperationsTab
+        availableTables={[{ name: "customers", rows: 12, size: "32 KB" }]}
+        currentSelectedDatabase="crm_db"
+        newDbCollation="utf8mb4_general_ci"
+        onChangeCollation={vi.fn()}
+        onDropDatabase={vi.fn()}
+        setNewDbCollation={vi.fn()}
+      />
+    );
+
+    expect(
+      getOpText("Penyortiran Karakter (Collation)")
+    ).toBeInTheDocument();
+    expect(getOpText("Ganti Nama Basis Data ke:")).toBeInTheDocument();
+    expect(
+      getOpText("Salin Basis Data (Copy Database)")
+    ).toBeInTheDocument();
+
+    const { getByText: getSearchText } = render(
+      <SearchTab
+        availableTables={[{ name: "customers", rows: 12, size: "32 KB" }]}
+        currentSelectedDatabase="crm_db"
+        isSearching={false}
+        onBrowseTableMatches={vi.fn()}
+        onExecuteSearch={vi.fn()}
+        searchResults={[]}
+      />
+    );
+
+    expect(
+      getSearchText("Kata Kunci / Nilai yang Dicari:")
+    ).toBeInTheDocument();
+    expect(getSearchText("Mengandung Kata (LIKE)")).toBeInTheDocument();
+  });
+
+  it("renders RoutinesTab correctly", () => {
+    const { getByText } = render(
+      <RoutinesTab
+        currentSelectedDatabase="store_db"
+        isLoadingRoutines={false}
+        onLoadRoutines={vi.fn()}
+        routinesData={[
+          {
+            definer: "root@localhost",
+            name: "CalculateTotal",
+            type: "PROCEDURE",
+          },
+        ]}
+        triggersData={[
+          {
+            event: "INSERT",
+            name: "before_user_insert",
+            table: "users",
+            timing: "BEFORE",
+          },
+        ]}
+      />
+    );
+
+    expect(getByText("Prosedur & Fungsi (1)")).toBeInTheDocument();
+    expect(
+      getByText("Pemicu Database / Triggers (1)")
+    ).toBeInTheDocument();
+    expect(getByText("CalculateTotal")).toBeInTheDocument();
   });
 });

@@ -7,3 +7,12 @@ declare const MAIN_WINDOW_VITE_NAME: string;
 declare module 'lucide-react';
 declare module '@tanstack/router-plugin/vite';
 
+interface ImportMetaEnv {
+  readonly VITE_BACKEND_URL?: string;
+  readonly VITE_CLOUD_API_URL?: string;
+  readonly VITE_CLOUD_AUTH_URL?: string;
+}
+
+interface ImportMeta {
+  readonly env?: ImportMetaEnv;
+}

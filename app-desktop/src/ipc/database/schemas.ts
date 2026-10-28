@@ -36,25 +36,34 @@ export const exportDatabaseSchema = z.object({
   connection: databaseConnectionSchema,
   database: z.string(),
   filePath: z.string().optional(),
+  format: z.enum(["sql", "csv", "json", "xml"]).default("sql").optional(),
   options: z.object({
     addDropTable: z.boolean().default(true),
     disableForeignKeyChecks: z.boolean().default(true),
     includeData: z.boolean().default(true),
     includeStructure: z.boolean().default(true),
   }),
+  tables: z.array(z.string()).optional(),
 });
 export type ExportDatabaseInput = z.infer<typeof exportDatabaseSchema>;
 
 export const importDatabaseSchema = z.object({
   connection: databaseConnectionSchema,
+  csvDelimiter: z.string().default(",").optional(),
   database: z.string().optional(),
   filePath: z.string().optional(),
+  format: z.enum(["sql", "csv", "json", "xml"]).default("sql").optional(),
   sqlContent: z.string().optional(),
+  targetTable: z.string().optional(),
 });
 export type ImportDatabaseInput = z.infer<typeof importDatabaseSchema>;
 
 export const promptSqlFileSchema = z.object({
   defaultFileName: z.string().optional(),
+  format: z
+    .enum(["sql", "csv", "json", "xml", "all"])
+    .default("all")
+    .optional(),
   type: z.enum(["open", "save"]),
 });
 export type PromptSqlFileInput = z.infer<typeof promptSqlFileSchema>;
@@ -71,4 +80,3 @@ export const dropDatabaseSchema = z.object({
   name: z.string().min(1),
 });
 export type DropDatabaseInput = z.infer<typeof dropDatabaseSchema>;
-

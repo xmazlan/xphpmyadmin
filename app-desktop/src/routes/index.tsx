@@ -11,6 +11,7 @@ import { ConnectionInspector } from "@/components/workspace/connection/connectio
 import { ConnectionSidebar } from "@/components/workspace/connection/connection-sidebar";
 import { ConfirmDialog } from "@/components/workspace/modals/confirm-dialog";
 import { useConnection } from "@/context/connection-context";
+import { useCloudSync } from "@/context/cloud-sync-context";
 import {
   type DiagnosticStage,
   type Profile,
@@ -31,6 +32,11 @@ export function HomePage() {
     setProfiles,
     setSavedPasswords,
   } = useConnection();
+  const { recordAction } = useCloudSync();
+
+  // State navigasi sidebar & filter metode
+  const [activeNav, setActiveNav] = useState<string>("hosts");
+  const [methodFilter, setMethodFilter] = useState<"all" | "direct" | "ssh">("all");
 
   // State profil & daftar server
   const [selectedId, setSelectedId] = useState<string>(profiles[0]?.id || "");
@@ -72,6 +78,41 @@ export function HomePage() {
     }
   };
 
+  const handleSelectNav = (sectionId: string) => {
+    setActiveNav(sectionId);
+    if (sectionId === "tunnels") {
+      setMethodFilter("ssh");
+      const sshProfile = profiles.find((p) => p.method === "ssh");
+      if (sshProfile) {
+        handleSelectHost(sshProfile);
+      }
+      toast.info("Menu SSH Tunnels Aktif", {
+        description: "Menampilkan koneksi database via terowongan SSH VPS.",
+      });
+    } else if (sectionId === "hosts") {
+      setMethodFilter("all");
+    } else if (sectionId === "keychain") {
+      toast.info("Keychain Password Vault", {
+        description: "Password disimpan aman menggunakan enkripsi AES-256.",
+      });
+    } else if (sectionId === "settings") {
+      toast.info("Pengaturan Koneksi", {
+        description: "Gunakan panel inspector untuk mengatur parameter database dan SSH.",
+      });
+    } else {
+      toast.info(`Bagian ${sectionId} dipilih`);
+    }
+  };
+
+  const handleMethodFilterChange = (filter: "all" | "direct" | "ssh") => {
+    setMethodFilter(filter);
+    if (filter === "ssh") {
+      setActiveNav("tunnels");
+    } else if (filter === "all" || filter === "direct") {
+      setActiveNav("hosts");
+    }
+  };
+
   const handleToggleFavorite = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setProfiles((prev) =>
@@ -87,6 +128,15 @@ export function HomePage() {
     () =>
       profiles
         .filter((p) => {
+          if (activeNav === "tunnels" || methodFilter === "ssh") {
+            if (p.method !== "ssh") {
+              return false;
+            }
+          } else if (methodFilter === "direct") {
+            if (p.method === "ssh") {
+              return false;
+            }
+          }
           if (favoritesOnly && !p.favorite) {
             return false;
           }
@@ -97,7 +147,8 @@ export function HomePage() {
           return (
             p.name.toLowerCase().includes(q) ||
             p.host.toLowerCase().includes(q) ||
-            p.username.toLowerCase().includes(q)
+            p.username.toLowerCase().includes(q) ||
+            (p.ssh?.host && p.ssh.host.toLowerCase().includes(q))
           );
         })
         .sort((a, b) => {
@@ -118,7 +169,7 @@ export function HomePage() {
             new Date(a.last_used_at).getTime()
           );
         }),
-    [profiles, searchQuery, favoritesOnly, sortBy]
+    [profiles, searchQuery, favoritesOnly, sortBy, activeNav, methodFilter]
   );
 
   const handleAddNewHost = () => {
@@ -142,9 +193,58 @@ export function HomePage() {
       username: "root",
     };
     setProfiles([newHost, ...profiles]);
+    recordAction({
+      action: "profile_create",
+      category: "connection",
+      details: { host: newHost.host, port: newHost.port, method: "direct" },
+      profileId: newHost.id,
+      profileName: newHost.name,
+    });
     handleSelectHost(newHost);
     toast.info("Draft koneksi baru dibuat", {
       description: "Lengkapi parameter lalu simpan.",
+    });
+  };
+
+  const handleAddNewSshTunnel = () => {
+    const newSshHost: Profile = {
+      connection_revision: 1,
+      created_at: new Date().toISOString(),
+      database: "",
+      db_type: "auto",
+      environment: "Production",
+      favorite: false,
+      has_saved_password: false,
+      host: "127.0.0.1",
+      id: crypto.randomUUID(),
+      last_used_at: null,
+      method: "ssh",
+      name: "VPS MySQL via SSH Tunnel",
+      port: 3306,
+      ssh: {
+        auth_type: "password",
+        host: "",
+        key: "",
+        password: "",
+        port: 22,
+        username: "root",
+      },
+      tls: { ca: null, cert: null, enabled: false, key: null, verify: true },
+      updated_at: new Date().toISOString(),
+      username: "root",
+    };
+    setProfiles([newSshHost, ...profiles]);
+    recordAction({
+      action: "profile_create",
+      category: "connection",
+      details: { host: newSshHost.host, port: newSshHost.port, method: "ssh" },
+      profileId: newSshHost.id,
+      profileName: newSshHost.name,
+    });
+    handleSelectHost(newSshHost);
+    setIsInspectorOpen(true);
+    toast.info("Draft SSH Tunnel Baru Dibuat", {
+      description: "Masukkan IP publik VPS dan kredensial SSH pada panel sebelah kanan.",
     });
   };
 
@@ -159,6 +259,13 @@ export function HomePage() {
     const idToDelete = deleteTargetProfile.id;
     const remaining = profiles.filter((p) => p.id !== idToDelete);
     setProfiles(remaining);
+    recordAction({
+      action: "profile_delete",
+      category: "connection",
+      details: { host: deleteTargetProfile.host },
+      profileId: deleteTargetProfile.id,
+      profileName: deleteTargetProfile.name,
+    });
     setSavedPasswords((prev) => {
       const next = { ...prev };
       delete next[idToDelete];
@@ -381,7 +488,9 @@ export function HomePage() {
 
   const handleInspectSshKey = async () => {
     if (!editForm.ssh?.host) {
-      toast.error("Host SSH belum diisi");
+      toast.error("Host SSH belum diisi", {
+        description: "Masukkan IP atau hostname VPS pada kolom SSH Host.",
+      });
       return;
     }
     toast.info("Memindai Host Key SSH...", {
@@ -475,14 +584,21 @@ export function HomePage() {
 
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden">
-      <ConnectionSidebar isSidebarCollapsed={isSidebarCollapsed} />
+      <ConnectionSidebar
+        activeSection={activeNav}
+        isSidebarCollapsed={isSidebarCollapsed}
+        onSelectSection={handleSelectNav}
+      />
 
       <ConnectionGrid
         favoritesOnly={favoritesOnly}
         filteredProfiles={filteredProfiles}
         isInspectorOpen={isInspectorOpen}
+        methodFilter={methodFilter}
         onAddNewHost={handleAddNewHost}
+        onAddNewSshTunnel={handleAddNewSshTunnel}
         onDeleteHost={handleDeleteHost}
+        onMethodFilterChange={handleMethodFilterChange}
         onSelectHost={handleSelectHost}
         onSortByChange={setSortBy}
         onToggleFavorite={handleToggleFavorite}
@@ -536,8 +652,7 @@ export function HomePage() {
         isOpen={!!deleteTargetProfile}
         onCancel={() => setDeleteTargetProfile(null)}
         onConfirm={handleConfirmDeleteHost}
-        title="Konfirmasi Hapus Koneksi Host"
-        variant="destructive"
+        title="Konfirmasi Penghapusan Koneksi"
       />
     </div>
   );

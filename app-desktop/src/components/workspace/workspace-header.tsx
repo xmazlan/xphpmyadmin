@@ -1,4 +1,4 @@
-import { Search, Sparkles, X } from "lucide-react";
+import { Cloud, Search, Sparkles, X } from "lucide-react";
 import type React from "react";
 import ToggleTheme from "@/components/toggle-theme";
 import { cn } from "@/utils/tailwind";
@@ -9,9 +9,11 @@ interface WorkspaceHeaderProps {
   activeTabs: ActiveTabItem[];
   isSidebarCollapsed: boolean;
   onCloseTab: (tabId: string, e: React.MouseEvent) => void;
+  onOpenCloudSync?: () => void;
   onSearchChange: (query: string) => void;
   onSelectTab: (tabId: string) => void;
   onToggleSidebar: () => void;
+  pendingSyncCount?: number;
   searchQuery: string;
 }
 
@@ -27,9 +29,11 @@ export function WorkspaceHeader({
   activeTabs,
   isSidebarCollapsed,
   onCloseTab,
+  onOpenCloudSync,
   onSearchChange,
   onSelectTab,
   onToggleSidebar,
+  pendingSyncCount = 0,
   searchQuery,
 }: WorkspaceHeaderProps) {
   return (
@@ -91,7 +95,7 @@ export function WorkspaceHeader({
         })}
       </div>
 
-      {/* Right side: Omni-search + Theme */}
+      {/* Right side: Omni-search + Cloud Sync + Theme */}
       <div className="flex shrink-0 items-center gap-2">
         <div className="relative hidden w-36 sm:w-48 md:block">
           <Search
@@ -106,6 +110,24 @@ export function WorkspaceHeader({
             value={searchQuery}
           />
         </div>
+
+        {/* Cloud Sync Button */}
+        {onOpenCloudSync && (
+          <button
+            className="relative flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            onClick={onOpenCloudSync}
+            title="Cloud Sync & Jurnal Audit"
+            type="button"
+          >
+            <Cloud size={14} />
+            {pendingSyncCount > 0 && (
+              <span className="-top-1 -right-1 absolute flex size-3.5 items-center justify-center rounded-full bg-amber-500 font-bold font-mono text-[9px] text-black shadow-xs">
+                {pendingSyncCount > 9 ? "9+" : pendingSyncCount}
+              </span>
+            )}
+          </button>
+        )}
+
         <ToggleTheme />
       </div>
     </header>

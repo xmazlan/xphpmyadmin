@@ -1,3 +1,4 @@
+// @ts-expect-error - TanStack router React 19 JSX types compatibility
 import { RouterProvider } from "@tanstack/react-router";
 import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
@@ -27,9 +28,7 @@ const root = createRoot(container);
 root.render(
   <React.StrictMode>
     <TooltipProvider>
-      <TooltipProvider>
-        <App />
-      </TooltipProvider>
+      <App />
     </TooltipProvider>
   </React.StrictMode>
 );

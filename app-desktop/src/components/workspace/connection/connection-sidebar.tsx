@@ -11,20 +11,24 @@ import ToggleTheme from "@/components/toggle-theme";
 import { cn } from "@/utils/tailwind";
 
 interface ConnectionSidebarProps {
+  activeSection?: string;
   isSidebarCollapsed: boolean;
+  onSelectSection?: (id: string) => void;
 }
 
 const NAV_ITEMS = [
-  { active: true, icon: Server, id: "hosts", label: "Koneksi (Hosts)" },
-  { active: false, icon: Key, id: "keychain", label: "Keychain" },
-  { active: false, icon: Terminal, id: "tunnels", label: "SSH Tunnels" },
-  { active: false, icon: FileCode2, id: "snippets", label: "SQL Snippets" },
-  { active: false, icon: ShieldCheck, id: "known", label: "Known Hosts" },
-  { active: false, icon: Clock, id: "backup", label: "Backup & Logs" },
+  { icon: Server, id: "hosts", label: "Koneksi (Hosts)" },
+  { icon: Terminal, id: "tunnels", label: "SSH Tunnels" },
+  { icon: Key, id: "keychain", label: "Keychain" },
+  { icon: FileCode2, id: "snippets", label: "SQL Snippets" },
+  { icon: ShieldCheck, id: "known", label: "Known Hosts" },
+  { icon: Clock, id: "backup", label: "Backup & Logs" },
 ];
 
 export function ConnectionSidebar({
+  activeSection = "hosts",
   isSidebarCollapsed,
+  onSelectSection,
 }: ConnectionSidebarProps) {
   return (
     <aside
@@ -36,21 +40,26 @@ export function ConnectionSidebar({
       <div className="flex w-full flex-col gap-1">
         {NAV_ITEMS.map((nav) => {
           const Icon = nav.icon;
+          const isActive = activeSection === nav.id;
           return (
             <button
               className={cn(
-                "flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left font-medium text-xs transition-colors",
-                nav.active
+                "flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left font-medium text-xs transition-colors",
+                isActive
                   ? "border border-border bg-accent font-semibold text-accent-foreground shadow-xs"
                   : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
               )}
               key={nav.id}
+              onClick={() => onSelectSection?.(nav.id)}
+              title={nav.label}
               type="button"
             >
               <Icon
                 className={
-                  nav.active
-                    ? "shrink-0 text-primary"
+                  isActive
+                    ? nav.id === "tunnels"
+                      ? "shrink-0 text-purple-400"
+                      : "shrink-0 text-primary"
                     : "shrink-0 text-muted-foreground/70"
                 }
                 size={14}
@@ -71,7 +80,8 @@ export function ConnectionSidebar({
           <ToggleTheme showLabel />
         )}
         <button
-          className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-muted-foreground text-xs hover:bg-muted/40 hover:text-foreground"
+          className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-muted-foreground text-xs hover:bg-muted/40 hover:text-foreground"
+          onClick={() => onSelectSection?.("settings")}
           type="button"
         >
           <Settings className="shrink-0" size={14} />

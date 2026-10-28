@@ -133,17 +133,17 @@ toast.success("Koneksi SSH berhasil terhubung ke server produksi", {
 
 ## 4. Prosedur Penambahan Komponen Baru
 
-Jika di masa mendatang diperlukan penambahan variasi komponen dari registry shadcn, **AI Agent WAJIB menggunakan `npm`**:
+Jika di masa mendatang diperlukan penambahan variasi komponen dari registry shadcn, gunakan CLI shadcn:
 
 ```bash
 # Menambah komponen tertentu:
-npm dlx shadcn@latest add <component-name>
+npx shadcn@latest add <component-name>
 
 # Contoh:
-npm dlx shadcn@latest add dropdown-menu
+npx shadcn@latest add dropdown-menu
 ```
 
-> **Catatan Paket Manajer**: Repositori `Apps` menggunakan **`npm`** (bukan `pnpm`). Jangan pernah menjalankan perintah `pnpm dlx` atau membuat `pnpm-workspace.yaml`.
+> **Catatan Paket Manajer**: Repositori `app-desktop` menggunakan **`yarn`** (`yarn.lock`). Untuk menambahkan dependensi gunakan `yarn add` / `yarn add -D`.
 
 ---
 
@@ -153,4 +153,3 @@ Sebelum menyelesaikan tugas yang berkaitan dengan frontend/UI, pastikan:
 - [ ] Modal/dialog menggunakan `<Dialog>` dari `@/components/ui/dialog`.
 - [ ] Seluruh input teks, dropdown, dan form controls menggunakan komponen `@/components/ui/*`.
 - [ ] Warna selaras dengan palet Midnight Navy Termius (tidak ada elemen yang terpotong atau berwarna putih mencolok).
-- [ ] Class utilitas dikombinasikan secara aman menggunakan `cn(...)`.

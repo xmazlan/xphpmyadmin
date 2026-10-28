@@ -7,11 +7,13 @@ import {
   FileUp,
   Layers,
   PanelLeft,
+  Search,
   Server,
   Sliders,
   SlidersHorizontal,
   Table as TableIcon,
   Users,
+  Workflow,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,11 +52,13 @@ export function WorkspaceNav({
         : "Structure",
     },
     { icon: Code2, id: "sql" as WorkspaceTabId, label: "SQL" },
+    { icon: Search, id: "search" as WorkspaceTabId, label: "Search" },
     { icon: Sliders, id: "operations" as WorkspaceTabId, label: "Operations" },
-    { icon: Activity, id: "status" as WorkspaceTabId, label: "Status" },
-    { icon: Users, id: "users" as WorkspaceTabId, label: "User accounts" },
     { icon: FileDown, id: "export" as WorkspaceTabId, label: "Export" },
     { icon: FileUp, id: "import" as WorkspaceTabId, label: "Import" },
+    { icon: Workflow, id: "routines" as WorkspaceTabId, label: "Routines" },
+    { icon: Activity, id: "status" as WorkspaceTabId, label: "Status" },
+    { icon: Users, id: "users" as WorkspaceTabId, label: "User accounts" },
     {
       icon: SlidersHorizontal,
       id: "variables" as WorkspaceTabId,
@@ -119,10 +123,10 @@ export function WorkspaceNav({
           return (
             <button
               className={cn(
-                "flex shrink-0 cursor-pointer select-none items-center gap-1.5 border-b-2 px-3 py-2 font-medium text-xs transition-all",
+                "flex h-9 shrink-0 items-center gap-1.5 border-b-2 px-3 font-medium text-xs transition-colors",
                 isActive
-                  ? "border-primary bg-accent/60 font-semibold text-foreground"
-                  : "border-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                  ? "border-primary bg-accent/40 font-semibold text-primary"
+                  : "border-transparent text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground"
               )}
               key={tab.id}
               onClick={() => onSwitchWorkspaceTab(tab.id)}
@@ -130,12 +134,12 @@ export function WorkspaceNav({
             >
               <Icon
                 className={cn(
-                  "transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground/70"
+                  "shrink-0",
+                  isActive ? "text-primary" : "text-muted-foreground"
                 )}
                 size={13}
               />
-              <span>{tab.label}</span>
+              <span className="whitespace-nowrap">{tab.label}</span>
             </button>
           );
         })}
