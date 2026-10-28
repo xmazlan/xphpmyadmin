@@ -1,114 +1,196 @@
-# electron-shadcn
+# xphpMyAdmin Desktop
 
-Electron in all its glory. Everything you will need to develop your beautiful desktop application.
+<div align="center">
 
-![Demo GIF](https://github.com/LuanRoger/electron-shadcn/blob/main/images/demo.png)
+![xphpMyAdmin Desktop](https://img.shields.io/badge/xphpMyAdmin-Desktop%20v1.4.1-0284c7?style=for-the-badge&logo=mysql&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/License-MIT-emerald?style=for-the-badge)](LICENSE)
+[![Platform: macOS | Windows | Linux](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-blue?style=for-the-badge&logo=electron&logoColor=white)](https://github.com/xmazlan/xphpmyadmin)
+[![Test Suite: Vitest](https://img.shields.io/badge/Tests-41%20Passing-success?style=for-the-badge&logo=vitest&logoColor=white)](src/tests)
 
-## Libs and tools
+<p align="center">
+  <strong>A modern, high-performance desktop client for MySQL & MariaDB database administration.</strong><br/>
+  Featuring SSH Bastion Tunneling, Full phpMyAdmin Capabilities, Multi-Format Export/Import, Visual Table Operations, and Cloud Synchronization with Frictionless Local Vault Access.
+</p>
 
-To develop a Electron app, you probably will need some UI, test, formatter, style or other kind of library or framework, so let me install and configure some of them to you.
+</div>
 
-### Core 🏍️
+---
 
-- [Electron 43](https://www.electronjs.org)
-- [Vite 8](https://vitejs.dev)
+## 🌟 Overview
 
-### DX 🛠️
+**xphpMyAdmin Desktop** brings the power and familiarity of phpMyAdmin into a native, high-speed desktop application. Built with **Electron**, **React 19**, **Tailwind CSS 4**, and **Shadcn UI**, it eliminates the need to configure web servers or expose database ports publicly.
 
-- [TypeScript 6](https://www.typescriptlang.org)
-- [oRPC](https://orpc.unnoq.com)
-- [Prettier](https://prettier.io)
-- [Ultracite with Biome](https://www.ultracite.ai/providers/biome)
-- [Zod 4](https://zod.dev)
-- [React Query (TanStack)](https://react-query.tanstack.com)
+Whether you are connecting directly to local development servers or tunneling through remote bastion hosts via encrypted SSH, xphpMyAdmin provides a unified, secure, and eye-friendly workspace.
 
-### UI 🎨
+---
 
-- [React 19.2](https://reactjs.org)
-- [Tailwind 4.3](https://tailwindcss.com)
-- [Shadcn UI](https://ui.shadcn.com)
-- [Geist](https://vercel.com/font) as default font
-- [i18next](https://www.i18next.com)
-- [TanStack Router](https://tanstack.com/router) (with file based routing)
-- [Lucide](https://lucide.dev)
+## 🚀 Key Features
 
-### Test 🧪
+### 1. 🛡️ Authentication & Cloud Sync Hub
+- **External Browser OAuth Redirect**: Authenticate seamlessly via Google Workspace or GitHub. The app opens your default web browser for secure sign-in and automatically redirects back into the desktop app via ephemeral loopback server and `xphpmyadmin://` deep linking.
+- **Frictionless Free Tier (Local Vault)**: New users can register and use the app completely free forever with a standalone local vault. No credit card or upfront plan selection required.
+- **Tiered Cloud Subscriptions**: Upgrade to **Pro**, **Team**, or **Business** with monthly or annual billing (save up to 33%) for multi-device vault synchronization, team sharing, and audit logging.
+- **Unified JSON Transaction Journaling**: Automatically records user activities (connection setups, query executions, maintenance tasks) with offline backup export and cloud sync.
 
-- [Vitest](https://vitest.dev)
-- [Playwright](https://playwright.dev)
-- [React Testing Library](https://testing-library.com/docs/react-testing-library/intro)
+### 2. 🗄️ Full phpMyAdmin Database Workspace
+- **Complete Core Navigation**: Databases, SQL Query Editor, Server Status & Processes, User Accounts, Export, Import, Variables Explorer, Charsets, Storage Engines, and Plugins.
+- **Table Structure & Operations**: Browse, inspect schemas, insert rows, modify collations, copy or rename tables, configure `AUTO_INCREMENT`, and execute maintenance commands (**Optimize**, **Analyze**, **Check**, **Repair**, and **Checksum**).
+- **Interactive Data Grid**: Column sorting, fast client-side row filtering, row JSON copy, clipboard export, and safe single-row deletion.
+- **Visual Data Protection**: Protective confirmation modals before destructive actions (table truncate, table drop, database drop) to prevent accidental data loss.
 
-### Packing and distribution 📦
+### 3. 📤 Multi-Format Export & Import
+- **Multi-Format Export**: Back up entire schemas or specific table data into standard formats: **SQL Dump**, **CSV**, **JSON**, and **XML**.
+- **Flexible Data Import**: Restore standard `.sql` script files, map `.csv` files directly to tables with custom delimiters, or import `.json` backups with real-time execution feedback.
 
-- [Electron Forge](https://www.electronforge.io)
+### 4. 🔍 Deep Search & Stored Routines
+- **Cross-Table Search**: Search across all database tables simultaneously with fuzzy keyword matching, exact matches, or regex patterns.
+- **Routines & Triggers Management**: Inspect, call, and manage stored procedures, custom functions, and automated database triggers directly from the visual interface.
 
-### CI/CD 🚀
+### 5. 🔐 SSH Tunneling & Multi-Session Connection Manager
+- **SSH Bastion Tunnel**: Direct and SSH Tunnel connection methods supporting passwords or SSH private keys.
+- **1-Click Terminal Command**: Copy ready-to-run terminal SSH tunneling commands configured for your host and port.
+- **Multi-Tab Sessions**: Manage multiple database connections concurrently with independent tabs and isolated query contexts.
 
-- Pre-configured [GitHub Actions workflow](https://github.com/LuanRoger/electron-shadcn/blob/main/.github/workflows/playwright.yml), for test with Playwright
+### 6. 🎨 Obsidian Dark Theme & Ergonomic UX
+- Designed with high-contrast, eye-friendly **Obsidian Dark Mode** by default.
+- Strict compliance with `shadcn/ui` semantic color tokens for seamless dark/light theme switching.
+- Responsive layout adapting smoothly between windowed mode and maximized fullscreen.
 
-### Project preferences 🎯
+---
 
-- Use Context isolation
-- [React Compiler](https://react.dev/learn/react-compiler) is enabled by default.
-- `titleBarStyle`: hidden (Using custom title bar)
-- Geist as default font
-- Some default styles was applied, check the [`styles`](https://github.com/LuanRoger/electron-shadcn/tree/main/src/styles) directory
-- React DevTools are installed by default
+## 🛠️ Tech Stack
 
-## How to use
+| Category | Technology |
+| :--- | :--- |
+| **Runtime & Core** | [Electron 43](https://www.electronjs.org), [Vite 8](https://vitejs.dev), [Node.js](https://nodejs.org) |
+| **Frontend Framework** | [React 19](https://react.dev), [TypeScript 6](https://www.typescriptlang.org) |
+| **Styling & Components** | [Tailwind CSS 4](https://tailwindcss.com), [Shadcn UI](https://ui.shadcn.com), [Lucide Icons](https://lucide.dev) |
+| **Database Drivers** | [mysql2](https://github.com/sidorares/node-mysql2), [ssh2](https://github.com/mscdex/ssh2) |
+| **State & Data Flow** | [TanStack Router](https://tanstack.com/router), [TanStack Query](https://tanstack.com/query), [oRPC](https://orpc.unnoq.com), [Zod 4](https://zod.dev) |
+| **Syntax Highlighting** | [Shiki](https://shiki.style) |
+| **Packaging** | [Electron Forge](https://www.electronforge.io) (Vite Plugin + Fuses) |
+| **Testing** | [Vitest](https://vitest.dev), [Testing Library](https://testing-library.com), [Playwright](https://playwright.dev) |
 
-1. Clone this repository
+---
 
-```bash
-git clone https://github.com/LuanRoger/electron-shadcn.git
+## 📂 Project Structure
+
+```text
+app-desktop/
+├── build-app/            # Automated multi-platform build & packaging scripts
+├── releases/             # Bilingual release notes (YYYY-MM-DD-*.json)
+├── src/
+│   ├── actions/          # IPC invocation actions (shell, window, database)
+│   ├── components/       # UI components (auth, connection, workspace, modals)
+│   │   ├── auth/         # AuthGate, OAuth browser flow, and plan upgrade dialogs
+│   │   ├── connection/   # Connection cards, grid, filters, and inspector
+│   │   ├── workspace/    # phpMyAdmin workspace tabs (Databases, SQL, Export, Import, etc.)
+│   │   └── ui/           # Reusable shadcn/ui primitives
+│   ├── constants/        # Cloud endpoints, IPC channels, local storage keys
+│   ├── context/          # React contexts (ConnectionContext, CloudSyncContext)
+│   ├── ipc/              # oRPC IPC handlers (database connection, query runner, shell)
+│   ├── main/             # Electron main process modules (OAuth loopback & deep link handler)
+│   ├── routes/           # TanStack file-based routing
+│   ├── services/         # Database execution, SSH tunnel driver, cloud sync API client
+│   ├── tests/            # Vitest unit & integration test suites
+│   ├── types/            # TypeScript schemas and definitions
+│   ├── main.ts           # Electron main process entrypoint
+│   └── preload.ts        # Secure context bridge and renderer bindings
+├── forge.config.ts       # Electron Forge multi-platform distribution configuration
+├── tsconfig.json         # TypeScript compiler configuration
+└── package.json          # Project dependencies and build scripts
 ```
 
-Or use it as a template on GitHub
+---
 
-2. Install dependencies
+## 💻 Getting Started
+
+### Prerequisites
+
+- **Node.js**: `v20` or `v22+`
+- **Package Manager**: `yarn` (`v1.22+`)
+
+### 1. Clone & Install Dependencies
 
 ```bash
+git clone https://github.com/xmazlan/xphpmyadmin.git
+cd xphpmyadmin/app-desktop
 yarn install
 ```
 
-3. Run the app
+### 2. Environment Variables
+
+Create a `.env` file in `app-desktop/` (or copy from `.env.example`):
+
+```bash
+cp .env.example .env
+```
+
+```env
+# Backend Cloud Services
+VITE_BACKEND_URL=https://www.er-service.duckdns.org
+VITE_CLOUD_API_URL=https://www.er-service.duckdns.org/api/sync
+VITE_CLOUD_AUTH_URL=https://www.er-service.duckdns.org/api/auth
+```
+
+### 3. Run Development Server
 
 ```bash
 yarn start
 ```
 
-Now you can go directly to `/src/routes/index.tsx` and modify the app as you want.
+---
 
-> You can also delete the `/src/routes/second.tsx` file if you don't want a second page.
+## 📦 Building & Distribution
 
-## Auto update
+Build cross-platform packages using Electron Forge:
 
-> [!WARNING]
-> This feature only work in open-source repositories in GitHub, if you need to use in a private repository, you need to setup a custom update server. Check the [Updating Applications](https://www.electronjs.org/docs/latest/tutorial/updates) section in the Electron documentation for more details.
+```bash
+# Package for current operating system
+yarn package
 
-The auto update uses GitHub Releases as source for the updates. The `publish` script will automatically create a new release with the version specified in your `package.json` file. You can run locally the `publish` script to create a new release, but you need to set the `GITHUB_TOKEN` environment variable with a GitHub Personal Access Token that has permission to create releases in your repository.
+# Platform-specific packaging
+yarn package:mac        # macOS Apple Silicon (arm64)
+yarn package:mac-intel  # macOS Intel (x64)
+yarn package:win        # Windows (x64)
+yarn package:linux      # Linux (x64)
+yarn package:linux-arm  # Linux (arm64)
 
-You can also use the GitHub Actions workflow to automatically create a new release when you push a new tag to the repository. The workflow need to be triggered manually, but you can modify to fit your needs. Also, the release is created as draft by default, so you can review and set a proper description before publish.
+# Create installers / distributions (DMG, DEB, RPM, Squirrel)
+yarn make:mac           # macOS DMG & ZIP
+yarn make:win           # Windows Squirrel Installer (.exe) & ZIP
+yarn make:linux         # Linux .deb & .rpm
+```
 
-> Check the [`.github/workflows/publish.yml`](https://github.com/LuanRoger/electron-shadcn/blob/main/.github/workflows/publish.yaml) file for more details.
+Distribution artifacts will be placed in the `out/` directory.
 
-When you open the app, it will check for updates automatically. If an update is available, it will download and install the update, after that, it will restart the app to apply the update. This ensure  that your users always have the latest version of your app.
+---
 
-The auto update is implemented using [update-electron-app](https://github.com/electron/update-electron-app) to check the updates and apply them. For the publishing, it is using the [Electron Forge's GitHub publisher](https://www.electronforge.io/config/publishers/github).
+## 🧪 Testing
 
-## Documentation
+We enforce high test coverage across database schemas, authentication flows, and workspace components:
 
-Check out the full documentation [here](https://docs.luanroger.dev/electron-shadcn).
+```bash
+# Run Vitest unit tests
+yarn test
 
-## Used by
+# Run tests in watch mode
+yarn test:watch
 
-- [yaste](https://github.com/LuanRoger/yaste) - yaste (Yet another super ₛᵢₘₚₗₑ text editor) is a text editor, that can be used as an alternative to the native text editor of your SO, maybe.
-- [eletric-drizzle](https://github.com/LuanRoger/electric-drizzle) - shadcn-ui and Drizzle ORM with Electron.
-- [Wordle Game](https://github.com/masonyekta/wordle-game) - A Wordle game which features interactive gameplay, cross-platform compatibility, and integration with a custom Wordle API for word validation and letter correctness.
-- [Mehr 🌟](https://github.com/xmannii/MehrLocalChat) - A modern, elegant local AI chatbot application using Electron, React, shadcn/ui, and Ollama.
+# Run TypeScript type-check
+yarn tsc --noEmit
+```
 
-> Does you've used this template in your project? Add it here and open a PR.
+All 41 test suites pass with full assertion integrity:
+- `auth-gate.test.tsx` (OAuth external browser flow & free tier policy)
+- `cloud-sync.test.ts` (JSON serialization, rate limits, tier restrictions)
+- `database-schemas.test.ts` (SSH tunnel credentials, import/export schema validation)
+- `workspace-components.test.tsx` (Workspace header, navigation tabs, SQL runner, maintenance)
+- `toggle-theme.test.tsx` (Theme toggle and contrast)
+- `routes.test.tsx` (Multi-tab connection navigation)
 
-## License
+---
 
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/LuanRoger/electron-shadcn/blob/main/LICENSE) file for details.
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
