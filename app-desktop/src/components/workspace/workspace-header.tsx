@@ -1,6 +1,8 @@
-import { Cloud, Search, Sparkles, X } from "lucide-react";
+import { Cloud, LogOut, Search, Sparkles, User, X } from "lucide-react";
 import type React from "react";
+import { SiGithub, SiGoogle } from "@icons-pack/react-simple-icons";
 import ToggleTheme from "@/components/toggle-theme";
+import type { CloudSyncConfig } from "@/types/cloud-sync";
 import { cn } from "@/utils/tailwind";
 import type { ActiveTabItem } from "./types";
 
@@ -9,12 +11,14 @@ interface WorkspaceHeaderProps {
   activeTabs: ActiveTabItem[];
   isSidebarCollapsed: boolean;
   onCloseTab: (tabId: string, e: React.MouseEvent) => void;
+  onLogout?: () => void;
   onOpenCloudSync?: () => void;
   onSearchChange: (query: string) => void;
   onSelectTab: (tabId: string) => void;
   onToggleSidebar: () => void;
   pendingSyncCount?: number;
   searchQuery: string;
+  userConfig?: CloudSyncConfig;
 }
 
 const ENV_COLORS: Record<string, string> = {
@@ -29,13 +33,20 @@ export function WorkspaceHeader({
   activeTabs,
   isSidebarCollapsed,
   onCloseTab,
+  onLogout,
   onOpenCloudSync,
   onSearchChange,
   onSelectTab,
   onToggleSidebar,
   pendingSyncCount = 0,
   searchQuery,
+  userConfig,
 }: WorkspaceHeaderProps) {
+  const userPlan = userConfig?.subscriptionTier || "free";
+  const userEmail = userConfig?.userEmail;
+  const userName = userConfig?.userName || userEmail?.split("@")[0] || "User";
+  const userProvider = userConfig?.userProvider;
+
   return (
     <header className="flex h-11 shrink-0 select-none items-center justify-between gap-2 border-border border-b bg-card px-3">
       <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
@@ -95,7 +106,7 @@ export function WorkspaceHeader({
         })}
       </div>
 
-      {/* Right side: Omni-search + Cloud Sync + Theme */}
+      {/* Right side: Omni-search + Cloud Sync + User Profile + Theme */}
       <div className="flex shrink-0 items-center gap-2">
         <div className="relative hidden w-36 sm:w-48 md:block">
           <Search
@@ -126,6 +137,51 @@ export function WorkspaceHeader({
               </span>
             )}
           </button>
+        )}
+
+        {/* User Profile Badge (if authenticated) */}
+        {userEmail && (
+          <div className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 py-0.5 pr-1.5 pl-2 text-xs">
+            <span className="flex size-4 items-center justify-center">
+              {userProvider === "google" ? (
+                <SiGoogle size={11} color="#EA4335" />
+              ) : userProvider === "github" ? (
+                <SiGithub size={11} />
+              ) : (
+                <User size={12} className="text-primary" />
+              )}
+            </span>
+            <span className="max-w-[80px] truncate font-medium text-foreground text-xs sm:max-w-[110px]">
+              {userName}
+            </span>
+            <span
+              className={cn(
+                "cursor-pointer rounded px-1.5 py-0.2 font-bold font-mono text-[9px] uppercase transition-transform hover:scale-105",
+                userPlan === "business"
+                  ? "bg-purple-500/20 text-purple-400"
+                  : userPlan === "team"
+                  ? "bg-blue-500/20 text-blue-400"
+                  : userPlan === "pro"
+                  ? "bg-primary/20 text-primary"
+                  : "bg-muted text-muted-foreground"
+              )}
+              onClick={onOpenCloudSync}
+              title="Klik untuk Kelola / Upgrade Paket"
+            >
+              {userPlan}
+            </span>
+
+            {onLogout && (
+              <button
+                className="ml-1 flex size-5 items-center justify-center rounded text-muted-foreground/80 hover:bg-destructive/10 hover:text-destructive"
+                onClick={onLogout}
+                title="Keluar dari Akun (Logout)"
+                type="button"
+              >
+                <LogOut size={11} />
+              </button>
+            )}
+          </div>
         )}
 
         <ToggleTheme />

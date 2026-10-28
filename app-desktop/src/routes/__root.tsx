@@ -2,6 +2,7 @@ import { createRootRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import type React from "react";
 import { Activity, useMemo, useState } from "react";
+import { AuthGate } from "@/components/auth/auth-gate";
 import { CloudSyncModal } from "@/components/workspace/modals/cloud-sync-modal";
 import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import { inDevelopment } from "@/constants";
@@ -27,9 +28,10 @@ function AppShell() {
     setIsSidebarCollapsed,
     setSearchQuery,
   } = useConnection();
-  const { journal } = useCloudSync();
+  const { config, isAuthenticated, journal, logout } = useCloudSync();
 
   const [isCloudSyncOpen, setIsCloudSyncOpen] = useState(false);
+  const [isLocalBypassed, setIsLocalBypassed] = useState(false);
 
   const pendingCount = useMemo(() => {
     return journal.filter((item) => item.syncStatus === "pending").length;
@@ -59,6 +61,17 @@ function AppShell() {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    setIsLocalBypassed(false);
+    navigate({ to: "/" });
+  };
+
+  // Intercept when not authenticated
+  if (!isAuthenticated && !isLocalBypassed) {
+    return <AuthGate onBypassLocal={() => setIsLocalBypassed(true)} />;
+  }
+
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-background font-sans text-foreground">
       <WorkspaceHeader
@@ -66,12 +79,14 @@ function AppShell() {
         activeTabs={activeTabs}
         isSidebarCollapsed={isSidebarCollapsed}
         onCloseTab={handleCloseTab}
+        onLogout={handleLogout}
         onOpenCloudSync={() => setIsCloudSyncOpen(true)}
         onSearchChange={setSearchQuery}
         onSelectTab={handleSelectTab}
         onToggleSidebar={() => setIsSidebarCollapsed((prev) => !prev)}
         pendingSyncCount={pendingCount}
         searchQuery={searchQuery}
+        userConfig={config}
       />
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <Outlet />

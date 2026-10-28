@@ -192,7 +192,9 @@ export const cloudSyncConfigSchema = z.object({
   subscriptionTier: subscriptionTierSchema.default("free"),
   userEmail: z.string().optional(),
   userId: z.string().optional(),
+  userAvatar: z.string().optional(),
   userName: z.string().optional(),
+  userProvider: z.enum(["google", "github", "credentials"]).optional(),
 });
 export type CloudSyncConfig = z.infer<typeof cloudSyncConfigSchema>;
 

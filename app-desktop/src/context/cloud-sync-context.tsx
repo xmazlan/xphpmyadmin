@@ -20,6 +20,7 @@ import {
   syncWithCloudBackend,
   updateCloudSyncConfig,
   upgradeSubscriptionPlan,
+  oauthLoginCloudBackend,
 } from "@/services/cloud-sync";
 import type {
   BillingCycle,
@@ -42,6 +43,7 @@ interface CloudSyncContextValue {
     error?: string;
     success: boolean;
   };
+  isAuthenticated: boolean;
   isSyncing: boolean;
   journal: UserActionEntry[];
   login: (
@@ -49,6 +51,12 @@ interface CloudSyncContextValue {
     pass: string
   ) => Promise<{ error?: string; success: boolean; user?: any }>;
   logout: () => void;
+  oauthLogin: (
+    provider: "google" | "github",
+    email: string,
+    name?: string,
+    image?: string
+  ) => Promise<{ error?: string; success: boolean; user?: any }>;
   mergeWithCloud: (
     profiles: Profile[],
     tokenOverride?: string
@@ -201,6 +209,17 @@ export function CloudSyncProvider({
     return res;
   };
 
+  const handleOAuthLogin = async (
+    provider: "google" | "github",
+    email: string,
+    name?: string,
+    image?: string
+  ) => {
+    const res = await oauthLoginCloudBackend(provider, email, name, image);
+    refreshState();
+    return res;
+  };
+
   const handleUpgradePlan = async (
     plan: SubscriptionTier,
     billingCycle: BillingCycle
@@ -228,10 +247,12 @@ export function CloudSyncProvider({
         deleteSnippet: handleDeleteSnippet,
         exportJson: exportCloudBackupJson,
         importJson: importCloudBackupJson,
+        isAuthenticated: Boolean(config.apiToken && config.userEmail),
         isSyncing,
         journal,
         login: handleLogin,
         logout: handleLogout,
+        oauthLogin: handleOAuthLogin,
         mergeWithCloud: handleMergeWithCloud,
         pullFromCloud: handlePullFromCloud,
         queryHistory,
