@@ -277,5 +277,26 @@ describe("Cloud Sync & State Journaling (er-backend)", () => {
     // 3. MERGE with er-backend
     const mergeRes = await mergeWithCloudBackend(MOCK_PROFILES, "vitest_test_sync_key");
     expect(mergeRes.success).toBe(true);
+    expect(mergeRes.success).toBe(true);
   });
+
+  it("should restrict cloud sync for free tier users (local vault only) and require subscription", async () => {
+    updateCloudSyncConfig({
+      subscriptionTier: "free",
+      maxVaults: 1,
+    });
+
+    const pushRes = await syncWithCloudBackend(MOCK_PROFILES);
+    expect(pushRes.success).toBe(false);
+    expect(pushRes.error).toContain("Paket gratis hanya memiliki brankas lokal");
+
+    const pullRes = await pullFromCloudBackend();
+    expect(pullRes.success).toBe(false);
+    expect(pullRes.error).toContain("Paket gratis hanya memiliki brankas lokal");
+
+    const mergeRes = await mergeWithCloudBackend(MOCK_PROFILES);
+    expect(mergeRes.success).toBe(false);
+    expect(mergeRes.error).toContain("Paket gratis hanya memiliki brankas lokal");
+  });
+
 });

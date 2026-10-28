@@ -1,11 +1,11 @@
 import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { AuthGate } from "@/components/auth/auth-gate";
-import { CloudSyncProvider } from "@/context/cloud-sync-context";
+import { CloudSyncProvider, useCloudSync } from "@/context/cloud-sync-context";
 
-describe("AuthGate Component & Authentication Interception", () => {
+describe("AuthGate Component & Free Tier (Local Vault) Policy", () => {
   it("renders Google, GitHub, and email/password login options", () => {
-    const { getByText, getByPlaceholderText } = render(
+    const { getByText, getAllByText, getByPlaceholderText } = render(
       <CloudSyncProvider>
         <AuthGate />
       </CloudSyncProvider>
@@ -18,7 +18,7 @@ describe("AuthGate Component & Authentication Interception", () => {
     // Credentials login
     expect(getByPlaceholderText(/nama@email.com/i)).toBeDefined();
     expect(getByPlaceholderText(/••••••••/i)).toBeDefined();
-    expect(getByText(/Masuk ke Cloud & Workspace/i)).toBeDefined();
+    expect(getAllByText(/Masuk ke Workspace/i).length).toBeGreaterThanOrEqual(1);
 
     // Quick test accounts
     expect(getByText(/Akun Uji Coba Cepat/i)).toBeDefined();
@@ -28,21 +28,25 @@ describe("AuthGate Component & Authentication Interception", () => {
     expect(getByText(/👑 Admin/i)).toBeDefined();
   });
 
-  it("switches to registration mode with plan selection", () => {
-    const { getByText, getByPlaceholderText } = render(
+  it("switches to registration mode without plan selection, giving Starter Full Local by default", () => {
+    const { getByText, getByPlaceholderText, queryByText } = render(
       <CloudSyncProvider>
         <AuthGate />
       </CloudSyncProvider>
     );
 
-    const registerTab = getByText(/Daftar Akun/i);
+    const registerTab = getByText(/Daftar Akun Gratis/i);
     fireEvent.click(registerTab);
 
     // Name input appears
     expect(getByPlaceholderText(/Nama lengkap Anda/i)).toBeDefined();
-    expect(getByText(/Pilih Paket/i)).toBeDefined();
-    expect(getByText(/Tahunan \(-33%\)/i)).toBeDefined();
-    expect(getByText(/Daftar & Aktifkan Paket/i)).toBeDefined();
+
+    // Crucial: User does NOT choose a plan when registering!
+    expect(queryByText(/Pilih Paket/i)).toBeNull();
+
+    // Informs user of Starter plan (full local)
+    expect(getByText(/Paket Starter Gratis \(Full Lokal\)/i)).toBeDefined();
+    expect(getByText(/Daftar Akun Gratis \(Lokal\)/i)).toBeDefined();
   });
 
   it("triggers offline local bypass when clicked", () => {

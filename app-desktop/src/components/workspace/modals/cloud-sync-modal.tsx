@@ -12,6 +12,7 @@ import {
   GitMerge,
   History,
   LogIn,
+  Lock,
   LogOut,
   RefreshCw,
   Server,
@@ -24,7 +25,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -120,6 +121,12 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
   }, [journal]);
 
   const activeTier = config.subscriptionTier || "free";
+
+  useEffect(() => {
+    if (isOpen && activeTier === "free") {
+      setActiveTab("pricing");
+    }
+  }, [isOpen, activeTier]);
   const activeCycle = config.billingCycle || "annual";
 
   const handleCopyJson = async () => {
@@ -170,6 +177,11 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
 
   // PUSH to er-backend
   const handleTriggerPush = async () => {
+    if (activeTier === "free") {
+      toast.error("Paket gratis hanya memiliki brankas lokal. Silakan berlangganan untuk sinkronisasi cloud.");
+      setActiveTab("pricing");
+      return;
+    }
     const res = await syncNow(profiles, tokenInput);
     if (res.success) {
       toast.success(
@@ -183,6 +195,11 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
 
   // PULL from er-backend
   const handleTriggerPull = async () => {
+    if (activeTier === "free") {
+      toast.error("Paket gratis hanya memiliki brankas lokal. Silakan berlangganan untuk sinkronisasi cloud.");
+      setActiveTab("pricing");
+      return;
+    }
     const res = await pullFromCloud(tokenInput);
     if (res.success && res.data) {
       if (res.data.profiles && res.data.profiles.length > 0) {
@@ -198,6 +215,11 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
 
   // SMART MERGE with er-backend
   const handleTriggerMerge = async () => {
+    if (activeTier === "free") {
+      toast.error("Paket gratis hanya memiliki brankas lokal. Silakan berlangganan untuk sinkronisasi cloud.");
+      setActiveTab("pricing");
+      return;
+    }
     const res = await mergeWithCloud(profiles, tokenInput);
     if (res.success) {
       toast.success(res.message || "Penggabungan cerdas cloud berhasil!");
@@ -376,6 +398,25 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
           </div>
         </div>
 
+        {/* Local Vault Banner for Free Tier */}
+        {activeTier === "free" && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 border-b border-amber-500/20 bg-amber-500/10 px-5 py-2.5 text-xs text-amber-300">
+            <div className="flex items-center gap-2">
+              <Shield className="size-4 shrink-0 text-amber-400" />
+              <span>
+                <strong>Mode Starter (Hanya Brankas Lokal):</strong> Anda menikmati semua fitur database remote secara lokal. Upgrade ke paket langganan untuk menyinkronkan data antar-perangkat ke cloud.
+              </span>
+            </div>
+            <button
+              onClick={() => setActiveTab("pricing")}
+              className="shrink-0 rounded-md bg-amber-500 px-3 py-1 font-semibold text-black text-xs hover:bg-amber-400 transition-colors"
+              type="button"
+            >
+              Lihat Paket Langganan
+            </button>
+          </div>
+        )}
+
         {/* Tab Bar Navigasi */}
         <div className="flex border-border border-b bg-[#0a0d18]/50 px-5">
           <button
@@ -524,7 +565,7 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                       Kapasitas Brankas
                     </span>
                     <p className="font-semibold text-foreground text-sm">
-                      {config.maxVaults || 50} Cloud Vaults
+                      {activeTier === "free" ? "1 Local Vault" : `${config.maxVaults || 50} Cloud Vaults`}
                     </p>
                   </div>
                   <div className="rounded-md border border-border/60 bg-muted/20 p-2.5">
@@ -556,9 +597,19 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                     disabled={isSyncing}
                     onClick={handleTriggerPush}
                     size="sm"
+                    variant={activeTier === "free" ? "outline" : "default"}
                   >
-                    <ArrowUpFromLine className="mr-1.5 size-3.5" />
-                    Kirim Snapshot (Push)
+                    {activeTier === "free" ? (
+                      <>
+                        <Lock className="mr-1.5 size-3.5 text-amber-400" />
+                        <span>Kirim Snapshot (Perlu Langganan)</span>
+                      </>
+                    ) : (
+                      <>
+                        <ArrowUpFromLine className="mr-1.5 size-3.5" />
+                        <span>Kirim Snapshot (Push)</span>
+                      </>
+                    )}
                   </Button>
                 </div>
 
@@ -580,8 +631,17 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                     size="sm"
                     variant="outline"
                   >
-                    <ArrowDownToLine className="mr-1.5 size-3.5" />
-                    Tarik State (Pull)
+                    {activeTier === "free" ? (
+                      <>
+                        <Lock className="mr-1.5 size-3.5 text-amber-400" />
+                        <span>Tarik State (Perlu Langganan)</span>
+                      </>
+                    ) : (
+                      <>
+                        <ArrowDownToLine className="mr-1.5 size-3.5" />
+                        <span>Tarik State (Pull)</span>
+                      </>
+                    )}
                   </Button>
                 </div>
 
@@ -603,8 +663,17 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                     size="sm"
                     variant="outline"
                   >
-                    <GitMerge className="mr-1.5 size-3.5" />
-                    Gabung Data (Merge)
+                    {activeTier === "free" ? (
+                      <>
+                        <Lock className="mr-1.5 size-3.5 text-amber-400" />
+                        <span>Gabung Data (Perlu Langganan)</span>
+                      </>
+                    ) : (
+                      <>
+                        <GitMerge className="mr-1.5 size-3.5" />
+                        <span>Gabung Data (Merge)</span>
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
@@ -675,6 +744,11 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                   </span>{" "}
                   plan.
                 </p>
+                {activeTier === "free" && (
+                  <p className="mx-auto max-w-lg text-[11px] text-muted-foreground/90 pt-1">
+                    Paket Starter gratis hanya memiliki akses <strong>Brankas Lokal</strong>. Untuk mulai menyinkronkan data antar-perangkat secara otomatis ke server cloud Neon, silakan pilih salah satu paket berlangganan di bawah:
+                  </p>
+                )}
 
                 {/* Billing Cycle Pill Toggle */}
                 <div className="pt-3 flex justify-center">

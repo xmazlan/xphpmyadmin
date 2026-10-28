@@ -18,7 +18,6 @@ import { useState } from "react";
 import { SiGithub, SiGoogle } from "@icons-pack/react-simple-icons";
 import { useCloudSync } from "@/context/cloud-sync-context";
 import { cn } from "@/utils/tailwind";
-import type { BillingCycle, SubscriptionTier } from "@/types/cloud-sync";
 
 interface AuthGateProps {
   onBypassLocal?: () => void;
@@ -31,8 +30,6 @@ export function AuthGate({ onBypassLocal }: AuthGateProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionTier>("business");
-  const [billingCycle, setBillingCycle] = useState<BillingCycle>("annual");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -68,11 +65,12 @@ export function AuthGate({ onBypassLocal }: AuthGateProps) {
           setIsLoading(false);
           return;
         }
-        const res = await register(name.trim(), email.trim(), password, selectedPlan, billingCycle);
+        // User starts with free tier (local vault only)
+        const res = await register(name.trim(), email.trim(), password, "free", "annual");
         if (!res.success) {
           setErrorMsg(res.error || "Gagal mendaftar. Silakan coba kembali.");
         } else {
-          setSuccessMsg("Pendaftaran berhasil! Mengalihkan ke workspace...");
+          setSuccessMsg("Pendaftaran berhasil! Mengalihkan ke workspace lokal...");
         }
       }
     } catch (err: any) {
@@ -139,13 +137,13 @@ export function AuthGate({ onBypassLocal }: AuthGateProps) {
           </div>
           <div className="flex items-center gap-1.5 font-bold font-mono text-xs uppercase tracking-wider text-primary">
             <Sparkles size={13} />
-            <span>xphpMyAdmin Cloud</span>
+            <span>xphpMyAdmin Desktop</span>
           </div>
           <h1 className="mt-1 font-bold text-2xl tracking-tight text-foreground">
             {mode === "login" ? "Masuk ke Workspace" : "Daftar Akun Baru"}
           </h1>
           <p className="mt-1.5 text-muted-foreground text-xs leading-relaxed">
-            Kelola basis data remote MySQL & MariaDB dengan sinkronisasi cloud terpadu dan keamanan enterprise.
+            Kelola basis data remote MySQL & MariaDB secara lokal gratis dengan opsi sinkronisasi cloud terpusat.
           </p>
         </div>
 
@@ -231,7 +229,7 @@ export function AuthGate({ onBypassLocal }: AuthGateProps) {
             }}
             type="button"
           >
-            Daftar Akun
+            Daftar Akun Gratis
           </button>
         </div>
 
@@ -298,53 +296,11 @@ export function AuthGate({ onBypassLocal }: AuthGateProps) {
           </div>
 
           {mode === "register" && (
-            <div className="space-y-2 pt-1">
-              <div className="flex items-center justify-between">
-                <label className="font-medium text-muted-foreground text-xs">Pilih Paket</label>
-                <div className="flex items-center gap-1 rounded bg-muted/60 p-0.5 text-[10px]">
-                  <button
-                    className={cn(
-                      "rounded px-1.5 py-0.5",
-                      billingCycle === "monthly" ? "bg-background text-foreground shadow-2xs" : "text-muted-foreground"
-                    )}
-                    onClick={() => setBillingCycle("monthly")}
-                    type="button"
-                  >
-                    Bulanan
-                  </button>
-                  <button
-                    className={cn(
-                      "rounded px-1.5 py-0.5",
-                      billingCycle === "annual" ? "bg-background text-foreground shadow-2xs" : "text-muted-foreground"
-                    )}
-                    onClick={() => setBillingCycle("annual")}
-                    type="button"
-                  >
-                    Tahunan (-33%)
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                {(["pro", "team", "business"] as const).map((tier) => (
-                  <button
-                    key={tier}
-                    type="button"
-                    onClick={() => setSelectedPlan(tier)}
-                    className={cn(
-                      "flex flex-col items-center rounded-lg border p-2 text-center transition-all",
-                      selectedPlan === tier
-                        ? "border-primary bg-primary/10 text-primary shadow-xs"
-                        : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                    )}
-                  >
-                    <span className="font-bold text-xs uppercase">{tier}</span>
-                    <span className="mt-0.5 text-[10px]">
-                      {tier === "business" ? "50 Vaults" : tier === "team" ? "20 Vaults" : "10 Vaults"}
-                    </span>
-                  </button>
-                ))}
-              </div>
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-center text-xs">
+              <span className="font-semibold text-foreground">Paket Starter Gratis (Full Lokal)</span>
+              <p className="mt-0.5 text-[11px] text-muted-foreground/80">
+                Semua fitur manajemen database remote dapat dinikmati secara lokal tanpa biaya. Brankas cloud dapat diaktifkan kapan saja dengan berlangganan.
+              </p>
             </div>
           )}
 
@@ -361,12 +317,12 @@ export function AuthGate({ onBypassLocal }: AuthGateProps) {
             ) : mode === "login" ? (
               <>
                 <KeyRound size={14} />
-                <span>Masuk ke Cloud & Workspace</span>
+                <span>Masuk ke Workspace</span>
               </>
             ) : (
               <>
                 <Zap size={14} />
-                <span>Daftar & Aktifkan Paket</span>
+                <span>Daftar Akun Gratis (Lokal)</span>
               </>
             )}
           </button>
@@ -453,7 +409,7 @@ export function AuthGate({ onBypassLocal }: AuthGateProps) {
               </span>
             </div>
             <p className="mt-1 text-muted-foreground text-xs">
-              Konfirmasi akun untuk dihubungkan ke brankas cloud xphpMyAdmin:
+              Konfirmasi akun untuk dihubungkan ke brankas xphpMyAdmin:
             </p>
 
             <div className="mt-4 space-y-3">

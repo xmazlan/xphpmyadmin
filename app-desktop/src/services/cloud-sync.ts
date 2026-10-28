@@ -347,6 +347,13 @@ export async function syncWithCloudBackend(
   syncedItems: number;
 }> {
   const config = getCloudSyncConfig();
+  if (config.subscriptionTier === "free") {
+    return {
+      error: "Paket gratis hanya memiliki brankas lokal. Silakan berlangganan (Pro, Team, atau Business) untuk mengaktifkan sinkronisasi cloud.",
+      success: false,
+      syncedItems: 0,
+    };
+  }
   const token = (tokenOverride || config.apiToken || config.userEmail || "user_pro_sync").trim();
   const baseEndpoint = (endpointOverride || config.apiEndpoint).replace(/\/+$/, "");
   const pushUrl = baseEndpoint.endsWith("/push") ? baseEndpoint : `${baseEndpoint}/push`;
@@ -435,6 +442,12 @@ export async function pullFromCloudBackend(
   updatedAt?: number;
 }> {
   const config = getCloudSyncConfig();
+  if (config.subscriptionTier === "free") {
+    return {
+      error: "Paket gratis hanya memiliki brankas lokal. Silakan berlangganan (Pro, Team, atau Business) untuk mengaktifkan sinkronisasi cloud.",
+      success: false,
+    };
+  }
   const token = (tokenOverride || config.apiToken || config.userEmail || "user_pro_sync").trim();
   const baseEndpoint = (endpointOverride || config.apiEndpoint).replace(/\/+$/, "");
   const pullUrl = baseEndpoint.endsWith("/pull") ? baseEndpoint : `${baseEndpoint}/pull`;
@@ -501,6 +514,12 @@ export async function mergeWithCloudBackend(
   success: boolean;
 }> {
   const config = getCloudSyncConfig();
+  if (config.subscriptionTier === "free") {
+    return {
+      error: "Paket gratis hanya memiliki brankas lokal. Silakan berlangganan (Pro, Team, atau Business) untuk mengaktifkan sinkronisasi cloud.",
+      success: false,
+    };
+  }
   const token = (tokenOverride || config.apiToken || config.userEmail || "user_pro_sync").trim();
   const baseEndpoint = (endpointOverride || config.apiEndpoint).replace(/\/+$/, "");
   const mergeUrl = baseEndpoint.endsWith("/merge") ? baseEndpoint : `${baseEndpoint}/merge`;
@@ -579,12 +598,12 @@ export async function loginToCloudBackend(
         ? "business"
         : resJson.user?.plan === "team"
         ? "team"
-        : "pro";
+        : (resJson.user?.plan === "pro" ? "pro" : "free");
     const userBilling: BillingCycle =
       resJson.user?.billingCycle === "monthly" ? "monthly" : "annual";
     const maxVaults =
       resJson.user?.maxVaults ||
-      (userTier === "business" ? 50 : userTier === "team" ? 20 : 10);
+      (userTier === "business" ? 50 : userTier === "team" ? 20 : (userTier === "pro" ? 10 : 1));
 
     updateCloudSyncConfig({
       apiToken: resJson.token,
@@ -617,7 +636,7 @@ export async function registerToCloudBackend(
   name: string,
   email: string,
   pass: string,
-  plan: SubscriptionTier = "pro",
+  plan: SubscriptionTier = "free",
   billingCycle: BillingCycle = "annual",
   authEndpointOverride?: string
 ): Promise<{ error?: string; success: boolean; user?: any }> {
@@ -649,12 +668,12 @@ export async function registerToCloudBackend(
         ? "business"
         : resJson.user?.plan === "team"
         ? "team"
-        : "pro";
+        : (resJson.user?.plan === "pro" ? "pro" : "free");
     const userBilling: BillingCycle =
       resJson.user?.billingCycle === "monthly" ? "monthly" : "annual";
     const maxVaults =
       resJson.user?.maxVaults ||
-      (userTier === "business" ? 50 : userTier === "team" ? 20 : 10);
+      (userTier === "business" ? 50 : userTier === "team" ? 20 : (userTier === "pro" ? 10 : 1));
 
     updateCloudSyncConfig({
       apiToken: resJson.token,
@@ -786,12 +805,12 @@ export async function oauthLoginCloudBackend(
         ? "business"
         : resJson.user?.plan === "team"
         ? "team"
-        : "pro";
+        : (resJson.user?.plan === "pro" ? "pro" : "free");
     const userBilling: BillingCycle =
       resJson.user?.billingCycle === "monthly" ? "monthly" : "annual";
     const maxVaults =
       resJson.user?.maxVaults ||
-      (userTier === "business" ? 50 : userTier === "team" ? 20 : 10);
+      (userTier === "business" ? 50 : userTier === "team" ? 20 : (userTier === "pro" ? 10 : 1));
 
     updateCloudSyncConfig({
       apiToken: resJson.token,
