@@ -1,7 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { fetchDatabases, testDatabaseConnection } from "@/actions/database";
+import {
+  fetchDatabases,
+  testDatabaseConnection,
+  testSshTunnelAction,
+} from "@/actions/database";
 import { ConnectionGrid } from "@/components/workspace/connection/connection-grid";
 import { ConnectionInspector } from "@/components/workspace/connection/connection-inspector";
 import { ConnectionSidebar } from "@/components/workspace/connection/connection-sidebar";
@@ -122,6 +126,7 @@ export function HomePage() {
       connection_revision: 1,
       created_at: new Date().toISOString(),
       database: "",
+      db_type: "auto",
       environment: "Local",
       favorite: false,
       has_saved_password: false,
@@ -262,12 +267,63 @@ export function HomePage() {
         status: "running",
       },
     ]);
-    const activePass = passwordInput || savedPasswords[editForm.id] || "";
+    let activePass = "";
+    if (passwordAction === "remove") {
+      activePass = "";
+    } else if (passwordAction === "replace") {
+      activePass = passwordInput;
+    } else {
+      activePass = savedPasswords[editForm.id] ?? "";
+    }
+
+    let sshTrustStatus: "passed" | "failed" | "skipped" = "skipped";
+    let sshTrustMsg: string | undefined = undefined;
+
+    if (editForm.method === "ssh" && editForm.ssh) {
+      const sshRes = await testSshTunnelAction(editForm.ssh);
+      if (sshRes.ok) {
+        sshTrustStatus = "passed";
+        sshTrustMsg = `${sshRes.keyAlgorithm} • ${sshRes.fingerprint}`;
+      } else {
+        sshTrustStatus = "failed";
+        sshTrustMsg = sshRes.error;
+      }
+    }
+
+    if (editForm.method === "ssh" && sshTrustStatus === "failed") {
+      setDiagnostics([
+        { duration_ms: 12, stage: "local_validation", status: "passed" },
+        {
+          duration_ms: 0,
+          message: sshTrustMsg,
+          stage: "ssh_trust",
+          status: "failed",
+        },
+        {
+          duration_ms: 0,
+          stage: "ssh_authentication_forwarding",
+          status: "failed",
+        },
+        {
+          duration_ms: 0,
+          stage: "mysql_tls_authentication_initial_database",
+          status: "pending",
+        },
+      ]);
+      toast.error("Gagal Terhubung ke Bastion SSH", {
+        description: sshTrustMsg || "Periksa konfigurasi SSH Tunnel Anda.",
+      });
+      setIsTesting(false);
+      return;
+    }
+
     const testResult = await testDatabaseConnection({
       database: undefined,
       host: editForm.host,
+      method: editForm.method,
       password: activePass,
       port: Number(editForm.port),
+      ssh: editForm.method === "ssh" ? editForm.ssh : null,
       user: editForm.username,
     });
     if (testResult.ok) {
@@ -275,6 +331,7 @@ export function HomePage() {
         { duration_ms: 12, stage: "local_validation", status: "passed" },
         {
           duration_ms: 0,
+          message: sshTrustMsg,
           stage: "ssh_trust",
           status: editForm.method === "ssh" ? "passed" : "skipped",
         },
@@ -289,7 +346,8 @@ export function HomePage() {
           status: "passed",
         },
       ]);
-      toast.success("Sambungan MariaDB Terverifikasi 100%!", {
+      const dbTypeLabel = testResult.dbType || "Database";
+      toast.success(`Sambungan ${dbTypeLabel} Terverifikasi 100%!`, {
         description: `Server: ${testResult.version} • Latensi: ${testResult.latencyMs}ms`,
       });
     } else {
@@ -297,6 +355,7 @@ export function HomePage() {
         { duration_ms: 12, stage: "local_validation", status: "passed" },
         {
           duration_ms: 0,
+          message: sshTrustMsg,
           stage: "ssh_trust",
           status: editForm.method === "ssh" ? "passed" : "skipped",
         },
@@ -312,7 +371,7 @@ export function HomePage() {
           status: "failed",
         },
       ]);
-      toast.error("Gagal Terhubung ke MariaDB", {
+      toast.error("Gagal Terhubung ke Database", {
         description:
           testResult.error || "Pastikan host, user, dan password benar.",
       });
@@ -321,48 +380,76 @@ export function HomePage() {
   };
 
   const handleInspectSshKey = async () => {
+    if (!editForm.ssh?.host) {
+      toast.error("Host SSH belum diisi");
+      return;
+    }
     toast.info("Memindai Host Key SSH...", {
-      description: `Target: ${editForm.ssh?.host || "bastion.internal"}`,
+      description: `Target: ${editForm.ssh.host}:${editForm.ssh.port || 22}`,
     });
-    await new Promise((r) => setTimeout(r, 400));
-    toast.success("Host Key SSH Terverifikasi", {
-      description:
-        "Algoritma: ssh-ed25519 • Fingerprint: SHA256:7uK2Z9jH4wQ8xP3v1Lm0",
-    });
+    const res = await testSshTunnelAction(editForm.ssh);
+    if (res.ok) {
+      toast.success("Host Key SSH Terverifikasi!", {
+        description: `Algoritma: ${res.keyAlgorithm} • Fingerprint: ${res.fingerprint} (${res.latencyMs}ms)`,
+      });
+    } else {
+      toast.error("Gagal Memindai Host Key SSH", {
+        description:
+          res.error || "Pastikan server SSH aktif dan kredensial sudah benar.",
+      });
+    }
   };
 
   const handleConnect = async (targetProfile?: Profile) => {
     const prof = targetProfile || editForm;
-    const activePass =
-      prof.id === editForm.id && passwordInput
-        ? passwordInput
-        : savedPasswords[prof.id] || "123";
-    if (passwordInput && prof.id === editForm.id) {
-      setSavedPasswords((prev) => ({ ...prev, [prof.id]: passwordInput }));
+    let activePass = "";
+    if (prof.id === editForm.id) {
+      if (passwordAction === "remove") {
+        activePass = "";
+      } else if (passwordAction === "replace") {
+        activePass = passwordInput;
+      } else {
+        activePass = savedPasswords[prof.id] ?? "";
+      }
+    } else {
+      activePass = savedPasswords[prof.id] ?? "";
+    }
+
+    if (prof.id === editForm.id) {
+      setSavedPasswords((prev) => ({ ...prev, [prof.id]: activePass }));
     }
     const connParams = {
       database: undefined,
       host: prof.host,
+      method: prof.method,
       password: activePass,
       port: Number(prof.port),
+      ssh: prof.method === "ssh" ? prof.ssh : null,
       user: prof.username,
     };
-    toast.loading("Mengambil daftar database dari MariaDB...", {
+    toast.loading("Mengambil daftar database dari server...", {
       id: "connect-toast",
     });
     const dbRes = await fetchDatabases(connParams);
     toast.dismiss("connect-toast");
     if (dbRes.ok && dbRes.databases.length > 0) {
       toast.success(
-        `Terhubung ke MariaDB: ${dbRes.databases.length} database ditemukan!`,
+        `Terhubung ke Database: ${dbRes.databases.length} database ditemukan!`,
         {
           description: `Server ${prof.host}:${prof.port} siap digunakan.`,
+        }
+      );
+    } else if (dbRes.ok) {
+      toast.warning(
+        "Terhubung ke MariaDB, tetapi tidak ada database ditemukan.",
+        {
+          description: `Server ${prof.host}:${prof.port} berhasil dihubungi.`,
         }
       );
     } else {
       toast.error("Tidak dapat mengambil daftar database", {
         description:
-          dbRes.error || "Pastikan MariaDB aktif dan password sudah benar.",
+          dbRes.error || "Pastikan database server aktif dan password sudah benar.",
       });
     }
 

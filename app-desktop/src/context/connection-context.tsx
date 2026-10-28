@@ -33,7 +33,7 @@ export function ConnectionProvider({
 }) {
   const [profiles, setProfiles] = useState<Profile[]>(INITIAL_PROFILES);
   const [savedPasswords, setSavedPasswords] = useState<Record<string, string>>({
-    "a1c3d4e5-3333-4444-8888-3456789abcde": "123",
+    "a1c3d4e5-3333-4444-8888-3456789abcde": "",
     "e4a1b2c3-1111-4444-8888-123456789abc": "secret",
   });
   const [activeTabs, setActiveTabs] = useState<ActiveTabItem[]>([

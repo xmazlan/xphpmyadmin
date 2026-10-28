@@ -3,6 +3,7 @@ import {
   Database,
   Eye,
   EyeOff,
+  FolderOpen,
   Key,
   PanelRightClose,
   RefreshCw,
@@ -10,7 +11,7 @@ import {
   Terminal,
   Zap,
 } from "lucide-react";
-import type React from "react";
+import React, { useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,6 +68,8 @@ export function ConnectionInspector({
   showPassword,
   showSshPassword,
 }: ConnectionInspectorProps) {
+  const sshKeyFileInputRef = useRef<HTMLInputElement>(null);
+
   if (!isOpen) {
     return null;
   }
@@ -178,8 +181,43 @@ export function ConnectionInspector({
         {/* Server Details */}
         <div className="space-y-2.5 rounded-lg border border-border bg-muted/40 p-3">
           <h4 className="font-semibold text-[11px] text-foreground">
-            Server Database MariaDB / MySQL
+            Server Database MySQL / MariaDB
           </h4>
+          <div>
+            <Label className="text-[10px] text-muted-foreground">
+              Tipe Database
+            </Label>
+            <Select
+              onValueChange={(val: "mysql" | "mariadb" | "auto") =>
+                setEditForm({ ...editForm, db_type: val })
+              }
+              value={editForm.db_type || "auto"}
+            >
+              <SelectTrigger className="mt-1 h-7 border-border text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="text-xs">
+                <SelectItem value="auto">
+                  <div className="flex items-center gap-2">
+                    <span>🔍</span>
+                    <span>Auto-Detect (MySQL & MariaDB)</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="mysql">
+                  <div className="flex items-center gap-2">
+                    <span>🐬</span>
+                    <span>MySQL</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="mariadb">
+                  <div className="flex items-center gap-2">
+                    <span>🦭</span>
+                    <span>MariaDB</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-2">
               <Label className="text-[10px] text-muted-foreground">
@@ -377,17 +415,45 @@ export function ConnectionInspector({
                   (Opsional jika pakai Password)
                 </span>
               </Label>
-              <Input
-                className="mt-1 h-7 border-border bg-background font-mono text-xs"
-                onChange={(e) =>
-                  setEditForm({
-                    ...editForm,
-                    ssh: { ...editForm.ssh!, key: e.target.value },
-                  })
-                }
-                placeholder="~/.ssh/id_rsa atau path berkas kunci privat"
-                value={editForm.ssh?.key || ""}
-              />
+              <div className="mt-1 flex items-center gap-1.5">
+                <Input
+                  className="h-7 flex-1 border-border bg-background font-mono text-xs"
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      ssh: { ...editForm.ssh!, key: e.target.value },
+                    })
+                  }
+                  placeholder="~/.ssh/id_rsa atau path berkas kunci privat"
+                  value={editForm.ssh?.key || ""}
+                />
+                <input
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const pathStr = (file as any).path || file.name;
+                      setEditForm({
+                        ...editForm,
+                        ssh: { ...editForm.ssh!, key: pathStr },
+                      });
+                    }
+                  }}
+                  ref={sshKeyFileInputRef}
+                  type="file"
+                />
+                <Button
+                  className="h-7 shrink-0 px-2 text-[10px]"
+                  onClick={() => sshKeyFileInputRef.current?.click()}
+                  size="sm"
+                  title="Pilih Berkas Kunci SSH"
+                  type="button"
+                  variant="outline"
+                >
+                  <FolderOpen size={12} />
+                  <span className="hidden sm:inline">Pilih</span>
+                </Button>
+              </div>
             </div>
           </div>
         )}

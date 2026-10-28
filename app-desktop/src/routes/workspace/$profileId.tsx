@@ -245,13 +245,15 @@ export function WorkspaceStudioPage() {
 
   // Connection parameters
   const getConnParams = (db?: string) => {
-    const activePass = savedPasswords[profile.id] || "123";
+    const activePass = savedPasswords[profile?.id] ?? "";
     return {
       database: db,
-      host: profile.host,
+      host: profile?.host || "127.0.0.1",
+      method: profile?.method || "direct",
       password: activePass,
-      port: Number(profile.port),
-      user: profile.username,
+      port: Number(profile?.port || 3306),
+      ssh: profile?.method === "ssh" ? profile?.ssh : null,
+      user: profile?.username || "root",
     };
   };
 
@@ -285,6 +287,14 @@ export function WorkspaceStudioPage() {
             setQueryResults(qRes);
           }
         }
+      } else if (dbRes.ok && dbRes.databases.length === 0) {
+        setAvailableDatabases([]);
+      } else if (!dbRes.ok) {
+        toast.error("Gagal memuat daftar basis data", {
+          description:
+            dbRes.error ||
+            "Pastikan MariaDB/MySQL aktif dan password sudah sesuai.",
+        });
       }
     }
     initDatabases();
@@ -890,16 +900,10 @@ export function WorkspaceStudioPage() {
       toast.error("Nama basis data tidak boleh kosong.");
       return;
     }
-    const activePass = savedPasswords[profile.id] || "123";
     setIsCreatingDb(true);
     const res = await createDatabaseAction({
       collation: newDbCollation || undefined,
-      connection: {
-        host: profile.host,
-        password: activePass,
-        port: Number(profile.port),
-        user: profile.username,
-      },
+      connection: getConnParams(),
       name: newDbName.trim(),
     });
     setIsCreatingDb(false);
@@ -937,14 +941,8 @@ export function WorkspaceStudioPage() {
       isOpen: true,
       onConfirm: async () => {
         setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
-        const activePass = savedPasswords[profile.id] || "123";
         const res = await dropDatabaseAction({
-          connection: {
-            host: profile.host,
-            password: activePass,
-            port: Number(profile.port),
-            user: profile.username,
-          },
+          connection: getConnParams(),
           name: dbName,
         });
         if (res.ok) {
@@ -1001,15 +999,8 @@ export function WorkspaceStudioPage() {
   };
 
   const handleChangeCollation = async () => {
-    const activePass = savedPasswords[profile.id] || "123";
     const res = await executeSqlQuery(
-      {
-        database: currentSelectedDatabase,
-        host: profile.host,
-        password: activePass,
-        port: Number(profile.port),
-        user: profile.username,
-      },
+      getConnParams(currentSelectedDatabase),
       `ALTER DATABASE \`${currentSelectedDatabase}\` COLLATE ${newDbCollation};`,
       currentSelectedDatabase
     );

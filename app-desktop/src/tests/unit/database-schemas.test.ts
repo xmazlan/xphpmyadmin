@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createDatabaseSchema,
+  databaseConnectionSchema,
   dropDatabaseSchema,
   exportDatabaseSchema,
   importDatabaseSchema,
@@ -131,6 +132,27 @@ describe("Database Export & Import Schemas", () => {
       key: "~/.ssh/id_rsa",
     });
     expect(validWithKey.success).toBe(true);
+  });
+
+  it("should validate databaseConnectionSchema with ssh method and configuration", () => {
+    const valid = databaseConnectionSchema.safeParse({
+      host: "10.0.4.15",
+      method: "ssh",
+      password: "db_password",
+      port: 3306,
+      ssh: {
+        host: "bastion.staging.internal",
+        key: "~/.ssh/id_ed25519",
+        port: 22,
+        username: "ubuntu",
+      },
+      user: "staging_user",
+    });
+    expect(valid.success).toBe(true);
+    if (valid.success) {
+      expect(valid.data.method).toBe("ssh");
+      expect(valid.data.ssh?.host).toBe("bastion.staging.internal");
+    }
   });
 });
 
