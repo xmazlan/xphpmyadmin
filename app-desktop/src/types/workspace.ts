@@ -12,7 +12,8 @@ export type WorkspaceTabId =
   | "variables"
   | "charsets"
   | "engines"
-  | "plugins";
+  | "plugins"
+  | "settings";
 
 export interface ActiveTabItem {
   env: string;

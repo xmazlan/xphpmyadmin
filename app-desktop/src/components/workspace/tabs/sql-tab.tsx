@@ -139,6 +139,17 @@ export function SqlTab({
             </span>
           </div>
           <div className="flex items-center gap-1.5">
+            {sqlQuery.trim() && (
+              <Button
+                className="h-6.5 border-border text-muted-foreground text-xs hover:bg-muted hover:text-foreground"
+                disabled={isExecutingQuery}
+                onClick={() => setSqlQuery("")}
+                size="sm"
+                variant="outline"
+              >
+                Batal
+              </Button>
+            )}
             <Button
               className="flex h-6.5 items-center gap-1 bg-emerald-600 px-2.5 font-semibold text-white text-xs hover:bg-emerald-500"
               disabled={isExecutingQuery}
@@ -246,7 +257,7 @@ export function SqlTab({
       {/* Interactive Real Data Table Grid */}
       <div className="flex-1 overflow-auto bg-background">
         {queryResults && queryResults.columns.length > 0 ? (
-          <table className="w-full border-collapse text-left font-mono text-xs">
+          <table className="w-full min-w-[500px] border-collapse text-left font-mono text-xs">
             <thead>
               <tr className="sticky top-0 border-border border-b bg-muted/40 text-muted-foreground">
                 <th className="w-8 px-2 py-2 text-center">#</th>

@@ -266,13 +266,25 @@ export function buildCloudSyncSnapshot(
   const snippets = getStoredSnippets();
   const config = getCloudSyncConfig();
 
+  let appSettings: any = null;
+  if (isStorageAvailable()) {
+    try {
+      const rawSettings = localStorage.getItem(LOCAL_STORAGE_KEYS.APP_SETTINGS);
+      if (rawSettings) {
+        appSettings = JSON.parse(rawSettings);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   const preferences: CloudSyncPreferences = {
     autoSyncEnabled: config.autoSync,
-    defaultCollation: "utf8mb4_general_ci",
-    language: "id",
+    defaultCollation: appSettings?.defaultCollation || "utf8mb4_general_ci",
+    language: appSettings?.language || (isStorageAvailable() && localStorage.getItem(LOCAL_STORAGE_KEYS.LANGUAGE)) || "en",
     recordQueries: true,
     syncIntervalMinutes: 5,
-    theme: "dark",
+    theme: (appSettings?.theme || (isStorageAvailable() && localStorage.getItem(LOCAL_STORAGE_KEYS.THEME)) || "dark") as any,
     ...preferencesOverride,
   };
 

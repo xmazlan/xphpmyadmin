@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ConnectionGrid } from "@/components/workspace/connection/connection-grid";
 import { ConnectionInspector } from "@/components/workspace/connection/connection-inspector";
@@ -34,8 +34,9 @@ describe("Workspace Components", () => {
 
     expect(getByText("Pengelola Koneksi")).toBeInTheDocument();
     expect(
-      getByPlaceholderText("Cari host atau database...")
+      getByPlaceholderText(/Cari host atau database\.\.\.|Search hosts or databases\.\.\./)
     ).toBeInTheDocument();
+    expect(getByText("v1.4.2")).toBeInTheDocument();
   });
 
   it("handles pending sync badges correctly based on subscription tier", () => {
@@ -99,13 +100,17 @@ describe("Workspace Components", () => {
     expect(queryByText("3")).toBeNull();
   });
 
-  it("renders ConnectionSidebar correctly", () => {
-    const { getByText } = render(
-      <ConnectionSidebar isSidebarCollapsed={false} />
+  it("renders ConnectionSidebar correctly and triggers onSelectSection for settings", () => {
+    const onSelectMock = vi.fn();
+    const { getByText, getByTitle } = render(
+      <ConnectionSidebar isSidebarCollapsed={false} onSelectSection={onSelectMock} />
     );
     expect(getByText("Koneksi (Hosts)")).toBeInTheDocument();
     expect(getByText("SSH Tunnels")).toBeInTheDocument();
-    expect(getByText("Pengaturan")).toBeInTheDocument();
+    const settingsBtn = getByTitle("Pengaturan");
+    expect(settingsBtn).toBeInTheDocument();
+    fireEvent.click(settingsBtn);
+    expect(onSelectMock).toHaveBeenCalledWith("settings");
   });
 
   it("renders ConnectionGrid with hosts list and triggers onDeleteHost", () => {

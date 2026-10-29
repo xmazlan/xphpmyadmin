@@ -128,7 +128,7 @@ export function SearchTab({
             <Label className="text-muted-foreground text-xs">
               Pilihan Pola Pencarian:
             </Label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {[
                 {
                   desc: "Mencocokkan substring di mana saja (%kata%)",
@@ -275,8 +275,8 @@ export function SearchTab({
                   : "Tidak ditemukan baris yang cocok pada tabel yang diperiksa."}
               </p>
             ) : (
-              <div className="overflow-hidden rounded-md border border-border">
-                <table className="w-full border-collapse text-left font-mono text-xs">
+              <div className="overflow-x-auto rounded-md border border-border">
+                <table className="w-full min-w-[500px] border-collapse text-left font-mono text-xs">
                   <thead>
                     <tr className="border-border border-b bg-muted/40 text-muted-foreground">
                       <th className="px-3 py-2 font-semibold">Tabel</th>

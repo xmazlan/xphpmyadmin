@@ -206,27 +206,37 @@ export function ExportModal({
           )}
         </div>
 
-        {/* Footer Modal */}
-        <div className="flex items-center justify-end gap-2 border-border border-t bg-muted/40 px-4 py-3">
+        {/* Footer Modal dengan Tombol Batal */}
+        <div className="flex items-center justify-between border-border border-t bg-muted/40 px-4 py-3">
           <Button
-            className="h-7 border-border text-foreground hover:bg-muted"
-            disabled={isExporting}
-            onClick={() => onExecuteExport(false)}
+            className="h-7 border-border text-muted-foreground text-xs hover:bg-muted hover:text-foreground"
+            onClick={onClose}
             size="sm"
             variant="outline"
           >
-            <Copy className="mr-1.5" size={12} />
-            Salin ke Clipboard
+            Batal
           </Button>
-          <Button
-            className="h-7 bg-primary font-semibold text-primary-foreground text-xs hover:bg-primary/90"
-            disabled={isExporting}
-            onClick={() => onExecuteExport(true)}
-            size="sm"
-          >
-            <Download className="mr-1.5" size={12} />
-            {isExporting ? "Mengekspor..." : `Simpan .${exportFormat || "sql"}`}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              className="h-7 border-border text-foreground hover:bg-muted"
+              disabled={isExporting}
+              onClick={() => onExecuteExport(false)}
+              size="sm"
+              variant="outline"
+            >
+              <Copy className="mr-1.5" size={12} />
+              Salin ke Clipboard
+            </Button>
+            <Button
+              className="h-7 bg-primary font-semibold text-primary-foreground text-xs hover:bg-primary/90"
+              disabled={isExporting}
+              onClick={() => onExecuteExport(true)}
+              size="sm"
+            >
+              <Download className="mr-1.5" size={12} />
+              {isExporting ? "Mengekspor..." : `Simpan .${exportFormat || "sql"}`}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

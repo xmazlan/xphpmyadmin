@@ -46,7 +46,7 @@ export function EnginesTab({
       </div>
 
       <div className="flex-1 overflow-auto">
-        <table className="w-full border-collapse text-left font-mono text-xs">
+        <table className="w-full min-w-[500px] border-collapse text-left font-mono text-xs">
           <thead>
             <tr className="sticky top-0 border-border border-b bg-muted/40 text-muted-foreground">
               <th className="px-4 py-2.5 font-semibold">Nama Mesin</th>

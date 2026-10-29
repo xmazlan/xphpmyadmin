@@ -10,8 +10,10 @@ import { ConnectionGrid } from "@/components/workspace/connection/connection-gri
 import { ConnectionInspector } from "@/components/workspace/connection/connection-inspector";
 import { ConnectionSidebar } from "@/components/workspace/connection/connection-sidebar";
 import { ConfirmDialog } from "@/components/workspace/modals/confirm-dialog";
+import { SettingsView } from "@/components/workspace/settings/settings-view";
 import { useConnection } from "@/context/connection-context";
 import { useCloudSync } from "@/context/cloud-sync-context";
+import { useSettings } from "@/context/settings-context";
 import {
   type DiagnosticStage,
   type Profile,
@@ -33,6 +35,7 @@ export function HomePage() {
     setSavedPasswords,
   } = useConnection();
   const { recordAction } = useCloudSync();
+  const { openSettings } = useSettings();
 
   // State navigasi sidebar & filter metode
   const [activeNav, setActiveNav] = useState<string>("hosts");
@@ -96,9 +99,8 @@ export function HomePage() {
         description: "Password disimpan aman menggunakan enkripsi AES-256.",
       });
     } else if (sectionId === "settings") {
-      toast.info("Pengaturan Koneksi", {
-        description: "Gunakan panel inspector untuk mengatur parameter database dan SSH.",
-      });
+      // Switch active view directly to Settings View
+      setActiveNav("settings");
     } else {
       toast.info(`Bagian ${sectionId} dipilih`);
     }
@@ -120,6 +122,16 @@ export function HomePage() {
     );
     if (selectedId === id) {
       setEditForm((prev) => ({ ...prev, favorite: !prev.favorite }));
+    }
+    const target = profiles.find((p) => p.id === id);
+    if (target) {
+      recordAction({
+        action: "profile_update",
+        category: "connection",
+        details: { favorite: !target.favorite },
+        profileId: target.id,
+        profileName: target.name,
+      });
     }
     toast.success("Status favorit diperbarui");
   };
@@ -335,6 +347,17 @@ export function HomePage() {
           : p
       )
     );
+    recordAction({
+      action: "profile_update",
+      category: "connection",
+      details: {
+        host: validatedData.host,
+        method: validatedData.method,
+        port: validatedData.port,
+      },
+      profileId: validatedData.id,
+      profileName: validatedData.name,
+    });
     toast.success("Profil Berhasil Disimpan", {
       description: `${validatedData.name} (${validatedData.host}:${validatedData.port}) tersimpan di SQLite`,
     });
@@ -591,7 +614,11 @@ export function HomePage() {
         onSelectSection={handleSelectNav}
       />
 
-      <ConnectionGrid
+      {activeNav === "settings" ? (
+        <SettingsView />
+      ) : (
+        <>
+          <ConnectionGrid
         favoritesOnly={favoritesOnly}
         filteredProfiles={filteredProfiles}
         isInspectorOpen={isInspectorOpen}
@@ -629,6 +656,9 @@ export function HomePage() {
         showPassword={showPassword}
         showSshPassword={showSshPassword}
       />
+
+        </>
+      )}
 
       <ConfirmDialog
         cancelText="Batal"

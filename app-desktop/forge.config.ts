@@ -1,3 +1,4 @@
+import path from "node:path";
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
 import { MakerDeb } from "@electron-forge/maker-deb";
 import { MakerDMG } from "@electron-forge/maker-dmg";
@@ -12,32 +13,43 @@ const config: ForgeConfig = {
   makers: [
     new MakerDMG(
       {
+        icon: path.resolve(__dirname, "assets/icon.icns"),
         name: "xphpMyAdmin",
       },
       ["darwin"]
     ),
     new MakerZIP({}, ["darwin", "win32", "linux"]),
     new MakerSquirrel({
-      name: "xphpmyadmin",
+      name: "xphpmyadmin-desktop",
+      setupIcon: path.resolve(__dirname, "assets/icon.ico"),
     }),
     new MakerDeb({
       options: {
-        bin: "xphpmyadmin",
-        name: "xphpmyadmin",
-        productName: "xphpMyAdmin",
+        bin: "xphpmyadmin-desktop",
+        categories: ["Development", "Utility"],
+        desktopTemplate: path.resolve(__dirname, "build-app/desktop.ejs"),
+        icon: path.resolve(__dirname, "assets/icon.png"),
+        mimeType: ["x-scheme-handler/xphpmyadmin"],
+        name: "xphpmyadmin-desktop",
+        productName: "xphpMyAdmin Desktop",
       },
     }),
     new MakerRpm({
       options: {
-        bin: "xphpmyadmin",
-        name: "xphpmyadmin",
-        productName: "xphpMyAdmin",
+        bin: "xphpmyadmin-desktop",
+        categories: ["Development", "Utility"],
+        icon: path.resolve(__dirname, "assets/icon.png"),
+        mimeType: ["x-scheme-handler/xphpmyadmin"],
+        name: "xphpmyadmin-desktop",
+        productName: "xphpMyAdmin Desktop",
       },
     }),
   ],
   packagerConfig: {
     asar: true,
     executableName: "xphpmyadmin-desktop",
+    extraResource: [path.resolve(__dirname, "assets")],
+    icon: path.resolve(__dirname, "assets/icon"),
     name: "xphpMyAdmin",
   },
   plugins: [

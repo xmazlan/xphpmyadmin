@@ -19,6 +19,7 @@ import {
 } from "@/actions/database";
 import { FALLBACK_TABLES } from "@/components/workspace/constants";
 import { ExplorerSidebar } from "@/components/workspace/explorer/explorer-sidebar";
+import { SettingsView } from "@/components/workspace/settings/settings-view";
 import { ConfirmDialog } from "@/components/workspace/modals/confirm-dialog";
 import { CreateDatabaseModal } from "@/components/workspace/modals/create-database-modal";
 import { ExportModal } from "@/components/workspace/modals/export-modal";
@@ -49,12 +50,14 @@ import type {
 import { WorkspaceNav } from "@/components/workspace/workspace-nav";
 import { useConnection } from "@/context/connection-context";
 import { useCloudSync } from "@/context/cloud-sync-context";
+import { useSettings } from "@/context/settings-context";
 
 export function WorkspaceStudioPage() {
   const { profileId } = Route.useParams();
   const navigate = useNavigate();
   const { profiles, savedPasswords, setActiveTabId } = useConnection();
   const { recordAction, recordQuery } = useCloudSync();
+  const { openSettings } = useSettings();
 
   const profile = useMemo(
     () => profiles.find((p) => p.id === profileId) || profiles[0],
@@ -1668,7 +1671,7 @@ export function WorkspaceStudioPage() {
   }, [serverPluginsData, pluginsSearch]);
 
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden bg-background text-foreground font-sans antialiased">
+    <div className="flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden bg-background text-foreground font-sans antialiased">
       <WorkspaceNav
         activeConnectedProfile={profile}
         availableDatabasesCount={availableDatabases.length}
@@ -1685,6 +1688,7 @@ export function WorkspaceStudioPage() {
         {/* Left Tree Explorer */}
         <ExplorerSidebar
           activeConnectedProfile={profile}
+          onOpenSettings={() => setCurrentWorkspaceTab("settings")}
           availableDatabases={availableDatabases}
           currentSelectedDatabase={currentSelectedDatabase}
           databaseSearch={databaseSearch}
@@ -1911,6 +1915,9 @@ export function WorkspaceStudioPage() {
             serverPluginsData={serverPluginsData}
             setPluginsSearch={setPluginsSearch}
           />
+        )}
+        {currentWorkspaceTab === "settings" && (
+          <SettingsView />
         )}
       </section>
 

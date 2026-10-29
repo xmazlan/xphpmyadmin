@@ -107,8 +107,8 @@ export function RoutinesTab({
 
         {/* Routines Table */}
         {activeSubTab === "routines" ? (
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <table className="w-full border-collapse text-left font-mono text-xs">
+          <div className="overflow-x-auto rounded-lg border border-border bg-card">
+            <table className="w-full min-w-[620px] border-collapse text-left font-mono text-xs">
               <thead>
                 <tr className="border-border border-b bg-muted/40 text-muted-foreground">
                   <th className="px-3 py-2.5 font-semibold">Nama Rutin</th>
@@ -198,8 +198,8 @@ export function RoutinesTab({
           </div>
         ) : (
           /* Triggers Table */
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <table className="w-full border-collapse text-left font-mono text-xs">
+          <div className="overflow-x-auto rounded-lg border border-border bg-card">
+            <table className="w-full min-w-[620px] border-collapse text-left font-mono text-xs">
               <thead>
                 <tr className="border-border border-b bg-muted/40 text-muted-foreground">
                   <th className="px-3 py-2.5 font-semibold">Nama Pemicu</th>

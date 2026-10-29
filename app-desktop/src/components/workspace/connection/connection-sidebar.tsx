@@ -30,6 +30,8 @@ export function ConnectionSidebar({
   isSidebarCollapsed,
   onSelectSection,
 }: ConnectionSidebarProps) {
+  const isSettingsActive = activeSection === "settings";
+
   return (
     <aside
       className={cn(
@@ -55,13 +57,14 @@ export function ConnectionSidebar({
               type="button"
             >
               <Icon
-                className={
+                className={cn(
+                  "shrink-0",
                   isActive
                     ? nav.id === "tunnels"
-                      ? "shrink-0 text-purple-400"
-                      : "shrink-0 text-primary"
-                    : "shrink-0 text-muted-foreground/70"
-                }
+                      ? "text-purple-600 dark:text-purple-400"
+                      : "text-primary"
+                    : "text-muted-foreground/70"
+                )}
                 size={14}
               />
               {!isSidebarCollapsed && (
@@ -80,11 +83,24 @@ export function ConnectionSidebar({
           <ToggleTheme showLabel />
         )}
         <button
-          className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-muted-foreground text-xs hover:bg-muted/40 hover:text-foreground"
+          className={cn(
+            "flex w-full cursor-pointer items-center gap-2.5 rounded-md py-1.5 text-left text-xs transition-colors",
+            isSidebarCollapsed ? "justify-center px-1" : "px-2.5",
+            isSettingsActive
+              ? "border border-border bg-accent font-semibold text-accent-foreground shadow-xs"
+              : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+          )}
           onClick={() => onSelectSection?.("settings")}
+          title="Pengaturan"
           type="button"
         >
-          <Settings className="shrink-0" size={14} />
+          <Settings
+            className={cn(
+              "shrink-0",
+              isSettingsActive ? "text-primary" : "text-muted-foreground/70"
+            )}
+            size={14}
+          />
           {!isSidebarCollapsed && <span>Pengaturan</span>}
         </button>
       </div>

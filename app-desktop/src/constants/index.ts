@@ -1,4 +1,5 @@
 export const LOCAL_STORAGE_KEYS = {
+  APP_SETTINGS: "xphpmyadmin_app_settings",
   CLOUD_SYNC_CONFIG: "xphpmyadmin_cloud_config",
   CLOUD_SYNC_JOURNAL: "xphpmyadmin_cloud_journal",
   CLOUD_SYNC_QUERY_HISTORY: "xphpmyadmin_query_history",

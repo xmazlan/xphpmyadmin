@@ -15,6 +15,10 @@ import {
   ConnectionProvider,
   useConnection,
 } from "@/context/connection-context";
+import {
+  SettingsProvider,
+  useSettings,
+} from "@/context/settings-context";
 import BaseLayout from "@/layouts/base-layout";
 
 function AppShell() {
@@ -39,6 +43,7 @@ function AppShell() {
     setCachedProfiles,
     syncNow,
   } = useCloudSync();
+  const { closeSettings, isSettingsOpen } = useSettings();
 
   const [isCloudSyncOpen, setIsCloudSyncOpen] = useState(false);
   const [isLocalBypassed, setIsLocalBypassed] = useState(false);
@@ -52,36 +57,6 @@ function AppShell() {
   const pendingCount = useMemo(() => {
     return journal.filter((item) => item.syncStatus === "pending").length;
   }, [journal]);
-
-  // Otomatis sinkronkan antrean ke cloud backend untuk pengguna berlangganan (non-free)
-  useEffect(() => {
-    const isSubscribed = config.subscriptionTier !== "free";
-    const autoSyncActive = config.autoSync ?? isSubscribed;
-
-    if (
-      isAuthenticated &&
-      isSubscribed &&
-      autoSyncActive &&
-      pendingCount > 0 &&
-      !isSyncing
-    ) {
-      const timer = setTimeout(() => {
-        syncNow(profiles).catch((err) => {
-          console.warn("Background auto-sync failed:", err);
-        });
-      }, 400);
-
-      return () => clearTimeout(timer);
-    }
-  }, [
-    isAuthenticated,
-    config.subscriptionTier,
-    config.autoSync,
-    pendingCount,
-    isSyncing,
-    profiles,
-    syncNow,
-  ]);
 
   const handleSelectTab = (tabId: string) => {
     setActiveTabId(tabId);
@@ -158,6 +133,8 @@ function AppShell() {
         isOpen={isCloudSyncOpen}
         onClose={() => setIsCloudSyncOpen(false)}
       />
+
+
     </div>
   );
 }
@@ -166,12 +143,14 @@ function Root() {
   return (
     <ConnectionProvider>
       <CloudSyncProvider>
-        <BaseLayout>
-          <AppShell />
-          <Activity mode={inDevelopment ? "visible" : "hidden"}>
-            <TanStackRouterDevtools />
-          </Activity>
-        </BaseLayout>
+        <SettingsProvider>
+          <BaseLayout>
+            <AppShell />
+            {/*<Activity mode={inDevelopment ? "visible" : "hidden"}>
+              <TanStackRouterDevtools />
+            </Activity>*/}
+          </BaseLayout>
+        </SettingsProvider>
       </CloudSyncProvider>
     </ConnectionProvider>
   );

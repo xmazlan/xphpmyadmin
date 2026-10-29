@@ -133,23 +133,6 @@ export function CloudSyncProvider({
 
   useEffect(() => {
     refreshState();
-    const initialConfig = getCloudSyncConfig();
-    const storedJournal = getStoredJournal();
-    const hasPending = storedJournal.some((j) => j.syncStatus === "pending");
-    if (
-      initialConfig.subscriptionTier !== "free" &&
-      initialConfig.autoSync !== false &&
-      hasPending
-    ) {
-      setIsSyncing(true);
-      triggerAutoSyncToCloud(undefined, 300)
-        .then(() => {
-          refreshState();
-        })
-        .finally(() => {
-          setIsSyncing(false);
-        });
-    }
   }, []);
 
   const handleRecordAction = (
@@ -158,7 +141,7 @@ export function CloudSyncProvider({
     const newEntry = storeUserAction(action);
     setJournal((prev) => [newEntry, ...prev]);
 
-    // Status selain free disinkronkan ke backend secara default
+    // Status selain free disinkronkan ke backend secara default saat pengguna melakukan tindakan
     const currentConfig = getCloudSyncConfig();
     const isNonFree = currentConfig.subscriptionTier !== "free";
     const autoSyncEnabled = currentConfig.autoSync ?? isNonFree;
@@ -248,6 +231,21 @@ export function CloudSyncProvider({
   const handleUpdateConfig = (updates: Partial<CloudSyncConfig>) => {
     const updated = updateCloudSyncConfig(updates);
     setConfig(updated);
+
+    // Saat mengatur/mengubah konfigurasi, sinkronkan perubahan jika user berlangganan
+    const isNonFree = updated.subscriptionTier !== "free";
+    const autoSyncEnabled = updated.autoSync ?? isNonFree;
+
+    if (isNonFree && autoSyncEnabled) {
+      setIsSyncing(true);
+      triggerAutoSyncToCloud(cachedProfiles, 600)
+        .then(() => {
+          refreshState();
+        })
+        .finally(() => {
+          setIsSyncing(false);
+        });
+    }
   };
 
   const handleSyncNow = async (profiles?: Profile[], tokenOverride?: string) => {

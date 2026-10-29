@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none" width="100%" height="100%">
+  <defs>
+    <linearGradient id="sq-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a1017" />
+      <stop offset="50%" stop-color="#070a0e" />
+      <stop offset="100%" stop-color="#030508" />
+    </linearGradient>
+    <linearGradient id="sq-border" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2dd4bf" stop-opacity="0.45" />
+      <stop offset="50%" stop-color="#0d9488" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#042f2e" stop-opacity="0.5" />
+    </linearGradient>
+    <linearGradient id="db-disc" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0d9488" />
+      <stop offset="100%" stop-color="#0f766e" />
+    </linearGradient>
+    <linearGradient id="db-top" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2dd4bf" />
+      <stop offset="100%" stop-color="#14b8a6" />
+    </linearGradient>
+    <linearGradient id="x-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5eead4" />
+      <stop offset="50%" stop-color="#2dd4bf" />
+      <stop offset="100%" stop-color="#0d9488" />
+    </linearGradient>
+    <linearGradient id="x-edge" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#99f6e4" stop-opacity="0.2" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Container Squircle -->
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#sq-bg)" stroke="url(#sq-border)" stroke-width="2.5" />
+
+  <!-- Ambient Glow Behind Symbol -->
+  <circle cx="64" cy="64" r="36" fill="#14b8a6" opacity="0.12" filter="url(#glow)" />
+
+  <!-- Database Cylinder Stack (Left/Center) -->
+  <g transform="translate(18, 22)">
+    <!-- Bottom Disc -->
+    <path d="M12 50 C12 43 52 43 52 50 L52 64 C52 71 12 71 12 64 Z" fill="url(#db-disc)" opacity="0.8" />
+    <path d="M12 64 C12 71 52 71 52 64" stroke="#2dd4bf" stroke-width="1.8" fill="none" opacity="0.5" />
+
+    <!-- Middle Disc -->
+    <path d="M12 34 C12 27 52 27 52 34 L52 48 C52 55 12 55 12 48 Z" fill="url(#db-disc)" opacity="0.9" />
+    <path d="M12 48 C12 55 52 55 52 48" stroke="#2dd4bf" stroke-width="1.8" fill="none" opacity="0.7" />
+
+    <!-- Top Cylinder Base -->
+    <path d="M12 18 C12 11 52 11 52 18 L52 32 C52 39 12 39 12 32 Z" fill="url(#db-disc)" />
+    <!-- Top Cap -->
+    <ellipse cx="32" cy="18" rx="20" ry="8" fill="url(#db-top)" />
+    <ellipse cx="32" cy="18" rx="16" ry="6.5" fill="#042f2e" opacity="0.4" />
+  </g>
+
+  <!-- Stylized Futuristic 'X' (Foreground Intersection) -->
+  <g filter="url(#glow)">
+    <!-- Main X geometry with dimensional facets -->
+    <path d="M54 36 L66 36 L86 64 L106 36 L118 36 L94 70 L119 104 L107 104 L85 73 L63 104 L51 104 L77 67 Z"
+          fill="url(#x-grad)"
+          stroke="#0f172a"
+          stroke-width="1.5" />
+
+    <!-- Sleek inner highlight spine -->
+    <path d="M57 39 L65 39 L85 67 L91 60 L73 39 Z" fill="url(#x-edge)" opacity="0.6" />
+    <path d="M85 71 L105 101 L99 101 L80 73 Z" fill="url(#x-edge)" opacity="0.5" />
+    <path d="M115 39 L97 65 L93 60 L107 39 Z" fill="url(#x-edge)" opacity="0.6" />
+    <path d="M60 101 L79 73 L83 78 L68 101 Z" fill="url(#x-edge)" opacity="0.5" />
+  </g>
+
+  <!-- Sparkling Data Node Accent -->
+  <circle cx="118" cy="36" r="3.5" fill="#5eead4" filter="url(#glow)" />
+  <circle cx="118" cy="36" r="1.5" fill="#ffffff" />
+</svg>

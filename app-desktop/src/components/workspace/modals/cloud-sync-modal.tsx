@@ -27,6 +27,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -48,13 +49,13 @@ const PRESET_ENDPOINTS = [
   {
     auth: "https://er-service.duckdns.org/api/auth",
     id: "cloud",
-    label: "Cloud Server (Produksi)",
+    label: "Cloud (Produksi)",
     sync: "https://er-service.duckdns.org/api/sync",
   },
   {
     auth: "http://127.0.0.1:4000/api/auth",
     id: "local",
-    label: "Server Lokal (Port 4000)",
+    label: "Lokal (Port 4000)",
     sync: "http://127.0.0.1:4000/api/sync",
   },
 ];
@@ -89,6 +90,8 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
   const [copied, setCopied] = useState(false);
   const [restoreJsonInput, setRestoreJsonInput] = useState("");
   const [isRestoring, setIsRestoring] = useState(false);
+  const [confirmClearJournal, setConfirmClearJournal] = useState(false);
+  const { t } = useTranslation();
 
   // Pricing & Billing Toggle State
   const [billingCycle, setBillingCycle] = useState<BillingCycle>(
@@ -352,27 +355,27 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
   return (
     <Dialog onOpenChange={(open) => !open && onClose()} open={isOpen}>
       <DialogContent
-        className="max-w-4xl lg:max-w-5xl rounded-2xl border border-teal-500/20 bg-[#070a0e] p-0 text-foreground shadow-2xl shadow-teal-950/20 overflow-hidden focus:outline-none"
+        className="flex flex-col w-[96vw] sm:w-[94vw] max-w-5xl h-[92vh] max-h-[860px] min-h-[440px] rounded-2xl border border-teal-500/20 bg-[#070a0e] p-0 gap-0 text-foreground shadow-2xl shadow-teal-950/20 overflow-hidden focus:outline-none sm:max-w-4xl lg:max-w-5xl"
         showCloseButton={false}
       >
         <DialogTitle className="sr-only">
           Cloud Sync & Jurnal Audit Aktivitas
         </DialogTitle>
 
-        {/* Header Modal - Teal Accent Theme */}
-        <div className="flex items-center justify-between border-b border-teal-500/15 bg-linear-to-r from-teal-950/25 via-[#0a0f14]/80 to-[#070a0e] px-6 py-4">
-          <div className="flex items-center gap-3.5">
-            <div className="flex size-10 items-center justify-center rounded-xl border border-teal-500/30 bg-linear-to-br from-teal-500/20 to-teal-500/5 text-teal-400 shadow-inner shadow-teal-500/10">
-              <Cloud className={cn("size-5", isSyncing && "animate-pulse")} />
+        {/* Header Modal - Responsive Flex Layout */}
+        <div className="shrink-0 flex items-center justify-between border-b border-teal-500/15 bg-linear-to-r from-teal-950/30 via-[#0a0f14]/90 to-[#070a0e] px-3.5 sm:px-6 py-3 sm:py-4 gap-2 sm:gap-4">
+          <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+            <div className="flex size-8 sm:size-10 items-center justify-center rounded-xl border border-teal-500/30 bg-linear-to-br from-teal-500/20 to-teal-500/5 text-teal-400 shadow-inner shadow-teal-500/10 shrink-0">
+              <Cloud className={cn("size-4 sm:size-5", isSyncing && "animate-pulse")} />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-foreground text-sm tracking-tight">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <h3 className="font-semibold text-foreground text-xs sm:text-sm tracking-tight truncate">
                   Sinkronisasi Cloud & Vault
                 </h3>
                 <span
                   className={cn(
-                    "rounded-full px-2.5 py-0.5 font-bold font-mono text-[10px] tracking-wide uppercase",
+                    "rounded-full px-2 py-0.5 font-bold font-mono text-[9px] sm:text-[10px] tracking-wide uppercase whitespace-nowrap",
                     activeTier === "business"
                       ? "border border-amber-500/40 bg-linear-to-r from-amber-500/20 to-orange-500/20 text-amber-300"
                       : activeTier === "team"
@@ -391,39 +394,41 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                         : "STARTER / LOCAL"}
                 </span>
               </div>
-              <p className="text-muted-foreground text-xs flex items-center gap-1.5 mt-0.5">
-                <span className="relative flex size-2">
+              <p className="text-muted-foreground text-[10px] sm:text-xs flex items-center gap-1.5 mt-0.5 truncate">
+                <span className="relative flex size-1.5 sm:size-2 shrink-0">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-400 opacity-75" />
-                  <span className="relative inline-flex size-2 rounded-full bg-teal-500" />
+                  <span className="relative inline-flex size-1.5 sm:size-2 rounded-full bg-teal-500" />
                 </span>
-                <span>Server Endpoint:</span>
-                <code className="text-teal-400 font-mono text-[11px] truncate max-w-sm">
-                  {endpointInput || "https://er-service.duckdns.org/api/sync"}
-                </code>
+                <span className="hidden xs:inline text-muted-foreground/80">Layanan:</span>
+                <span className="text-teal-400 font-semibold text-[10px] sm:text-[11px] truncate max-w-[130px] xs:max-w-[180px] sm:max-w-xs md:max-w-sm">
+                  {endpointInput?.includes("127.0.0.1") || endpointInput?.includes("localhost")
+                    ? "ER Suite Local Node"
+                    : "ER Suite Cloud Sync"}
+                </span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             {pendingCount > 0 && (
               <span
                 className={cn(
-                  "flex items-center gap-1 rounded-md border px-2.5 py-1 font-medium text-xs",
+                  "flex items-center gap-1 rounded-md border px-2 py-0.5 sm:px-2.5 sm:py-1 font-medium text-[10px] sm:text-xs whitespace-nowrap",
                   activeTier !== "free"
                     ? "border-teal-500/30 bg-teal-500/10 text-teal-300"
                     : "border-amber-500/30 bg-amber-500/10 text-amber-400"
                 )}
               >
-                <Clock className="size-3" />
-                {pendingCount}{" "}
-                {activeTier !== "free"
-                  ? "sedang disinkronkan"
-                  : "antrean lokal"}
+                <Clock className="size-3 shrink-0" />
+                <span>{pendingCount}</span>
+                <span className="hidden md:inline">
+                  {activeTier !== "free" ? "sedang disinkronkan" : "antrean lokal"}
+                </span>
               </span>
             )}
             {activeTier !== "free" && (
               <Button
-                className="hidden sm:inline-flex h-7 rounded-lg border-teal-500/40 bg-teal-500/15 text-xs font-semibold text-teal-300 hover:bg-teal-500/25 transition-all"
+                className="hidden sm:inline-flex h-7 sm:h-8 rounded-lg border-teal-500/40 bg-teal-500/15 text-xs font-semibold text-teal-300 hover:bg-teal-500/25 transition-all"
                 disabled={isSyncing}
                 onClick={handleTriggerPush}
                 size="sm"
@@ -436,7 +441,7 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
               </Button>
             )}
             <Button
-              className="size-8 rounded-lg text-muted-foreground hover:text-teal-300 hover:bg-teal-500/10 transition-colors"
+              className="size-7 sm:size-8 rounded-lg text-muted-foreground hover:text-teal-300 hover:bg-teal-500/10 transition-colors shrink-0"
               onClick={onClose}
               size="icon"
               variant="ghost"
@@ -448,16 +453,16 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
 
         {/* Local Vault Banner for Free Tier */}
         {activeTier === "free" && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-teal-500/20 bg-teal-950/20 px-6 py-2.5 text-xs text-teal-200">
-            <div className="flex items-center gap-2">
-              <Shield className="size-4 shrink-0 text-teal-400" />
-              <span>
+          <div className="shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 border-b border-teal-500/20 bg-teal-950/20 px-4 sm:px-6 py-2 sm:py-2.5 text-xs text-teal-200">
+            <div className="flex items-start sm:items-center gap-2">
+              <Shield className="size-4 shrink-0 text-teal-400 mt-0.5 sm:mt-0" />
+              <span className="text-[11px] sm:text-xs leading-relaxed">
                 <strong>Mode Starter (Hanya Brankas Lokal):</strong> Semua fitur manajemen database remote dapat digunakan penuh secara lokal. Berlangganan cloud untuk mengaktifkan sinkronisasi otomatis antar-perangkat.
               </span>
             </div>
             <button
               onClick={() => setActiveTab("pricing")}
-              className="shrink-0 rounded-lg bg-teal-600 px-3 py-1.5 font-semibold text-white text-xs hover:bg-teal-500 transition-colors shadow-sm shadow-teal-950/50"
+              className="w-full sm:w-auto shrink-0 rounded-lg bg-teal-600 px-3 py-1.5 font-semibold text-white text-xs hover:bg-teal-500 transition-colors shadow-sm shadow-teal-950/50 text-center"
               type="button"
             >
               Lihat Paket Langganan
@@ -465,11 +470,11 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
           </div>
         )}
 
-        {/* Tab Bar Navigasi - Teal Accent */}
-        <div className="flex border-b border-teal-500/15 bg-[#090d13]/90 px-4 py-2 gap-1 overflow-x-auto no-scrollbar">
+        {/* Tab Bar Navigasi - Responsive Scroll */}
+        <div className="shrink-0 flex border-b border-teal-500/15 bg-[#090d13]/90 px-3 sm:px-4 py-1.5 sm:py-2 gap-1 overflow-x-auto no-scrollbar scroll-smooth">
           <button
             className={cn(
-              "flex items-center gap-2 px-3.5 py-2 rounded-lg font-medium text-xs transition-all whitespace-nowrap",
+              "flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg font-medium text-[11px] sm:text-xs transition-all whitespace-nowrap shrink-0",
               activeTab === "overview"
                 ? "bg-teal-500/15 text-teal-300 font-semibold border border-teal-500/30 shadow-xs shadow-teal-950/40"
                 : "text-muted-foreground hover:text-teal-200 hover:bg-teal-500/5"
@@ -477,12 +482,12 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
             onClick={() => setActiveTab("overview")}
             type="button"
           >
-            <Zap className="size-3.5 text-teal-400" />
+            <Zap className="size-3.5 text-teal-400 shrink-0" />
             Operasi Cloud
           </button>
           <button
             className={cn(
-              "flex items-center gap-2 px-3.5 py-2 rounded-lg font-medium text-xs transition-all whitespace-nowrap",
+              "flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg font-medium text-[11px] sm:text-xs transition-all whitespace-nowrap shrink-0",
               activeTab === "pricing"
                 ? "bg-teal-500/15 text-teal-300 font-semibold border border-teal-500/30 shadow-xs shadow-teal-950/40"
                 : "text-muted-foreground hover:text-teal-200 hover:bg-teal-500/5"
@@ -490,7 +495,7 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
             onClick={() => setActiveTab("pricing")}
             type="button"
           >
-            <CreditCard className="size-3.5 text-teal-400" />
+            <CreditCard className="size-3.5 text-teal-400 shrink-0" />
             Upgrade Plan
             <span className="rounded-full bg-teal-500/20 px-1.5 py-0.5 font-bold text-[9px] text-teal-300 border border-teal-500/30">
               -33%
@@ -498,7 +503,7 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
           </button>
           <button
             className={cn(
-              "flex items-center gap-2 px-3.5 py-2 rounded-lg font-medium text-xs transition-all whitespace-nowrap",
+              "flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg font-medium text-[11px] sm:text-xs transition-all whitespace-nowrap shrink-0",
               activeTab === "auth"
                 ? "bg-teal-500/15 text-teal-300 font-semibold border border-teal-500/30 shadow-xs shadow-teal-950/40"
                 : "text-muted-foreground hover:text-teal-200 hover:bg-teal-500/5"
@@ -506,12 +511,12 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
             onClick={() => setActiveTab("auth")}
             type="button"
           >
-            <User className="size-3.5 text-teal-400" />
+            <User className="size-3.5 text-teal-400 shrink-0" />
             Akun ({config.userEmail ? "Aktif" : "Login/Daftar"})
           </button>
           <button
             className={cn(
-              "flex items-center gap-2 px-3.5 py-2 rounded-lg font-medium text-xs transition-all whitespace-nowrap",
+              "flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg font-medium text-[11px] sm:text-xs transition-all whitespace-nowrap shrink-0",
               activeTab === "journal"
                 ? "bg-teal-500/15 text-teal-300 font-semibold border border-teal-500/30 shadow-xs shadow-teal-950/40"
                 : "text-muted-foreground hover:text-teal-200 hover:bg-teal-500/5"
@@ -519,12 +524,12 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
             onClick={() => setActiveTab("journal")}
             type="button"
           >
-            <History className="size-3.5 text-teal-400" />
+            <History className="size-3.5 text-teal-400 shrink-0" />
             Jurnal ({journal.length})
           </button>
           <button
             className={cn(
-              "flex items-center gap-2 px-3.5 py-2 rounded-lg font-medium text-xs transition-all whitespace-nowrap",
+              "flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg font-medium text-[11px] sm:text-xs transition-all whitespace-nowrap shrink-0",
               activeTab === "json_snapshot"
                 ? "bg-teal-500/15 text-teal-300 font-semibold border border-teal-500/30 shadow-xs shadow-teal-950/40"
                 : "text-muted-foreground hover:text-teal-200 hover:bg-teal-500/5"
@@ -532,12 +537,12 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
             onClick={() => setActiveTab("json_snapshot")}
             type="button"
           >
-            <FileCode2 className="size-3.5 text-teal-400" />
+            <FileCode2 className="size-3.5 text-teal-400 shrink-0" />
             JSON Snapshot
           </button>
           <button
             className={cn(
-              "flex items-center gap-2 px-3.5 py-2 rounded-lg font-medium text-xs transition-all whitespace-nowrap",
+              "flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg font-medium text-[11px] sm:text-xs transition-all whitespace-nowrap shrink-0",
               activeTab === "restore"
                 ? "bg-teal-500/15 text-teal-300 font-semibold border border-teal-500/30 shadow-xs shadow-teal-950/40"
                 : "text-muted-foreground hover:text-teal-200 hover:bg-teal-500/5"
@@ -545,22 +550,22 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
             onClick={() => setActiveTab("restore")}
             type="button"
           >
-            <Upload className="size-3.5 text-teal-400" />
+            <Upload className="size-3.5 text-teal-400 shrink-0" />
             Pulihkan Manual
           </button>
         </div>
 
-        {/* Konten Tab */}
-        <div className="max-h-[66vh] min-h-105 overflow-y-auto p-6 space-y-6">
+        {/* Konten Tab - Responsive Flex Scroll */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-3.5 sm:p-6 space-y-4 sm:space-y-6">
           {/* TAB 1: OVERVIEW & ACTIONS */}
           {activeTab === "overview" && (
-            <div className="space-y-5">
+            <div className="space-y-4 sm:space-y-5">
               {/* Card Status Cloud */}
-              <div className="rounded-xl border border-teal-500/20 bg-linear-to-br from-teal-950/20 via-[#0a0f14]/80 to-[#070a0e] p-4.5 backdrop-blur-xs">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="rounded-xl border border-teal-500/20 bg-linear-to-br from-teal-950/20 via-[#0a0f14]/80 to-[#070a0e] p-3.5 sm:p-4.5 backdrop-blur-xs">
+                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <Shield className="size-4 text-teal-400" />
+                      <Shield className="size-4 text-teal-400 shrink-0" />
                       <h4 className="font-semibold text-foreground text-sm">
                         Basis Data Cloud (Neon PostgreSQL)
                       </h4>
@@ -570,11 +575,11 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-1.5 rounded-lg border border-teal-500/20 bg-background/60 p-1 shrink-0">
+                  <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 rounded-lg border border-teal-500/20 bg-background/60 p-1 w-full sm:w-auto shrink-0">
                     {PRESET_ENDPOINTS.map((preset) => (
                       <button
                         className={cn(
-                          "rounded-md px-2.5 py-1 font-medium text-[11px] transition-all",
+                          "flex-1 sm:flex-initial rounded-md px-2.5 py-1 font-medium text-[11px] transition-all text-center whitespace-nowrap",
                           endpointInput === preset.sync
                             ? "bg-teal-600 text-white font-semibold shadow-xs shadow-teal-950/50"
                             : "text-muted-foreground hover:text-teal-300 hover:bg-teal-500/10"
@@ -589,54 +594,56 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                   </div>
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 border-t border-teal-500/15 pt-3.5">
-                  <div className="rounded-lg border border-teal-500/15 bg-background/50 p-3">
-                    <span className="text-[11px] text-muted-foreground">
+                <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 border-t border-teal-500/15 pt-3.5">
+                  <div className="rounded-lg border border-teal-500/15 bg-background/50 p-2.5 sm:p-3">
+                    <span className="text-[10px] sm:text-[11px] text-muted-foreground">
                       Total Host Server
                     </span>
-                    <p className="font-semibold text-foreground text-sm mt-0.5">
+                    <p className="font-semibold text-foreground text-xs sm:text-sm mt-0.5 truncate">
                       {profiles.length} Host Server
                     </p>
                   </div>
-                  <div className="rounded-lg border border-teal-500/15 bg-background/50 p-3">
-                    <span className="text-[11px] text-muted-foreground">
+                  <div className="rounded-lg border border-teal-500/15 bg-background/50 p-2.5 sm:p-3">
+                    <span className="text-[10px] sm:text-[11px] text-muted-foreground">
                       Riwayat Aksi
                     </span>
-                    <p className="font-semibold text-foreground text-sm mt-0.5">
+                    <p className="font-semibold text-foreground text-xs sm:text-sm mt-0.5 truncate">
                       {journal.length} Transaksi
                     </p>
                   </div>
-                  <div className="rounded-lg border border-teal-500/15 bg-background/50 p-3">
-                    <span className="text-[11px] text-muted-foreground">
+                  <div className="rounded-lg border border-teal-500/15 bg-background/50 p-2.5 sm:p-3">
+                    <span className="text-[10px] sm:text-[11px] text-muted-foreground">
                       Kapasitas Brankas
                     </span>
-                    <p className="font-semibold text-foreground text-sm mt-0.5">
+                    <p className="font-semibold text-foreground text-xs sm:text-sm mt-0.5 truncate">
                       {activeTier === "free"
                         ? "1 Vault Lokal"
                         : `${config.maxVaults || 50} Cloud Vaults`}
                     </p>
                   </div>
-                  <div className="rounded-lg border border-teal-500/15 bg-background/50 p-3">
-                    <span className="text-[11px] text-muted-foreground">
+                  <div className="rounded-lg border border-teal-500/15 bg-background/50 p-2.5 sm:p-3">
+                    <span className="text-[10px] sm:text-[11px] text-muted-foreground">
                       Status Koneksi
                     </span>
-                    <p className="font-semibold text-teal-400 text-sm mt-0.5 flex items-center gap-1.5">
-                      <span className="size-1.5 rounded-full bg-teal-400" />
-                      {config.status === "success"
-                        ? "Terhubung & Sinkron"
-                        : "Siap Sinkron"}
+                    <p className="font-semibold text-teal-400 text-xs sm:text-sm mt-0.5 flex items-center gap-1.5 truncate">
+                      <span className="size-1.5 rounded-full bg-teal-400 shrink-0" />
+                      <span className="truncate">
+                        {config.status === "success"
+                          ? "Terhubung & Sinkron"
+                          : "Siap Sinkron"}
+                      </span>
                     </p>
                   </div>
                 </div>
               </div>
 
               {/* Tiga Aksi Utama: PUSH, PULL, MERGE */}
-              <div className="grid grid-cols-1 gap-3.5 md:grid-cols-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-3.5">
                 {/* 1. PUSH */}
-                <div className="flex flex-col justify-between rounded-xl border border-teal-500/25 bg-linear-to-b from-teal-950/25 via-[#0a0f14]/80 to-[#070a0e] p-4 transition-all hover:border-teal-500/50 shadow-sm">
+                <div className="flex flex-col justify-between rounded-xl border border-teal-500/25 bg-linear-to-b from-teal-950/25 via-[#0a0f14]/80 to-[#070a0e] p-3.5 sm:p-4 transition-all hover:border-teal-500/50 shadow-sm">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2">
-                      <div className="flex size-7 items-center justify-center rounded-lg bg-teal-500/15 border border-teal-500/30 text-teal-400">
+                      <div className="flex size-7 items-center justify-center rounded-lg bg-teal-500/15 border border-teal-500/30 text-teal-400 shrink-0">
                         <ArrowUpFromLine className="size-3.5" />
                       </div>
                       <span className="font-semibold text-foreground text-xs">
@@ -649,7 +656,7 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                   </div>
                   <Button
                     className={cn(
-                      "mt-4 w-full text-xs font-semibold transition-all",
+                      "mt-3.5 sm:mt-4 w-full text-xs font-semibold transition-all",
                       activeTier === "free"
                         ? "border-border/70 hover:bg-muted/40"
                         : "bg-teal-600 hover:bg-teal-500 text-white shadow-md shadow-teal-950/50"
@@ -661,12 +668,12 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                   >
                     {activeTier === "free" ? (
                       <>
-                        <Lock className="mr-1.5 size-3.5 text-amber-400" />
-                        <span>Kirim Snapshot (Perlu Langganan)</span>
+                        <Lock className="mr-1.5 size-3.5 text-amber-400 shrink-0" />
+                        <span className="truncate">Kirim Snapshot (Perlu Langganan)</span>
                       </>
                     ) : (
                       <>
-                        <ArrowUpFromLine className="mr-1.5 size-3.5" />
+                        <ArrowUpFromLine className="mr-1.5 size-3.5 shrink-0" />
                         <span>Kirim Snapshot (Push)</span>
                       </>
                     )}
@@ -674,10 +681,10 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                 </div>
 
                 {/* 2. PULL */}
-                <div className="flex flex-col justify-between rounded-xl border border-teal-500/20 bg-linear-to-b from-teal-950/15 via-[#0a0f14]/80 to-[#070a0e] p-4 transition-all hover:border-teal-500/40 shadow-sm">
+                <div className="flex flex-col justify-between rounded-xl border border-teal-500/20 bg-linear-to-b from-teal-950/15 via-[#0a0f14]/80 to-[#070a0e] p-3.5 sm:p-4 transition-all hover:border-teal-500/40 shadow-sm">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2">
-                      <div className="flex size-7 items-center justify-center rounded-lg bg-teal-500/15 border border-teal-500/30 text-teal-400">
+                      <div className="flex size-7 items-center justify-center rounded-lg bg-teal-500/15 border border-teal-500/30 text-teal-400 shrink-0">
                         <ArrowDownToLine className="size-3.5" />
                       </div>
                       <span className="font-semibold text-foreground text-xs">
@@ -689,7 +696,7 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                     </p>
                   </div>
                   <Button
-                    className="mt-4 w-full text-xs font-semibold border-teal-500/30 hover:bg-teal-500/10 hover:text-teal-300 transition-all"
+                    className="mt-3.5 sm:mt-4 w-full text-xs font-semibold border-teal-500/30 hover:bg-teal-500/10 hover:text-teal-300 transition-all"
                     disabled={isSyncing}
                     onClick={handleTriggerPull}
                     size="sm"
@@ -697,12 +704,12 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                   >
                     {activeTier === "free" ? (
                       <>
-                        <Lock className="mr-1.5 size-3.5 text-amber-400" />
-                        <span>Tarik State (Perlu Langganan)</span>
+                        <Lock className="mr-1.5 size-3.5 text-amber-400 shrink-0" />
+                        <span className="truncate">Tarik State (Perlu Langganan)</span>
                       </>
                     ) : (
                       <>
-                        <ArrowDownToLine className="mr-1.5 size-3.5" />
+                        <ArrowDownToLine className="mr-1.5 size-3.5 shrink-0" />
                         <span>Tarik State (Pull)</span>
                       </>
                     )}
@@ -710,10 +717,10 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                 </div>
 
                 {/* 3. MERGE */}
-                <div className="flex flex-col justify-between rounded-xl border border-teal-500/20 bg-linear-to-b from-teal-950/15 via-[#0a0f14]/80 to-[#070a0e] p-4 transition-all hover:border-teal-500/40 shadow-sm">
+                <div className="flex flex-col justify-between rounded-xl border border-teal-500/20 bg-linear-to-b from-teal-950/15 via-[#0a0f14]/80 to-[#070a0e] p-3.5 sm:p-4 transition-all hover:border-teal-500/40 shadow-sm">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2">
-                      <div className="flex size-7 items-center justify-center rounded-lg bg-teal-500/15 border border-teal-500/30 text-teal-400">
+                      <div className="flex size-7 items-center justify-center rounded-lg bg-teal-500/15 border border-teal-500/30 text-teal-400 shrink-0">
                         <GitMerge className="size-3.5" />
                       </div>
                       <span className="font-semibold text-foreground text-xs">
@@ -725,7 +732,7 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                     </p>
                   </div>
                   <Button
-                    className="mt-4 w-full text-xs font-semibold border-teal-500/30 hover:bg-teal-500/10 hover:text-teal-300 transition-all"
+                    className="mt-3.5 sm:mt-4 w-full text-xs font-semibold border-teal-500/30 hover:bg-teal-500/10 hover:text-teal-300 transition-all"
                     disabled={isSyncing}
                     onClick={handleTriggerMerge}
                     size="sm"
@@ -733,12 +740,12 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                   >
                     {activeTier === "free" ? (
                       <>
-                        <Lock className="mr-1.5 size-3.5 text-amber-400" />
-                        <span>Gabung Data (Perlu Langganan)</span>
+                        <Lock className="mr-1.5 size-3.5 text-amber-400 shrink-0" />
+                        <span className="truncate">Gabung Data (Perlu Langganan)</span>
                       </>
                     ) : (
                       <>
-                        <GitMerge className="mr-1.5 size-3.5" />
+                        <GitMerge className="mr-1.5 size-3.5 shrink-0" />
                         <span>Gabung Data (Merge)</span>
                       </>
                     )}
@@ -747,12 +754,12 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
               </div>
 
               {/* Endpoint & Key Form */}
-              <div className="space-y-3.5 rounded-xl border border-teal-500/20 bg-[#0a0f14]/70 p-4.5">
+              <div className="space-y-3.5 rounded-xl border border-teal-500/20 bg-[#0a0f14]/70 p-3.5 sm:p-4.5">
                 {/* Auto-Sync Setting Switch */}
-                <div className="flex items-center justify-between rounded-xl border border-teal-500/20 bg-linear-to-r from-teal-950/20 via-[#0a0f14]/80 to-[#070a0e] p-3.5">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border border-teal-500/20 bg-linear-to-r from-teal-950/20 via-[#0a0f14]/80 to-[#070a0e] p-3 sm:p-3.5">
                   <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <RefreshCw className="size-3.5 text-teal-400" />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <RefreshCw className="size-3.5 text-teal-400 shrink-0" />
                       <span className="text-xs font-semibold text-foreground">
                         Sinkronisasi Otomatis (Auto-Sync)
                       </span>
@@ -766,7 +773,7 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
                       {activeTier === "free"
                         ? "Paket Starter hanya menyimpan di brankas lokal. Tingkatkan ke Pro / Team / Business untuk sinkronisasi otomatis ke cloud."
                         : "Setiap aktivitas database (tabel, query, backup, manipulasi) otomatis disinkronkan ke cloud backend Neon secara real-time."}
@@ -776,6 +783,7 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                     checked={
                       activeTier !== "free" && Boolean(config.autoSync ?? true)
                     }
+                    className="shrink-0 self-end sm:self-center"
                     disabled={activeTier === "free"}
                     onCheckedChange={(checked) => {
                       updateConfig({ autoSync: checked });
@@ -788,7 +796,7 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-medium text-muted-foreground">
                       Endpoint API Sinkronisasi
@@ -812,10 +820,10 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-t border-teal-500/15 pt-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 border-t border-teal-500/15 pt-3">
                   <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                    <Clock className="size-3.5 text-teal-400" />
-                    <span>
+                    <Clock className="size-3.5 text-teal-400 shrink-0" />
+                    <span className="truncate">
                       Terakhir disinkronkan:{" "}
                       {config.lastSyncAt
                         ? new Date(config.lastSyncAt).toLocaleString()
@@ -823,14 +831,28 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                     </span>
                   </div>
 
-                  <Button
-                    className="border-teal-500/30 hover:bg-teal-500/15 hover:text-teal-300 text-teal-400"
-                    onClick={handleSaveSettings}
-                    size="sm"
-                    variant="outline"
-                  >
-                    Simpan Pengaturan
-                  </Button>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Button
+                      className="w-full sm:w-auto border-border/70 text-muted-foreground hover:bg-muted hover:text-foreground text-xs"
+                      onClick={() => {
+                        setEndpointInput(config.apiEndpoint);
+                        setTokenInput(config.apiToken || "");
+                        toast.info("Perubahan konfigurasi dibatalkan.");
+                      }}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      {t("common.cancel", "Batal")}
+                    </Button>
+                    <Button
+                      className="w-full sm:w-auto border-teal-500/30 hover:bg-teal-500/15 hover:text-teal-300 text-teal-400"
+                      onClick={handleSaveSettings}
+                      size="sm"
+                      variant="outline"
+                    >
+                      {t("common.save", "Simpan Pengaturan")}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -838,10 +860,10 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
 
           {/* TAB 2: PRICING & UPGRADE PLAN */}
           {activeTab === "pricing" && (
-            <div className="space-y-6 py-2">
+            <div className="space-y-5 sm:space-y-6 py-1">
               {/* Header Upgrade */}
-              <div className="text-center space-y-1.5">
-                <h2 className="text-2xl font-bold tracking-tight text-foreground">
+              <div className="text-center space-y-1.5 sm:space-y-2">
+                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                   Upgrade your plan
                 </h2>
                 <p className="text-xs text-muted-foreground">
@@ -858,17 +880,17 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                   plan.
                 </p>
                 {activeTier === "free" && (
-                  <p className="mx-auto max-w-lg text-[11px] text-muted-foreground/90 pt-1">
+                  <p className="mx-auto max-w-lg text-[11px] text-muted-foreground/90 pt-0.5 px-2">
                     Paket Starter gratis hanya memiliki akses <strong>Brankas Lokal</strong>. Untuk mulai menyinkronkan data antar-perangkat secara otomatis ke server cloud, silakan pilih paket berlangganan di bawah:
                   </p>
                 )}
 
                 {/* Billing Cycle Pill Toggle */}
-                <div className="pt-3 flex justify-center">
+                <div className="pt-2 sm:pt-3 flex justify-center">
                   <div className="inline-flex items-center rounded-full bg-[#0a1216] p-1 border border-teal-500/30">
                     <button
                       className={cn(
-                        "rounded-full px-4 py-1.5 text-xs font-medium transition-all",
+                        "rounded-full px-3.5 sm:px-4 py-1.5 text-xs font-medium transition-all",
                         billingCycle === "monthly"
                           ? "bg-teal-900/60 text-teal-200 font-semibold shadow-sm border border-teal-500/30"
                           : "text-muted-foreground hover:text-foreground"
@@ -880,7 +902,7 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                     </button>
                     <button
                       className={cn(
-                        "rounded-full px-4 py-1.5 text-xs font-medium transition-all flex items-center gap-1.5",
+                        "rounded-full px-3.5 sm:px-4 py-1.5 text-xs font-medium transition-all flex items-center gap-1.5",
                         billingCycle === "annual"
                           ? "bg-teal-900/60 text-teal-200 font-semibold shadow-sm border border-teal-500/30"
                           : "text-muted-foreground hover:text-foreground"
@@ -889,7 +911,7 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                       type="button"
                     >
                       <span>Annual</span>
-                      <span className="text-teal-400 font-bold text-[11px]">
+                      <span className="text-teal-400 font-bold text-[10px] sm:text-[11px]">
                         • up to 33% off
                       </span>
                     </button>
@@ -898,24 +920,24 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
               </div>
 
               {/* 3 Pricing Cards (Pro, Team, Business) */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4.5">
                 {/* 1. PRO PLAN CARD */}
                 <div
                   className={cn(
-                    "flex flex-col justify-between rounded-2xl border p-5 transition-all bg-[#0a0f14]/80 backdrop-blur-sm",
+                    "flex flex-col justify-between rounded-2xl border p-4 sm:p-5 transition-all bg-[#0a0f14]/80 backdrop-blur-sm",
                     activeTier === "pro"
                       ? "border-teal-500 ring-1 ring-teal-500/50 shadow-lg shadow-teal-500/15"
                       : "border-teal-500/20 hover:border-teal-500/40"
                   )}
                 >
-                  <div className="space-y-4">
+                  <div className="space-y-3.5 sm:space-y-4">
                     <div>
-                      <h3 className="font-semibold text-foreground text-base">Pro</h3>
+                      <h3 className="font-semibold text-foreground text-sm sm:text-base">Pro</h3>
                     </div>
 
                     <div className="space-y-0.5">
                       <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-bold tracking-tight text-foreground">
+                        <span className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                           US${billingCycle === "annual" ? SUBSCRIPTION_PLANS.pro.annualMonthlyRate : SUBSCRIPTION_PLANS.pro.monthlyRate}
                         </span>
                       </div>
@@ -953,8 +975,8 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                       <ul className="space-y-2 text-xs text-foreground/90">
                         {SUBSCRIPTION_PLANS.pro.features.map((feat) => (
                           <li className="flex items-start gap-2" key={feat}>
-                            <span className="text-teal-400 text-sm leading-none">•</span>
-                            <span className="text-[11px] leading-relaxed">{feat}</span>
+                            <span className="text-teal-400 text-sm leading-none shrink-0">•</span>
+                            <span className="text-[11px] leading-relaxed break-words">{feat}</span>
                           </li>
                         ))}
                       </ul>
@@ -965,20 +987,20 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                 {/* 2. TEAM PLAN CARD */}
                 <div
                   className={cn(
-                    "flex flex-col justify-between rounded-2xl border p-5 transition-all bg-[#0a0f14]/80 backdrop-blur-sm",
+                    "flex flex-col justify-between rounded-2xl border p-4 sm:p-5 transition-all bg-[#0a0f14]/80 backdrop-blur-sm",
                     activeTier === "team"
                       ? "border-teal-500 ring-1 ring-teal-500/50 shadow-lg shadow-teal-500/15"
                       : "border-teal-500/20 hover:border-teal-500/40"
                   )}
                 >
-                  <div className="space-y-4">
+                  <div className="space-y-3.5 sm:space-y-4">
                     <div>
-                      <h3 className="font-semibold text-foreground text-base">Team</h3>
+                      <h3 className="font-semibold text-foreground text-sm sm:text-base">Team</h3>
                     </div>
 
                     <div className="space-y-0.5">
                       <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-bold tracking-tight text-foreground">
+                        <span className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                           US${billingCycle === "annual" ? SUBSCRIPTION_PLANS.team.annualMonthlyRate : SUBSCRIPTION_PLANS.team.monthlyRate}
                         </span>
                       </div>
@@ -1024,8 +1046,8 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                       <ul className="space-y-2 text-xs text-foreground/90">
                         {SUBSCRIPTION_PLANS.team.features.map((feat) => (
                           <li className="flex items-start gap-2" key={feat}>
-                            <span className="text-teal-400 text-sm leading-none">•</span>
-                            <span className="text-[11px] leading-relaxed">{feat}</span>
+                            <span className="text-teal-400 text-sm leading-none shrink-0">•</span>
+                            <span className="text-[11px] leading-relaxed break-words">{feat}</span>
                           </li>
                         ))}
                       </ul>
@@ -1036,15 +1058,15 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                 {/* 3. BUSINESS PLAN CARD */}
                 <div
                   className={cn(
-                    "flex flex-col justify-between rounded-2xl border p-5 transition-all bg-[#0a0f14]/80 backdrop-blur-sm relative",
+                    "flex flex-col justify-between rounded-2xl border p-4 sm:p-5 transition-all bg-[#0a0f14]/80 backdrop-blur-sm relative",
                     activeTier === "business"
                       ? "border-amber-500/80 ring-1 ring-amber-500/40 shadow-xl shadow-amber-500/10"
                       : "border-teal-500/20 hover:border-teal-500/40"
                   )}
                 >
-                  <div className="space-y-4">
+                  <div className="space-y-3.5 sm:space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-foreground text-base">Business</h3>
+                      <h3 className="font-semibold text-foreground text-sm sm:text-base">Business</h3>
                       <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[9px] font-bold text-amber-400">
                         ENTERPRISE
                       </span>
@@ -1052,7 +1074,7 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
 
                     <div className="space-y-0.5">
                       <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-bold tracking-tight text-foreground">
+                        <span className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                           US${billingCycle === "annual" ? SUBSCRIPTION_PLANS.business.annualMonthlyRate : SUBSCRIPTION_PLANS.business.monthlyRate}
                         </span>
                       </div>
@@ -1098,8 +1120,8 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                       <ul className="space-y-2 text-xs text-foreground/90">
                         {SUBSCRIPTION_PLANS.business.features.slice(0, 2).map((feat) => (
                           <li className="flex items-start gap-2" key={feat}>
-                            <span className="text-amber-400 text-sm leading-none">•</span>
-                            <span className="text-[11px] leading-relaxed">{feat}</span>
+                            <span className="text-amber-400 text-sm leading-none shrink-0">•</span>
+                            <span className="text-[11px] leading-relaxed break-words">{feat}</span>
                           </li>
                         ))}
                       </ul>
@@ -1107,7 +1129,7 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                       <div className="pt-2">
                         <p className="text-[11px] text-muted-foreground font-medium">Available add-ons:</p>
                         <p className="text-[11px] text-foreground/90 flex items-center gap-1.5 mt-1">
-                          <span className="text-amber-400">•</span> SAML SSO
+                          <span className="text-amber-400 shrink-0">•</span> SAML SSO
                         </p>
                       </div>
                     </div>
@@ -1121,24 +1143,24 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
           {activeTab === "auth" && (
             <div className="space-y-4">
               {config.userEmail ? (
-                <div className="rounded-xl border border-teal-500/30 bg-teal-950/20 p-5">
+                <div className="rounded-xl border border-teal-500/30 bg-teal-950/20 p-4 sm:p-5">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3.5">
-                      <div className="flex size-11 items-center justify-center rounded-full bg-teal-500/20 text-teal-400 border border-teal-500/30">
-                        <User className="size-6" />
+                    <div className="flex items-center gap-3 sm:gap-3.5">
+                      <div className="flex size-10 sm:size-11 items-center justify-center rounded-full bg-teal-500/20 text-teal-400 border border-teal-500/30 shrink-0">
+                        <User className="size-5 sm:size-6" />
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-foreground text-sm">
+                      <div className="min-w-0">
+                        <h4 className="font-semibold text-foreground text-sm truncate">
                           {config.userName || "Pelanggan Cloud"}
                         </h4>
-                        <p className="text-muted-foreground text-xs">
+                        <p className="text-muted-foreground text-xs truncate">
                           {config.userEmail} (ID: {config.userId || "usr_pro"})
                         </p>
-                        <div className="mt-1.5 flex items-center gap-2">
-                          <span className="inline-block rounded bg-teal-500/20 border border-teal-500/40 px-2 py-0.5 font-bold font-mono text-[10px] text-teal-300 uppercase">
+                        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                          <span className="inline-block rounded bg-teal-500/20 border border-teal-500/40 px-2 py-0.5 font-bold font-mono text-[10px] text-teal-300 uppercase whitespace-nowrap">
                             PLAN: {activeTier} ({activeCycle})
                           </span>
-                          <span className="text-[11px] text-muted-foreground">
+                          <span className="text-[11px] text-muted-foreground whitespace-nowrap">
                             Maks {config.maxVaults || 50} Vaults Cloud
                           </span>
                         </div>
@@ -1146,7 +1168,7 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                     </div>
 
                     <Button
-                      className="border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+                      className="w-full sm:w-auto border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 shrink-0"
                       onClick={logout}
                       size="sm"
                       variant="outline"
@@ -1159,23 +1181,23 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
               ) : (
                 <div className="space-y-4">
                   {/* Quick Seeded Accounts Helper */}
-                  <div className="rounded-xl border border-teal-500/20 bg-[#0a0f14]/70 p-4.5">
+                  <div className="rounded-xl border border-teal-500/20 bg-[#0a0f14]/70 p-3.5 sm:p-4.5">
                     <div className="flex items-center gap-2 text-xs font-semibold text-foreground mb-1.5">
-                      <Sparkles className="size-4 text-teal-400" />
+                      <Sparkles className="size-4 text-teal-400 shrink-0" />
                       <span>Akun Uji Coba Cepat (Tersedia di Cloud)</span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground mb-3">
+                    <p className="text-[11px] text-muted-foreground mb-3 leading-relaxed">
                       Klik salah satu akun di bawah ini untuk langsung masuk dengan hak akses cloud:
                     </p>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                       <button
                         className="flex flex-col text-left p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 transition-all text-xs"
                         onClick={() => handleQuickLogin("business@xphpmyadmin.dev")}
                         type="button"
                       >
                         <span className="font-bold text-amber-300">Business Cloud User</span>
-                        <span className="text-[10px] font-mono text-muted-foreground mt-0.5">business@xphpmyadmin.dev</span>
-                        <span className="text-[9px] text-amber-400 mt-1.5 font-medium">Status: Business • Annual (50 Vaults)</span>
+                        <span className="text-[10px] font-mono text-muted-foreground mt-0.5 truncate w-full">business@xphpmyadmin.dev</span>
+                        <span className="text-[9px] text-amber-400 mt-1.5 font-medium">Business • Annual (50 Vaults)</span>
                       </button>
 
                       <button
@@ -1184,8 +1206,8 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                         type="button"
                       >
                         <span className="font-bold text-blue-300">Team Cloud User</span>
-                        <span className="text-[10px] font-mono text-muted-foreground mt-0.5">team@xphpmyadmin.dev</span>
-                        <span className="text-[9px] text-blue-400 mt-1.5 font-medium">Status: Team • Monthly (20 Vaults)</span>
+                        <span className="text-[10px] font-mono text-muted-foreground mt-0.5 truncate w-full">team@xphpmyadmin.dev</span>
+                        <span className="text-[9px] text-blue-400 mt-1.5 font-medium">Team • Monthly (20 Vaults)</span>
                       </button>
 
                       <button
@@ -1194,14 +1216,14 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                         type="button"
                       >
                         <span className="font-bold text-teal-300">Pro Developer User</span>
-                        <span className="text-[10px] font-mono text-muted-foreground mt-0.5">pro@xphpmyadmin.dev</span>
-                        <span className="text-[9px] text-teal-400 mt-1.5 font-medium">Status: Pro • Annual (10 Vaults)</span>
+                        <span className="text-[10px] font-mono text-muted-foreground mt-0.5 truncate w-full">pro@xphpmyadmin.dev</span>
+                        <span className="text-[9px] text-teal-400 mt-1.5 font-medium">Pro • Annual (10 Vaults)</span>
                       </button>
                     </div>
                   </div>
 
                   {/* Manual Login / Register Form */}
-                  <div className="mx-auto max-w-md rounded-xl border border-teal-500/20 bg-[#0a0f14]/80 p-5">
+                  <div className="mx-auto max-w-md w-full rounded-xl border border-teal-500/20 bg-[#0a0f14]/80 p-4 sm:p-5">
                     <div className="flex rounded-lg border border-teal-500/20 bg-background/60 p-1">
                       <button
                         className={cn(
@@ -1268,11 +1290,30 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                         />
                       </div>
 
-                      <Button
-                        className="mt-2 w-full text-xs font-semibold bg-teal-600 hover:bg-teal-500 text-white shadow-md shadow-teal-950/50"
-                        disabled={isAuthLoading}
-                        type="submit"
-                      >
+                      <div className="mt-2 flex items-center gap-2">
+                        {(authEmail || authPassword || authName) && (
+                          <Button
+                            className="w-1/3 text-xs border-border text-muted-foreground hover:bg-muted"
+                            disabled={isAuthLoading}
+                            onClick={() => {
+                              setAuthEmail("");
+                              setAuthPassword("");
+                              setAuthName("");
+                            }}
+                            type="button"
+                            variant="outline"
+                          >
+                            {t("common.cancel", "Batal")}
+                          </Button>
+                        )}
+                        <Button
+                          className={cn(
+                            "text-xs font-semibold bg-teal-600 hover:bg-teal-500 text-white shadow-md shadow-teal-950/50",
+                            authEmail || authPassword || authName ? "w-2/3" : "w-full"
+                          )}
+                          disabled={isAuthLoading}
+                          type="submit"
+                        >
                         {authMode === "login" ? (
                           <>
                             <LogIn className="mr-1.5 size-3.5" />
@@ -1284,7 +1325,8 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                             {isAuthLoading ? "Mendaftarkan..." : "Daftar Akun Cloud Business"}
                           </>
                         )}
-                      </Button>
+                        </Button>
+                      </div>
                     </form>
                   </div>
                 </div>
@@ -1294,20 +1336,20 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
 
           {/* TAB 4: JURNAL AKTIVITAS */}
           {activeTab === "journal" && (
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                <div className="flex flex-wrap gap-1.5">
+            <div className="space-y-3.5 sm:space-y-4">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2.5 sm:gap-3">
+                <div className="flex flex-wrap gap-1 sm:gap-1.5">
                   {[
                     { id: "all", label: "Semua" },
                     { id: "database", label: "Database" },
-                    { id: "table", label: "Tabel & Pemeliharaan" },
+                    { id: "table", label: "Tabel" },
                     { id: "export_import", label: "Ekspor/Impor" },
-                    { id: "routine", label: "Rutinitas/Trigger" },
-                    { id: "data", label: "Manipulasi Data" },
+                    { id: "routine", label: "Rutinitas" },
+                    { id: "data", label: "Manipulasi" },
                   ].map((cat) => (
                     <button
                       className={cn(
-                        "rounded-lg px-2.5 py-1 text-xs transition-colors",
+                        "rounded-lg px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs transition-colors",
                         categoryFilter === cat.id
                           ? "bg-teal-500/20 text-teal-300 font-semibold border border-teal-500/40 shadow-xs shadow-teal-950/40"
                           : "border border-border/70 bg-muted/20 text-muted-foreground hover:text-teal-200 hover:bg-teal-500/5"
@@ -1321,7 +1363,7 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                   ))}
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-between md:justify-end">
                   {activeTier !== "free" ? (
                     <Button
                       className="h-8 text-xs font-semibold border-teal-500/40 bg-teal-500/15 text-teal-300 hover:bg-teal-500/25 transition-all"
@@ -1337,7 +1379,7 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                         )}
                       />
                       {pendingCount > 0
-                        ? `Sinkronkan Manual (${pendingCount} tertunda)`
+                        ? `Sinkronkan (${pendingCount})`
                         : "Sinkronkan Manual"}
                     </Button>
                   ) : (
@@ -1351,21 +1393,45 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                       Sinkron Cloud (Perlu Langganan)
                     </Button>
                   )}
-                  <Button
-                    className="h-8 text-xs text-destructive hover:bg-destructive/10"
-                    onClick={clearJournal}
-                    size="sm"
-                    variant="ghost"
-                  >
-                    <Trash2 className="mr-1 size-3" />
-                    Bersihkan Jurnal
-                  </Button>
+                  {confirmClearJournal ? (
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        className="h-8 text-xs border-border text-muted-foreground hover:bg-muted"
+                        onClick={() => setConfirmClearJournal(false)}
+                        size="sm"
+                        variant="outline"
+                      >
+                        {t("common.cancel", "Batal")}
+                      </Button>
+                      <Button
+                        className="h-8 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={() => {
+                          clearJournal();
+                          setConfirmClearJournal(false);
+                          toast.success("Jurnal audit telah dibersihkan.");
+                        }}
+                        size="sm"
+                      >
+                        {t("common.delete", "Ya, Bersihkan")}
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      className="h-8 text-xs text-destructive hover:bg-destructive/10"
+                      onClick={() => setConfirmClearJournal(true)}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <Trash2 className="mr-1 size-3" />
+                      {t("common.clear", "Bersihkan")}
+                    </Button>
+                  )}
                 </div>
               </div>
 
               {filteredJournal.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-xl border border-teal-500/20 border-dashed py-14 text-center">
-                  <History className="size-8 text-muted-foreground/40" />
+                <div className="flex flex-col items-center justify-center rounded-xl border border-teal-500/20 border-dashed py-10 sm:py-14 text-center px-4">
+                  <History className="size-7 sm:size-8 text-muted-foreground/40" />
                   <p className="mt-2.5 font-medium text-foreground text-xs">
                     Belum ada riwayat aktivitas tercatat
                   </p>
@@ -1377,40 +1443,40 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                 <div className="divide-y divide-teal-500/10 rounded-xl border border-teal-500/20 bg-[#0a0f14]/80">
                   {filteredJournal.slice(0, 50).map((entry) => (
                     <div
-                      className="flex flex-col gap-1.5 p-3.5 text-xs"
+                      className="flex flex-col gap-1.5 p-3 sm:p-3.5 text-xs"
                       key={entry.id}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                           <span
                             className={cn(
-                              "rounded-md px-1.5 py-0.5 font-mono text-[10px] uppercase font-semibold",
+                              "rounded-md px-1.5 py-0.5 font-mono text-[9px] sm:text-[10px] uppercase font-semibold",
                               entry.category === "database" &&
-                              "bg-teal-500/15 text-teal-300 border border-teal-500/30",
+                              "bg-teal-100 text-teal-800 border border-teal-200 dark:bg-teal-500/15 dark:text-teal-300 dark:border-teal-500/30",
                               entry.category === "table" &&
-                              "bg-blue-500/10 text-blue-400 border border-blue-500/30",
+                              "bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/30",
                               entry.category === "export_import" &&
-                              "bg-purple-500/10 text-purple-400 border border-purple-500/30",
+                              "bg-purple-100 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/30",
                               entry.category === "routine" &&
-                              "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30",
+                              "bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30",
                               entry.category === "data" &&
-                              "bg-amber-500/10 text-amber-400 border border-amber-500/30"
+                              "bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30"
                             )}
                           >
                             {entry.category}
                           </span>
-                          <span className="font-semibold text-foreground">
+                          <span className="font-semibold text-foreground text-xs">
                             {entry.action}
                           </span>
                           {(entry.database || entry.table) && (
-                            <span className="font-mono text-muted-foreground text-[11px]">
+                            <span className="font-mono text-muted-foreground text-[10px] sm:text-[11px] truncate max-w-[200px]">
                               {entry.database}
                               {entry.table ? `.${entry.table}` : ""}
                             </span>
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
                           <span
                             className={cn(
                               "rounded-full px-2 py-0.5 font-mono text-[9px] font-medium",
@@ -1428,7 +1494,7 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                       </div>
 
                       {entry.details && Object.keys(entry.details).length > 0 && (
-                        <pre className="overflow-x-auto rounded-lg border border-border/50 bg-[#07080a] p-2 font-mono text-[10px] text-muted-foreground leading-relaxed">
+                        <pre className="overflow-x-auto rounded-lg border border-border/50 bg-[#07080a] p-2 font-mono text-[10px] text-muted-foreground leading-relaxed max-h-40">
                           {JSON.stringify(entry.details, null, 2)}
                         </pre>
                       )}
@@ -1442,18 +1508,18 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
           {/* TAB 5: JSON SNAPSHOT */}
           {activeTab === "json_snapshot" && (
             <div className="space-y-3.5">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
                 <div>
-                  <h4 className="font-semibold text-foreground text-xs">
+                  <h4 className="font-semibold text-foreground text-xs sm:text-sm">
                     Snapshot Serialisasi JSON Lengkap (Format Cloud)
                   </h4>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
                     Data dikirimkan ke tabel penyimpanan profil melalui endpoint <code>POST /api/sync/push</code>.
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                   <Button
-                    className="border-teal-500/20 hover:border-teal-500/40 hover:bg-teal-500/10 hover:text-teal-300"
+                    className="flex-1 sm:flex-initial border-teal-500/20 hover:border-teal-500/40 hover:bg-teal-500/10 hover:text-teal-300"
                     onClick={handleCopyJson}
                     size="sm"
                     variant="outline"
@@ -1466,19 +1532,19 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
                     {copied ? "Tersalin!" : "Salin JSON"}
                   </Button>
                   <Button
-                    className="border-teal-500/20 hover:border-teal-500/40 hover:bg-teal-500/10 hover:text-teal-300"
+                    className="flex-1 sm:flex-initial border-teal-500/20 hover:border-teal-500/40 hover:bg-teal-500/10 hover:text-teal-300"
                     onClick={handleDownloadJson}
                     size="sm"
                     variant="outline"
                   >
                     <Download className="mr-1.5 size-3.5" />
-                    Unduh Berkas .json
+                    Unduh .json
                   </Button>
                 </div>
               </div>
 
-              <div className="relative rounded-xl border border-teal-500/20 bg-[#06090d] p-3.5">
-                <pre className="max-h-90 overflow-auto font-mono text-teal-400 text-xs leading-relaxed select-all">
+              <div className="relative rounded-xl border border-teal-500/20 bg-[#06090d] p-3 sm:p-3.5">
+                <pre className="max-h-60 sm:max-h-96 overflow-auto font-mono text-teal-400 text-[11px] sm:text-xs leading-relaxed select-all">
                   {liveJsonString}
                 </pre>
               </div>
@@ -1489,7 +1555,7 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
           {activeTab === "restore" && (
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-foreground text-xs">
+                <h4 className="font-semibold text-foreground text-xs sm:text-sm">
                   Pulihkan Profil & Konfigurasi dari Berkas / JSON Cloud
                 </h4>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -1498,15 +1564,29 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
               </div>
 
               <textarea
-                className="h-48 w-full rounded-xl border border-teal-500/20 bg-[#06090d] p-3.5 font-mono text-foreground text-xs placeholder:text-muted-foreground/60 focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 focus:outline-none"
+                className="h-36 sm:h-48 w-full rounded-xl border border-teal-500/20 bg-[#06090d] p-3 sm:p-3.5 font-mono text-foreground text-[11px] sm:text-xs placeholder:text-muted-foreground/60 focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 focus:outline-none"
                 onChange={(e) => setRestoreJsonInput(e.target.value)}
                 placeholder='{"metadata": ..., "profiles": [...], ...}'
                 value={restoreJsonInput}
               />
 
-              <div className="flex justify-end">
+              <div className="flex items-center justify-end gap-2">
+                {restoreJsonInput && (
+                  <Button
+                    className="w-full sm:w-auto border-border text-muted-foreground hover:bg-muted hover:text-foreground text-xs"
+                    disabled={isRestoring}
+                    onClick={() => {
+                      setRestoreJsonInput("");
+                      toast.info("Input pemulihan dibatalkan.");
+                    }}
+                    size="sm"
+                    variant="outline"
+                  >
+                    {t("common.cancel", "Batal")}
+                  </Button>
+                )}
                 <Button
-                  className="bg-teal-600 hover:bg-teal-500 text-white font-semibold shadow-md shadow-teal-950/50"
+                  className="w-full sm:w-auto bg-teal-600 hover:bg-teal-500 text-white font-semibold shadow-md shadow-teal-950/50"
                   disabled={isRestoring || !restoreJsonInput.trim()}
                   onClick={handleApplyRestore}
                   size="sm"
@@ -1521,17 +1601,18 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
           )}
         </div>
 
-        {/* Footer Modal - Teal Accent Theme */}
-        <div className="flex items-center justify-between border-t border-teal-500/15 bg-[#070a0e] px-6 py-3.5 text-xs">
-          <div className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
-            <Server className="size-3.5 text-teal-400" />
-            <span>
-              Layanan: <strong className="text-teal-300">xphpMyAdmin Cloud</strong> (Neon Serverless PostgreSQL)
+        {/* Footer Modal - Responsive Flex Layout */}
+        <div className="shrink-0 flex items-center justify-between border-t border-teal-500/15 bg-[#070a0e] px-4 sm:px-6 py-2.5 sm:py-3.5 text-xs gap-2">
+          <div className="flex items-center gap-1.5 text-muted-foreground text-[10px] sm:text-[11px] min-w-0 truncate">
+            <Server className="size-3.5 text-teal-400 shrink-0" />
+            <span className="truncate">
+              Layanan: <strong className="text-teal-300">xphpMyAdmin Cloud</strong>{" "}
+              <span className="hidden sm:inline text-muted-foreground/80">(Neon Serverless PostgreSQL)</span>
             </span>
           </div>
 
           <Button
-            className="border-teal-500/25 hover:border-teal-500/40 hover:bg-teal-500/10 hover:text-teal-300"
+            className="shrink-0 border-teal-500/25 hover:border-teal-500/40 hover:bg-teal-500/10 hover:text-teal-300 text-xs"
             onClick={onClose}
             size="sm"
             variant="outline"

@@ -1,324 +1,260 @@
-import { CheckSquare, Copy, Download, FileDown, Square } from "lucide-react";
+import { Check, Copy, Download, FileDown, Layers } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import type { TableItem } from "@/types/workspace";
 import { cn } from "@/utils/tailwind";
 
+import type { TableItem } from "@/types/workspace";
+
 interface ExportTabProps {
-  availableTables?: TableItem[];
+  exportMethod?: "quick" | "custom" | string;
+  exportSelectedTables?: string[];
+  setExportMethod?: (val: any) => void;
+  setExportSelectedTables?: (val: any) => void;
+  availableTables?: (string | TableItem)[];
   currentSelectedDatabase: string;
   exportAddDropTable: boolean;
   exportDisableFk: boolean;
   exportFormat?: "sql" | "csv" | "json" | "xml";
-  exportMethod?: "quick" | "custom";
   exportMode: "full" | "structure" | "data";
   exportPreviewSql: string;
-  exportSelectedTables?: string[];
   isExporting: boolean;
   onExecuteExport: (saveToFile: boolean) => void;
+  selectedTables?: string[];
   setExportAddDropTable: (val: boolean) => void;
   setExportDisableFk: (val: boolean) => void;
   setExportFormat?: (val: "sql" | "csv" | "json" | "xml") => void;
-  setExportMethod?: (val: "quick" | "custom") => void;
   setExportMode: (val: "full" | "structure" | "data") => void;
-  setExportSelectedTables?: (val: string[]) => void;
+  setSelectedTables?: (tables: string[]) => void;
 }
 
 export function ExportTab({
-  availableTables = [],
+  availableTables: rawAvailableTables = [],
   currentSelectedDatabase,
   exportAddDropTable,
   exportDisableFk,
   exportFormat = "sql",
-  exportMethod = "quick",
+  exportMethod,
   exportMode,
   exportPreviewSql,
-  exportSelectedTables = [],
+  exportSelectedTables,
   isExporting,
   onExecuteExport,
+  selectedTables: propSelectedTables,
   setExportAddDropTable,
   setExportDisableFk,
   setExportFormat,
   setExportMethod,
   setExportMode,
   setExportSelectedTables,
+  setSelectedTables: propSetSelectedTables,
 }: ExportTabProps) {
+  const setSelectedTables = propSetSelectedTables || setExportSelectedTables || (() => {});
+  const selectedTables = propSelectedTables || exportSelectedTables || [];
+  const availableTables = (rawAvailableTables || []).map((t) => (typeof t === "string" ? t : t.name));
   const formats = [
-    {
-      desc: "Format standar phpMyAdmin dump DDL & INSERT",
-      ext: ".sql",
-      id: "sql" as const,
-      name: "SQL Dump",
-    },
-    {
-      desc: "Nilai dipisahkan koma untuk Excel / Spreadsheet",
-      ext: ".csv",
-      id: "csv" as const,
-      name: "CSV",
-    },
-    {
-      desc: "Objek JSON terstruktur untuk web & API",
-      ext: ".json",
-      id: "json" as const,
-      name: "JSON",
-    },
-    {
-      desc: "Hierarki elemen dokumen XML terstruktur",
-      ext: ".xml",
-      id: "xml" as const,
-      name: "XML",
-    },
+    { ext: ".sql", id: "sql" as const, name: "SQL Dump" },
+    { ext: ".csv", id: "csv" as const, name: "CSV" },
+    { ext: ".json", id: "json" as const, name: "JSON" },
+    { ext: ".xml", id: "xml" as const, name: "XML" },
   ];
 
-  const handleToggleTable = (tblName: string) => {
-    if (!setExportSelectedTables) return;
-    if (exportSelectedTables.includes(tblName)) {
-      setExportSelectedTables(
-        exportSelectedTables.filter((t) => t !== tblName)
-      );
+  const handleToggleTable = (tableName: string) => {
+    if (selectedTables.includes(tableName)) {
+      setSelectedTables(selectedTables.filter((t) => t !== tableName));
     } else {
-      setExportSelectedTables([...exportSelectedTables, tblName]);
+      setSelectedTables([...selectedTables, tableName]);
     }
   };
 
   const handleSelectAllTables = () => {
-    if (!setExportSelectedTables) return;
-    setExportSelectedTables(availableTables.map((t) => t.name));
+    setSelectedTables([...availableTables]);
   };
 
   const handleDeselectAllTables = () => {
-    if (!setExportSelectedTables) return;
-    setExportSelectedTables([]);
+    setSelectedTables([]);
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-background p-4 sm:p-6">
-      <div className="mx-auto w-full max-w-3xl space-y-4">
-        {/* Header */}
-        <div className="flex items-center justify-between border-border border-b pb-3">
-          <div className="flex items-center gap-2.5">
-            <FileDown className="text-emerald-500" size={20} />
+    <div className="flex-1 space-y-4 overflow-y-auto p-4 md:p-6 text-xs">
+      <div className="mx-auto max-w-3xl space-y-4">
+        {/* Banner Info Ekspor */}
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-500 shrink-0">
+              <FileDown size={18} />
+            </div>
             <div>
-              <h2 className="font-semibold text-foreground text-sm">
-                Ekspor Basis Data (
-                <span className="font-mono text-emerald-500">
-                  {currentSelectedDatabase || "Pilih database"}
-                </span>
-                )
-              </h2>
-              <p className="text-muted-foreground text-xs">
-                Cadangkan skema dan data basis data ke berbagai format standar
-                phpMyAdmin.
+              <h3 className="font-semibold text-foreground text-sm">
+                Ekspor Basis Data
+              </h3>
+              <p className="mt-0.5 text-muted-foreground text-xs leading-relaxed">
+                Buat salinan cadangan dari basis data{" "}
+                <span className="font-mono font-semibold text-emerald-500">
+                  `{currentSelectedDatabase}`
+                </span>{" "}
+                dalam format SQL dump atau format pertukaran data lainnya.
               </p>
             </div>
           </div>
-          <Badge
-            className="border-emerald-500/30 bg-emerald-500/10 font-mono text-[10px] text-emerald-500"
-            variant="outline"
-          >
-            {availableTables.length} Tabel Terdeteksi
-          </Badge>
         </div>
 
-        {/* Metode Ekspor (Cepat vs Kustom) */}
-        <div className="space-y-2 rounded-lg border border-border bg-card p-4">
+        {/* Pilihan Format Berkas */}
+        <div className="space-y-3 rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs">
           <Label className="block font-semibold text-[11px] text-muted-foreground uppercase tracking-wider">
-            Metode Ekspor
+            1. Pilih Format Berkas Ekspor
           </Label>
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              {
-                desc: "Tampilkan opsi standar, cadangkan seluruh tabel langsung.",
-                id: "quick" as const,
-                title: "Cepat (Quick)",
-              },
-              {
-                desc: "Pilih tabel spesifik, pengaturan DROP TABLE, dan filter.",
-                id: "custom" as const,
-                title: "Kustom (Custom)",
-              },
-            ].map((m) => (
-              <button
-                className={cn(
-                  "flex flex-col items-start rounded-lg border p-3 text-left transition-all",
-                  exportMethod === m.id
-                    ? "border-emerald-500 bg-emerald-500/10 font-semibold text-emerald-600 dark:text-emerald-400"
-                    : "border-border bg-muted/40 text-muted-foreground hover:border-white/20"
-                )}
-                key={m.id}
-                onClick={() => setExportMethod?.(m.id)}
-                type="button"
-              >
-                <span className="font-semibold text-foreground text-xs">
-                  {m.title}
-                </span>
-                <span className="mt-0.5 text-[10px] text-muted-foreground/70">
-                  {m.desc}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Pemilihan Format Berkas */}
-        <div className="space-y-2 rounded-lg border border-border bg-card p-4">
-          <Label className="block font-semibold text-[11px] text-muted-foreground uppercase tracking-wider">
-            Format Berkas Hasil Ekspor
-          </Label>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {formats.map((f) => (
               <button
                 className={cn(
-                  "flex flex-col items-start rounded-lg border p-3 text-left transition-all",
+                  "flex flex-col items-center justify-center rounded-lg border p-3 text-center transition-all cursor-pointer",
                   exportFormat === f.id
-                    ? "border-emerald-500 bg-emerald-500/10 font-semibold text-emerald-600 dark:text-emerald-400"
-                    : "border-border bg-muted/40 text-muted-foreground hover:border-white/20"
+                    ? "border-emerald-500 bg-emerald-500/10 font-semibold text-emerald-600 dark:text-emerald-400 shadow-xs"
+                    : "border-border bg-muted/40 text-muted-foreground hover:border-white/20 hover:text-foreground"
                 )}
                 key={f.id}
                 onClick={() => setExportFormat?.(f.id)}
                 type="button"
               >
-                <div className="flex w-full items-center justify-between">
-                  <span className="font-semibold text-foreground text-xs">
-                    {f.name}
-                  </span>
-                  <span className="font-mono text-[10px] text-emerald-500">
-                    {f.ext}
-                  </span>
-                </div>
-                <span className="mt-1 line-clamp-2 text-[10px] text-muted-foreground/70">
-                  {f.desc}
+                <span className="font-semibold text-foreground text-xs">
+                  {f.name}
+                </span>
+                <span className="font-mono text-[10px] text-muted-foreground/70">
+                  {f.ext}
                 </span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Pemilihan Tabel Kustom (Hanya jika Kustom) */}
-        {exportMethod === "custom" && availableTables.length > 0 && (
-          <div className="space-y-3 rounded-lg border border-border bg-card p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="font-semibold text-foreground text-xs">
-                  Pilih Tabel yang Diekspor
-                </Label>
-                <p className="text-[10px] text-muted-foreground/70">
-                  {exportSelectedTables.length} dari {availableTables.length}{" "}
-                  tabel terpilih.
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <button
-                  className="text-primary hover:underline"
-                  onClick={handleSelectAllTables}
-                  type="button"
-                >
-                  Pilih Semua
-                </button>
-                <span className="text-muted-foreground/70">•</span>
-                <button
-                  className="text-muted-foreground hover:underline"
-                  onClick={handleDeselectAllTables}
-                  type="button"
-                >
-                  Kosongkan
-                </button>
-              </div>
+        {/* Pemilihan Tabel yang Diekspor */}
+        <div className="space-y-3 rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <Label className="block font-semibold text-[11px] text-muted-foreground uppercase tracking-wider">
+              Pilih Tabel yang Diekspor
+            </Label>
+            <div className="flex items-center gap-2">
+              <Button
+                className="h-6 text-[10px]"
+                onClick={handleSelectAllTables}
+                size="sm"
+                variant="ghost"
+              >
+                Pilih Semua
+              </Button>
+              <Button
+                className="h-6 text-[10px]"
+                onClick={handleDeselectAllTables}
+                size="sm"
+                variant="ghost"
+              >
+                Batalkan Semua
+              </Button>
             </div>
+          </div>
 
-            <div className="max-h-48 overflow-y-auto rounded-md border border-border bg-background p-2">
-              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+          <div className="max-h-48 overflow-y-auto rounded-lg border border-border bg-muted/30 p-2">
+            {availableTables.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1.5">
                 {availableTables.map((tbl) => {
-                  const isChecked = exportSelectedTables.includes(tbl.name);
+                  const isSelected = selectedTables.includes(tbl);
                   return (
                     <button
                       className={cn(
-                        "flex items-center gap-2 rounded px-2 py-1.5 text-left font-mono text-xs transition-colors",
-                        isChecked
-                          ? "bg-accent/50 text-foreground"
-                          : "text-muted-foreground hover:bg-muted"
+                        "flex items-center justify-between rounded px-2.5 py-1.5 text-left text-xs transition-colors cursor-pointer",
+                        isSelected
+                          ? "bg-emerald-500/15 font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
                       )}
-                      key={tbl.name}
-                      onClick={() => handleToggleTable(tbl.name)}
+                      key={tbl}
+                      onClick={() => handleToggleTable(tbl)}
                       type="button"
                     >
-                      {isChecked ? (
-                        <CheckSquare
-                          className="shrink-0 text-emerald-500"
-                          size={14}
-                        />
-                      ) : (
-                        <Square
-                          className="shrink-0 text-muted-foreground/50"
-                          size={14}
-                        />
-                      )}
-                      <span className="truncate">{tbl.name}</span>
+                      <span className="font-mono text-[11px] truncate">
+                        {tbl}
+                      </span>
+                      {isSelected && <Check size={12} className="shrink-0" />}
                     </button>
                   );
                 })}
               </div>
+            ) : (
+              <p className="p-3 text-center text-muted-foreground text-xs">
+                Tidak ada tabel yang ditemukan di basis data ini.
+              </p>
+            )}
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+            <span>
+              {selectedTables.length} dari {availableTables.length} tabel dipilih
+            </span>
+          </div>
+        </div>
+
+        {/* Pilihan Cakupan Ekspor (Khusus SQL) */}
+        {exportFormat === "sql" && (
+          <div className="space-y-3 rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs">
+            <Label className="block font-semibold text-[11px] text-muted-foreground uppercase tracking-wider">
+              3. Cakupan Konten Ekspor (SQL)
+            </Label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {[
+                {
+                  desc: "Mengekspor struktur tabel beserta seluruh data baris.",
+                  id: "full" as const,
+                  title: "Struktur & Data",
+                },
+                {
+                  desc: "Hanya membuat DDL skema CREATE TABLE tanpa baris data.",
+                  id: "structure" as const,
+                  title: "Hanya Struktur",
+                },
+                {
+                  desc: "Hanya mengekspor statement query INSERT INTO data.",
+                  id: "data" as const,
+                  title: "Hanya Data",
+                },
+              ].map((item) => (
+                <button
+                  className={cn(
+                    "flex flex-col items-start rounded-lg border p-3 text-left transition-all cursor-pointer",
+                    exportMode === item.id
+                      ? "border-emerald-500 bg-emerald-500/10 font-semibold text-emerald-600 dark:text-emerald-400 shadow-xs"
+                      : "border-border bg-muted/40 text-muted-foreground hover:border-white/20 hover:text-foreground"
+                  )}
+                  key={item.id}
+                  onClick={() => setExportMode(item.id)}
+                  type="button"
+                >
+                  <span className="font-semibold text-foreground text-xs">
+                    {item.title}
+                  </span>
+                  <span className="mt-1 text-[10px] text-muted-foreground/70 leading-relaxed">
+                    {item.desc}
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Pilihan Cakupan Data / Struktur (Hanya untuk SQL) */}
+        {/* Opsi Tambahan SQL */}
         {exportFormat === "sql" && (
-          <div className="space-y-4 rounded-lg border border-border bg-card p-4">
-            <div>
-              <Label className="mb-2 block font-semibold text-[11px] text-muted-foreground uppercase tracking-wider">
-                Cakupan Konten SQL
-              </Label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  {
-                    desc: "Skema tabel & seluruh baris data",
-                    id: "full" as const,
-                    title: "Struktur & Data",
-                  },
-                  {
-                    desc: "Hanya DDL CREATE TABLE",
-                    id: "structure" as const,
-                    title: "Hanya Struktur",
-                  },
-                  {
-                    desc: "Hanya query INSERT data",
-                    id: "data" as const,
-                    title: "Hanya Data",
-                  },
-                ].map((item) => (
-                  <button
-                    className={cn(
-                      "flex flex-col items-start rounded-lg border p-3 text-left transition-all",
-                      exportMode === item.id
-                        ? "border-emerald-500 bg-emerald-500/10 font-semibold text-emerald-600 dark:text-emerald-400"
-                        : "border-border bg-muted/40 text-muted-foreground hover:border-white/20"
-                    )}
-                    key={item.id}
-                    onClick={() => setExportMode(item.id)}
-                    type="button"
-                  >
-                    <span className="font-semibold text-foreground text-xs">
-                      {item.title}
-                    </span>
-                    <span className="mt-0.5 text-[10px] text-muted-foreground/70">
-                      {item.desc}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-3 rounded-lg border border-border bg-muted/40 p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-foreground text-xs">
+          <div className="space-y-3 rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs">
+            <Label className="block font-semibold text-[11px] text-muted-foreground uppercase tracking-wider">
+              4. Opsi Penulisan SQL
+            </Label>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
+                <div className="space-y-0.5">
+                  <Label className="text-xs font-semibold text-foreground">
                     Sertakan DROP TABLE IF EXISTS
                   </Label>
-                  <p className="text-[10px] text-muted-foreground/70">
-                    Menimpa tabel lama jika sudah ada pada target import.
+                  <p className="text-[11px] text-muted-foreground">
+                    Menambahkan statement untuk menghapus tabel lama sebelum
+                    membuat ulang.
                   </p>
                 </div>
                 <Switch
@@ -326,14 +262,15 @@ export function ExportTab({
                   onCheckedChange={setExportAddDropTable}
                 />
               </div>
-              <div className="h-[1px] bg-border" />
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-foreground text-xs">
-                    Nonaktifkan Foreign Key Checks Sementara
+
+              <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
+                <div className="space-y-0.5">
+                  <Label className="text-xs font-semibold text-foreground">
+                    Nonaktifkan Pemeriksaan Foreign Key Sementara
                   </Label>
-                  <p className="text-[10px] text-muted-foreground/70">
-                    Mencegah kegagalan constraint relasi tabel saat restorasi.
+                  <p className="text-[11px] text-muted-foreground">
+                    Membungkus ekspor dengan SET FOREIGN_KEY_CHECKS = 0 untuk
+                    mencegah error constraint saat restore.
                   </p>
                 </div>
                 <Switch
@@ -345,44 +282,64 @@ export function ExportTab({
           </div>
         )}
 
-        {/* Pratinjau SQL / Format Hasil Ekspor */}
+        {/* Pratinjau Output Jika Ada */}
         {exportPreviewSql && (
-          <div className="space-y-1.5 rounded-lg border border-border bg-card p-4">
-            <Label className="text-[11px] text-muted-foreground">
-              Pratinjau Hasil Ekspor ({exportFormat.toUpperCase()}):
-            </Label>
+          <div className="space-y-2 rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs">
+            <div className="flex items-center justify-between">
+              <Label className="font-semibold text-[11px] text-muted-foreground uppercase tracking-wider">
+                Pratinjau Hasil Ekspor ({exportFormat.toUpperCase()}):
+              </Label>
+              <Badge className="font-mono text-[10px]" variant="outline">
+                {exportPreviewSql.split("\n").length} Baris
+              </Badge>
+            </div>
             <textarea
-              className="w-full resize-none rounded-md border border-border bg-background p-2.5 font-mono text-[11px] text-emerald-500 focus:outline-none"
+              className="w-full resize-none rounded-md border border-border bg-background p-3 font-mono text-[11px] text-emerald-500 focus:outline-none"
               readOnly
-              rows={6}
+              rows={5}
               value={exportPreviewSql}
             />
           </div>
         )}
 
-        {/* Footer Tombol Aksi */}
-        <div className="flex items-center justify-end gap-2 border-border border-t pt-3">
+        {/* Footer Tombol Aksi dengan Tombol Batal/Atur Ulang */}
+        <div className="flex items-center justify-between gap-2 border-border border-t pt-3">
           <Button
-            className="h-8 border-border text-foreground hover:bg-muted"
+            className="h-8 border-border text-muted-foreground text-xs hover:bg-muted hover:text-foreground"
             disabled={isExporting}
-            onClick={() => onExecuteExport(false)}
+            onClick={() => {
+              setSelectedTables([...availableTables]);
+              setExportFormat?.("sql");
+              setExportMode("full");
+            }}
             size="sm"
             variant="outline"
           >
-            <Copy className="mr-1.5" size={13} />
-            Salin ke Clipboard
+            Atur Ulang / Batal
           </Button>
-          <Button
-            className="h-8 bg-primary font-semibold text-primary-foreground text-xs hover:bg-primary/90"
-            disabled={isExporting}
-            onClick={() => onExecuteExport(true)}
-            size="sm"
-          >
-            <Download className="mr-1.5" size={13} />
-            {isExporting
-              ? "Mengekspor..."
-              : `Simpan Berkas .${exportFormat || "sql"}`}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              className="h-8 border-border text-foreground hover:bg-muted"
+              disabled={isExporting}
+              onClick={() => onExecuteExport(false)}
+              size="sm"
+              variant="outline"
+            >
+              <Copy className="mr-1.5" size={13} />
+              Salin ke Clipboard
+            </Button>
+            <Button
+              className="h-8 bg-primary font-semibold text-primary-foreground text-xs hover:bg-primary/90"
+              disabled={isExporting}
+              onClick={() => onExecuteExport(true)}
+              size="sm"
+            >
+              <Download className="mr-1.5" size={13} />
+              {isExporting
+                ? "Mengekspor..."
+                : `Simpan Berkas .${exportFormat || "sql"}`}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

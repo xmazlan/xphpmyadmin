@@ -809,7 +809,15 @@ export function ConnectionInspector({
 
       {/* Action Buttons */}
       <div className="shrink-0 space-y-2 border-border border-t bg-muted/40 p-3.5">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+          <Button
+            className="h-7.5 border-border bg-transparent text-muted-foreground text-xs hover:bg-muted hover:text-foreground"
+            onClick={onClose}
+            size="sm"
+            variant="outline"
+          >
+            Batal
+          </Button>
           <Button
             className="h-7.5 border-border bg-transparent text-foreground text-xs hover:bg-muted hover:text-foreground"
             disabled={isTesting}
@@ -818,18 +826,18 @@ export function ConnectionInspector({
             variant="outline"
           >
             <RefreshCw
-              className={cn("mr-1.5", isTesting && "animate-spin")}
+              className={cn("mr-1", isTesting && "animate-spin")}
               size={12}
             />
-            {isTesting ? "Menguji..." : "Tes Koneksi"}
+            <span className="truncate">{isTesting ? "Menguji..." : "Tes"}</span>
           </Button>
           <Button
             className="h-7.5 bg-primary font-semibold text-primary-foreground text-xs hover:bg-primary/90"
             onClick={onSaveProfile}
             size="sm"
           >
-            <Check className="mr-1.5" size={12} />
-            Simpan Profil
+            <Check className="mr-1" size={12} />
+            <span className="truncate">Simpan</span>
           </Button>
         </div>
         <Button

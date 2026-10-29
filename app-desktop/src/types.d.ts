@@ -26,6 +26,13 @@ interface ElectronOAuthApi {
   ) => Promise<{ error?: string; port?: number; success: boolean }>;
 }
 
+interface ElectronWindowApi {
+  onWindowStateChange: (
+    callback: (data: { isMaximized: boolean }) => void
+  ) => () => void;
+}
+
 interface Window {
   electronOAuth?: ElectronOAuthApi;
+  electronWindow?: ElectronWindowApi;
 }
