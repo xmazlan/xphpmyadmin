@@ -406,9 +406,19 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
 
           <div className="flex items-center gap-2.5">
             {pendingCount > 0 && (
-              <span className="flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 font-medium text-amber-400 text-xs">
+              <span
+                className={cn(
+                  "flex items-center gap-1 rounded-md border px-2.5 py-1 font-medium text-xs",
+                  activeTier !== "free"
+                    ? "border-teal-500/30 bg-teal-500/10 text-teal-300"
+                    : "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                )}
+              >
                 <Clock className="size-3" />
-                {pendingCount} antrean
+                {pendingCount}{" "}
+                {activeTier !== "free"
+                  ? "sedang disinkronkan"
+                  : "antrean lokal"}
               </span>
             )}
             {activeTier !== "free" && (

@@ -13,6 +13,9 @@ Semua perubahan pada proyek xphpMyAdmin didokumentasikan di berkas ini.
 
 ### Sinkronisasi Otomatis Aksi Pengguna (Auto-Sync Default untuk Non-Free & Manual Sync)
 - Mengaktifkan *auto-sync* secara default untuk setiap pengguna paket langganan (`Pro`, `Team`, `Business`), mengirim seluruh aksi basis data (tabel, kueri, pencadangan, pemulihan, rutinitas) ke server cloud Neon secara *debounced* dan *real-time*.
+- Mengaktifkan pengurasan otomatis antrean (*startup & post-login auto-drain*) saat pengguna masuk atau membuka aplikasi, sehingga seluruh aktivitas langsung berstatus tersinkron tanpa menunggu aksi berikutnya.
+- Menyelaraskan indikator bilah header dengan menyembunyikan lencana peringatan (*amber badge*) bagi akun berbayar karena sinkronisasi berlangsung mandiri di latar belakang, serta menampilkan indikator proses Teal responsif.
+- Mencegah kehilangan antrean data (*in-flight queueing*) saat transaksi beruntun terjadi di antarmuka.
 - Menyediakan tombol pintas sinkronisasi manual langsung di bilah navigasi header dengan indikator putaran animasi (*spinner*) saat proses berlangsung.
 - Menyediakan tombol sinkronisasi manual pada tab Jurnal Aktivitas dan Operasi Cloud di modal sinkronisasi.
 - Menyediakan sakelar preferensi kendali *auto-sync* di pengaturan modal untuk fleksibilitas pengaturan pengguna.

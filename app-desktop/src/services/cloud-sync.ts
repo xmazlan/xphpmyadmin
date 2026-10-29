@@ -477,6 +477,7 @@ export async function syncWithCloudBackend(
 // -------------------------------------------------------------
 let autoSyncTimeout: any = null;
 let isAutoSyncInProgress = false;
+let hasPendingSyncRequest = false;
 
 export function triggerAutoSyncToCloud(
   profiles?: Profile[],
@@ -503,13 +504,25 @@ export function triggerAutoSyncToCloud(
   }
 
   if (delayMs <= 0) {
-    return syncWithCloudBackend(profiles || getCachedProfiles());
+    if (isAutoSyncInProgress) {
+      hasPendingSyncRequest = true;
+      return Promise.resolve({ skipped: true, success: false });
+    }
+    isAutoSyncInProgress = true;
+    return syncWithCloudBackend(profiles || getCachedProfiles()).finally(() => {
+      isAutoSyncInProgress = false;
+      if (hasPendingSyncRequest) {
+        hasPendingSyncRequest = false;
+        triggerAutoSyncToCloud(getCachedProfiles(), 300);
+      }
+    });
   }
 
   return new Promise((resolve) => {
     autoSyncTimeout = setTimeout(async () => {
       autoSyncTimeout = null;
       if (isAutoSyncInProgress) {
+        hasPendingSyncRequest = true;
         return resolve({ skipped: true, success: false });
       }
       isAutoSyncInProgress = true;
@@ -520,6 +533,10 @@ export function triggerAutoSyncToCloud(
         resolve({ error: err?.message || String(err), success: false });
       } finally {
         isAutoSyncInProgress = false;
+        if (hasPendingSyncRequest) {
+          hasPendingSyncRequest = false;
+          triggerAutoSyncToCloud(getCachedProfiles(), 300);
+        }
       }
     }, delayMs);
   });

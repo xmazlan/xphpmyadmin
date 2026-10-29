@@ -136,7 +136,9 @@ export function WorkspaceHeader({
                 isSyncing
                   ? "Sedang menyinkronkan aktivitas ke cloud..."
                   : pendingSyncCount > 0
-                    ? `${pendingSyncCount} aktivitas belum disinkronkan. Klik untuk kelola Cloud Sync.`
+                    ? userPlan !== "free"
+                      ? `${pendingSyncCount} aktivitas dalam proses sinkronisasi otomatis.`
+                      : `${pendingSyncCount} aktivitas belum disinkronkan (Perlu langganan). Klik untuk kelola Cloud Sync.`
                     : "Cloud Sync & Jurnal Audit"
               }
               type="button"
@@ -146,10 +148,16 @@ export function WorkspaceHeader({
               ) : (
                 <Cloud
                   size={14}
-                  className={pendingSyncCount > 0 ? "text-amber-400" : "text-muted-foreground"}
+                  className={
+                    pendingSyncCount > 0
+                      ? userPlan !== "free"
+                        ? "text-teal-400"
+                        : "text-amber-400"
+                      : "text-muted-foreground"
+                  }
                 />
               )}
-              {!isSyncing && pendingSyncCount > 0 && (
+              {!isSyncing && pendingSyncCount > 0 && userPlan === "free" && (
                 <span className="-top-1 -right-1 absolute flex size-3.5 items-center justify-center rounded-full bg-amber-500 font-bold font-mono text-[9px] text-black shadow-xs">
                   {pendingSyncCount > 9 ? "9+" : pendingSyncCount}
                 </span>

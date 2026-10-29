@@ -16,6 +16,9 @@ Semua perubahan penting pada aplikasi **xphpMyAdmin Desktop** didokumentasikan d
 
 ### Sinkronisasi Cloud & Jurnal Aktivitas (Cloud Sync & State Journaling)
 - **Auto-Sync Default untuk Akun Berlangganan**: Setiap aksi pengguna pada paket non-free (`Pro`, `Team`, `Business`) kini otomatis disinkronkan ke server cloud Neon secara *debounced* (600ms–1000ms) tanpa membebani antarmuka.
+- **Otomasi Pengurasan Antrean saat Masuk (Login & Startup Auto-Sync)**: Memastikan pengguna akun berlangganan yang masuk (`login`, `register`, `oauth`, atau pemulihan sesi saat aplikasi dibuka) langsung memicu sinkronisasi otomatis di latar belakang untuk menguras seluruh aksi tertunda (*pending*) ke basis data cloud Neon, tanpa perlu klik manual.
+- **Penyelarasan Indikator Status Cloud di Header**: Menghilangkan lencana peringatan (*amber badge*) bagi pengguna berbayar karena seluruh antrean diproses secara otomatis di latar belakang, serta menampilkan ikon putaran Teal dinamis selama proses pengiriman data berlangsung.
+- **Mekanisme Antrean Trailing Aman (*In-Flight Queue*)**: Mengatasi potensi data tertinggal saat sinkronisasi simultan dengan menyimpan bendera permintaan beruntun dan mengeksekusinya tepat setelah proses aktif selesai.
 - **Tombol Pintas Sinkronisasi Manual**: Menambahkan tombol sinkronisasi manual 1-klik di bilah navigasi header dengan ikon animasi proses berputar (*spinner*) secara *live*.
 - **Tombol Sinkronisasi Manual pada Jurnal**: Menambahkan tombol *"Sinkronkan Manual"* langsung di atas daftar jurnal transaksi aktivitas.
 - **Sakelar Kendali Auto-Sync**: Menghadirkan pengaturan sakelar (*switch*) di jendela modal sinkronisasi dengan status `AKTIF SECARA DEFAULT` bagi akun berbayar.

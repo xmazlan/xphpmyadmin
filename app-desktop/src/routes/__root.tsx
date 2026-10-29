@@ -53,6 +53,36 @@ function AppShell() {
     return journal.filter((item) => item.syncStatus === "pending").length;
   }, [journal]);
 
+  // Otomatis sinkronkan antrean ke cloud backend untuk pengguna berlangganan (non-free)
+  useEffect(() => {
+    const isSubscribed = config.subscriptionTier !== "free";
+    const autoSyncActive = config.autoSync ?? isSubscribed;
+
+    if (
+      isAuthenticated &&
+      isSubscribed &&
+      autoSyncActive &&
+      pendingCount > 0 &&
+      !isSyncing
+    ) {
+      const timer = setTimeout(() => {
+        syncNow(profiles).catch((err) => {
+          console.warn("Background auto-sync failed:", err);
+        });
+      }, 400);
+
+      return () => clearTimeout(timer);
+    }
+  }, [
+    isAuthenticated,
+    config.subscriptionTier,
+    config.autoSync,
+    pendingCount,
+    isSyncing,
+    profiles,
+    syncNow,
+  ]);
+
   const handleSelectTab = (tabId: string) => {
     setActiveTabId(tabId);
     if (tabId === "tab-home") {
