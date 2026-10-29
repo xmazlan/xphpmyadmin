@@ -1,7 +1,8 @@
 import { createRootRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import type React from "react";
-import { Activity, useMemo, useState } from "react";
+import { Activity, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { AuthGate } from "@/components/auth/auth-gate";
 import { CloudSyncModal } from "@/components/workspace/modals/cloud-sync-modal";
 import { WorkspaceHeader } from "@/components/workspace/workspace-header";
@@ -23,15 +24,30 @@ function AppShell() {
     activeTabs,
     closeTab,
     isSidebarCollapsed,
+    profiles,
     searchQuery,
     setActiveTabId,
     setIsSidebarCollapsed,
     setSearchQuery,
   } = useConnection();
-  const { config, isAuthenticated, journal, logout } = useCloudSync();
+  const {
+    config,
+    isAuthenticated,
+    isSyncing,
+    journal,
+    logout,
+    setCachedProfiles,
+    syncNow,
+  } = useCloudSync();
 
   const [isCloudSyncOpen, setIsCloudSyncOpen] = useState(false);
   const [isLocalBypassed, setIsLocalBypassed] = useState(false);
+
+  useEffect(() => {
+    if (profiles?.length) {
+      setCachedProfiles(profiles);
+    }
+  }, [profiles, setCachedProfiles]);
 
   const pendingCount = useMemo(() => {
     return journal.filter((item) => item.syncStatus === "pending").length;
@@ -78,8 +94,24 @@ function AppShell() {
         activeTabId={activeTabId}
         activeTabs={activeTabs}
         isSidebarCollapsed={isSidebarCollapsed}
+        isSyncing={isSyncing}
         onCloseTab={handleCloseTab}
         onLogout={handleLogout}
+        onManualSync={() => {
+          syncNow(profiles).then((res) => {
+            if (res.success) {
+              toast.success("Sinkronisasi manual berhasil!", {
+                description:
+                  res.message ||
+                  `${res.syncedItems} item disinkronkan ke cloud database.`,
+              });
+            } else if (res.error) {
+              toast.error("Gagal sinkronisasi manual", {
+                description: res.error,
+              });
+            }
+          });
+        }}
         onOpenCloudSync={() => setIsCloudSyncOpen(true)}
         onSearchChange={setSearchQuery}
         onSelectTab={handleSelectTab}

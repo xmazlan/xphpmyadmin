@@ -116,7 +116,9 @@ export function inspectSshConnection(
                   : String(hashedKey);
             return true;
           },
-          passphrase: ssh.password || undefined,
+          keepaliveCountMax: 3,
+          keepaliveInterval: 15000,
+          passphrase: ssh.passphrase || ssh.password || undefined,
           password: ssh.password || undefined,
           port: ssh.port || 22,
           privateKey,
@@ -183,7 +185,9 @@ async function createSshTunneledConnection(
       })
       .connect({
         host: ssh.host,
-        passphrase: ssh.password || undefined,
+        keepaliveCountMax: 3,
+        keepaliveInterval: 15000,
+        passphrase: ssh.passphrase || ssh.password || undefined,
         password: ssh.password || undefined,
         port: ssh.port || 22,
         privateKey,

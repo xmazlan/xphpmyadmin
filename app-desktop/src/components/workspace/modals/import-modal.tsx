@@ -150,7 +150,7 @@ export function ImportModal({
                 className={cn(
                   "flex cursor-pointer select-none flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-center transition-all",
                   isDraggingImport
-                    ? "border-primary bg-primary/10 shadow-[0_0_15px_rgba(87,193,255,0.2)]"
+                    ? "border-primary bg-primary/10 shadow-[0_0_15px_rgba(20,184,166,0.25)]"
                     : "border-border bg-muted/40 hover:border-primary/50 hover:bg-muted"
                 )}
                 onClick={() => onPickImportFile(true)}

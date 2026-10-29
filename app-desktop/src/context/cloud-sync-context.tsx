@@ -22,6 +22,8 @@ import {
   upgradeSubscriptionPlan,
   oauthLoginCloudBackend,
   saveAuthSession,
+  triggerAutoSyncToCloud,
+  setCachedProfiles as setGlobalCachedProfiles,
 } from "@/services/cloud-sync";
 import type {
   BillingCycle,
@@ -90,9 +92,10 @@ interface CloudSyncContextValue {
   saveSnippet: (
     snippet: Omit<SavedSnippet, "id" | "createdAt" | "updatedAt">
   ) => SavedSnippet;
+  setCachedProfiles: (profiles: Profile[]) => void;
   snippets: SavedSnippet[];
   syncNow: (
-    profiles: Profile[],
+    profiles?: Profile[],
     tokenOverride?: string
   ) => Promise<{ error?: string; message?: string; success: boolean; syncedItems: number }>;
   updateConfig: (updates: Partial<CloudSyncConfig>) => void;
@@ -114,6 +117,12 @@ export function CloudSyncProvider({
   const [snippets, setSnippets] = useState<SavedSnippet[]>([]);
   const [config, setConfig] = useState<CloudSyncConfig>(getCloudSyncConfig());
   const [isSyncing, setIsSyncing] = useState(false);
+  const [cachedProfiles, setCachedProfilesState] = useState<Profile[]>([]);
+
+  const handleSetCachedProfiles = (profs: Profile[]) => {
+    setCachedProfilesState(profs);
+    setGlobalCachedProfiles(profs);
+  };
 
   const refreshState = () => {
     setJournal(getStoredJournal());
@@ -131,6 +140,23 @@ export function CloudSyncProvider({
   ) => {
     const newEntry = storeUserAction(action);
     setJournal((prev) => [newEntry, ...prev]);
+
+    // Status selain free disinkronkan ke backend secara default
+    const currentConfig = getCloudSyncConfig();
+    const isNonFree = currentConfig.subscriptionTier !== "free";
+    const autoSyncEnabled = currentConfig.autoSync ?? isNonFree;
+
+    if (isNonFree && autoSyncEnabled) {
+      setIsSyncing(true);
+      triggerAutoSyncToCloud(cachedProfiles, 600)
+        .then(() => {
+          refreshState();
+        })
+        .finally(() => {
+          setIsSyncing(false);
+        });
+    }
+
     return newEntry;
   };
 
@@ -139,6 +165,22 @@ export function CloudSyncProvider({
   ) => {
     const newEntry = storeQueryHistory(query);
     setQueryHistory((prev) => [newEntry, ...prev]);
+
+    const currentConfig = getCloudSyncConfig();
+    const isNonFree = currentConfig.subscriptionTier !== "free";
+    const autoSyncEnabled = currentConfig.autoSync ?? isNonFree;
+
+    if (isNonFree && autoSyncEnabled) {
+      setIsSyncing(true);
+      triggerAutoSyncToCloud(cachedProfiles, 1000)
+        .then(() => {
+          refreshState();
+        })
+        .finally(() => {
+          setIsSyncing(false);
+        });
+    }
+
     return newEntry;
   };
 
@@ -147,12 +189,43 @@ export function CloudSyncProvider({
   ) => {
     const newEntry = storeSnippet(snippet);
     setSnippets((prev) => [newEntry, ...prev]);
+
+    const currentConfig = getCloudSyncConfig();
+    const isNonFree = currentConfig.subscriptionTier !== "free";
+    const autoSyncEnabled = currentConfig.autoSync ?? isNonFree;
+
+    if (isNonFree && autoSyncEnabled) {
+      setIsSyncing(true);
+      triggerAutoSyncToCloud(cachedProfiles, 600)
+        .then(() => {
+          refreshState();
+        })
+        .finally(() => {
+          setIsSyncing(false);
+        });
+    }
+
     return newEntry;
   };
 
   const handleDeleteSnippet = (id: string) => {
     deleteStoredSnippet(id);
     setSnippets((prev) => prev.filter((s) => s.id !== id));
+
+    const currentConfig = getCloudSyncConfig();
+    const isNonFree = currentConfig.subscriptionTier !== "free";
+    const autoSyncEnabled = currentConfig.autoSync ?? isNonFree;
+
+    if (isNonFree && autoSyncEnabled) {
+      setIsSyncing(true);
+      triggerAutoSyncToCloud(cachedProfiles, 600)
+        .then(() => {
+          refreshState();
+        })
+        .finally(() => {
+          setIsSyncing(false);
+        });
+    }
   };
 
   const handleUpdateConfig = (updates: Partial<CloudSyncConfig>) => {
@@ -160,10 +233,12 @@ export function CloudSyncProvider({
     setConfig(updated);
   };
 
-  const handleSyncNow = async (profiles: Profile[], tokenOverride?: string) => {
+  const handleSyncNow = async (profiles?: Profile[], tokenOverride?: string) => {
     setIsSyncing(true);
     try {
-      const result = await syncWithCloudBackend(profiles, tokenOverride);
+      const activeProfiles =
+        profiles && profiles.length > 0 ? profiles : cachedProfiles;
+      const result = await syncWithCloudBackend(activeProfiles, tokenOverride);
       refreshState();
       return result;
     } finally {
@@ -273,6 +348,7 @@ export function CloudSyncProvider({
         refreshState,
         register: handleRegister,
         saveSnippet: handleSaveSnippet,
+        setCachedProfiles: handleSetCachedProfiles,
         snippets,
         syncNow: handleSyncNow,
         updateConfig: handleUpdateConfig,

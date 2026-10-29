@@ -173,6 +173,16 @@ describe("Database Export & Import Schemas", () => {
       username: "deploy",
     });
     expect(validKey.success).toBe(true);
+
+    const validKeyWithPassphrase = sshConfigSchema.safeParse({
+      auth_type: "key",
+      host: "ssh.example.com",
+      key: "-----BEGIN OPENSSH PRIVATE KEY-----\ntest\n-----END OPENSSH PRIVATE KEY-----",
+      passphrase: "encrypted-key-passphrase",
+      port: 22,
+      username: "ubuntu",
+    });
+    expect(validKeyWithPassphrase.success).toBe(true);
   });
 
   it("should validate databaseConnectionSchema with ssh method and configuration", () => {

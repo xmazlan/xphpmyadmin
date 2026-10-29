@@ -64,6 +64,7 @@ export const INITIAL_PROFILES: Profile[] = [
       auth_type: "key",
       host: "bastion.staging.dev",
       key: "~/.ssh/id_ed25519",
+      passphrase: "",
       password: "",
       port: 22,
       username: "ubuntu",

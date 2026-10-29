@@ -104,6 +104,37 @@ describe("Workspace Components", () => {
     expect(getByText("Hubungkan ke Database")).toBeInTheDocument();
   });
 
+  it("renders ConnectionInspector correctly with SSH Tunnel method", () => {
+    const sshProfile = INITIAL_PROFILES.find((p) => p.method === "ssh")!;
+    const { getByText } = render(
+      <ConnectionInspector
+        diagnostics={null}
+        editForm={sshProfile}
+        isOpen={true}
+        isTesting={false}
+        onClose={vi.fn()}
+        onConnect={vi.fn()}
+        onInspectSshKey={vi.fn()}
+        onSaveProfile={vi.fn()}
+        onTestConnection={vi.fn()}
+        passwordAction="keep"
+        passwordInput=""
+        setEditForm={vi.fn()}
+        setPasswordAction={vi.fn()}
+        setPasswordInput={vi.fn()}
+        setShowPassword={vi.fn()}
+        setShowSshPassword={vi.fn()}
+        showPassword={false}
+        showSshPassword={false}
+      />
+    );
+
+    expect(getByText("SSH Tunnel Details")).toBeInTheDocument();
+    expect(getByText("Konfigurasi SSH Server (VPS / Bastion)")).toBeInTheDocument();
+    expect(getByText("Standar Tunneling VPS Aktif:")).toBeInTheDocument();
+    expect(getByText("Passphrase Kunci Privat (Opsional)")).toBeInTheDocument();
+  });
+
   it("renders ExplorerSidebar correctly", () => {
     const { getByText, getAllByText } = render(
       <ExplorerSidebar
