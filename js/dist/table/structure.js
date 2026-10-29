@@ -285,22 +285,22 @@ AJAX.registerOnload('table/structure.js', function () {
     }).disableSelection();
     var $form = $('#move_columns_dialog').find('form');
     $form.data('serialized-unmoved', $form.serialize());
-    const designerModalPreviewModal = document.getElementById('designerModalPreviewModal');
-    designerModalPreviewModal.addEventListener('shown.bs.modal', () => {
-      const modalBody = designerModalPreviewModal.querySelector('.modal-body');
-      const $form = $('#move_column_form');
-      const serialized = $form.serialize();
+    var designerModalPreviewModal = document.getElementById('designerModalPreviewModal');
+    designerModalPreviewModal.addEventListener('shown.bs.modal', function () {
+      var modalBody = designerModalPreviewModal.querySelector('.modal-body');
+      var $form = $('#move_column_form');
+      var serialized = $form.serialize();
       if (serialized === $form.data('serialized-unmoved')) {
         modalBody.innerHTML = '';
         return;
       }
-      const formUrl = $form.attr('action');
-      const sep = CommonParams.get('arg_separator');
-      const formData = serialized + sep + 'preview_sql=1' + sep + 'ajax_request=1';
+      var formUrl = $form.attr('action');
+      var sep = CommonParams.get('arg_separator');
+      var formData = serialized + sep + 'preview_sql=1' + sep + 'ajax_request=1';
       $.post({
         url: formUrl,
         data: formData,
-        success: response => {
+        success: function success(response) {
           if (!response.success) {
             modalBody.innerHTML = '<div class="alert alert-danger" role="alert">' + Messages.strErrorProcessingRequest + '</div>';
             return;
@@ -308,12 +308,12 @@ AJAX.registerOnload('table/structure.js', function () {
           modalBody.innerHTML = response.sql_data;
           Functions.highlightSql($('#designerModalPreviewModal'));
         },
-        error: () => {
+        error: function error() {
           modalBody.innerHTML = '<div class="alert alert-danger" role="alert">' + Messages.strErrorProcessingRequest + '</div>';
         }
       });
     });
-    designerModalPreviewModal.addEventListener('hidden.bs.modal', () => {
+    designerModalPreviewModal.addEventListener('hidden.bs.modal', function () {
       designerModalPreviewModal.querySelector('.modal-body').innerHTML = '<div class="spinner-border" role="status">' + '<span class="visually-hidden">' + Messages.strLoading + '</span></div>';
     });
     $('#moveColumnsModal').modal('show');

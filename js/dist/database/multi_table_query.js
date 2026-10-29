@@ -82,7 +82,7 @@ AJAX.registerOnload('database/multi_table_query.js', function () {
         'ajax_request': '1',
         'token': CommonParams.get('token')
       },
-      success: function (response) {
+      success: function success(response) {
         foreignKeys = response.foreignKeyConstrains;
       }
     });
@@ -134,7 +134,7 @@ AJAX.registerOnload('database/multi_table_query.js', function () {
       type: 'POST',
       url: 'index.php?route=/database/multi-table-query/query',
       data: data,
-      success: function (data) {
+      success: function success(data) {
         var $resultsDom = $(data.message);
         $resultsDom.find('.ajax:not(.pageselector)').each(function () {
           $(this).on('click', function (event) {
@@ -162,7 +162,7 @@ AJAX.registerOnload('database/multi_table_query.js', function () {
   });
   $('.columnNameSelect').each(function () {
     $(this).on('change', function () {
-      const colIsStar = $(this).val() === '*';
+      var colIsStar = $(this).val() === '*';
       colIsStar && $(this).siblings('.col_alias').val('');
       $(this).siblings('.col_alias').prop('disabled', colIsStar);
     });
@@ -173,18 +173,18 @@ AJAX.registerOnload('database/multi_table_query.js', function () {
     });
   });
   function showHint(opSelect) {
-    const hints = theHints();
-    const value = opSelect.val();
-    const criteriaInputCol = opSelect.closest('table').find('.rhs_text_val').parent();
+    var hints = theHints();
+    var value = opSelect.val();
+    var criteriaInputCol = opSelect.closest('table').find('.rhs_text_val').parent();
     criteriaInputCol.find('.rhs_hint').remove();
     Object.keys(hints).includes(value) && criteriaInputCol.append("<p class=\"rhs_hint\">".concat(hints[value], "</p>"));
   }
   function addNewColumnCallbacks() {
     $('.tableNameSelect').each(function () {
       $(this).on('change', function () {
-        const $table = $(this);
-        const $alias = $table.siblings('.col_alias');
-        const $colsSelect = $table.parent().find('.columnNameSelect');
+        var $table = $(this);
+        var $alias = $table.siblings('.col_alias');
+        var $colsSelect = $table.parent().find('.columnNameSelect');
         $alias.prop('disabled', true);
         $colsSelect.each(function () {
           $(this).show();

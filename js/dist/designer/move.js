@@ -493,7 +493,7 @@ DesignerMove.toggleFullscreen = function () {
   var $img = $('#toggleFullscreen').find('img');
   var $span = $img.siblings('span');
   var $content = $('#page_content');
-  const pageContent = document.getElementById('page_content');
+  var pageContent = document.getElementById('page_content');
   if (!document.fullscreenElement) {
     $img.attr('src', $img.data('exit')).attr('title', $span.data('exit'));
     $span.text($span.data('exit'));
@@ -638,7 +638,7 @@ DesignerMove.addOtherDbTables = function () {
 };
 
 // ------------------------------ NEW ------------------------------------------
-DesignerMove.new = function () {
+DesignerMove["new"] = function () {
   DesignerMove.promptToSaveCurrentPage(function () {
     DesignerMove.loadPage(-1);
   });
@@ -1879,7 +1879,7 @@ AJAX.registerOnload('designer/move.js', function () {
     return false;
   });
   $('#newPage').on('click', function () {
-    DesignerMove.new();
+    DesignerMove["new"]();
     return false;
   });
   $('#editPage').on('click', function () {

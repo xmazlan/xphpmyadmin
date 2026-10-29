@@ -11,8 +11,8 @@
 /* global sprintf */ // js/vendor/sprintf.js
 
 $(document).on('change', '.criteria_op', function () {
-  const op = $(this).val();
-  const criteria = $(this).closest('.table').find('.rhs_text_val');
+  var op = $(this).val();
+  var criteria = $(this).closest('.table').find('.rhs_text_val');
   isOpWithoutArg(op) ? criteria.hide().val('') : criteria.show();
 });
 function getFormatsText() {
@@ -43,17 +43,17 @@ function isOpWithoutArg(op) {
   return opsWithoutArg().includes(op);
 }
 function generateCondition(criteriaDiv, table) {
-  const tableName = table.val();
-  const tableAlias = table.siblings('.table_alias').val();
-  const criteriaOp = criteriaDiv.find('.criteria_op').first().val();
-  let criteriaText = criteriaDiv.find('.rhs_text_val').first().val();
-  let query = '`' + Functions.escapeBacktick(tableAlias === '' ? tableName : tableAlias) + '`.';
+  var tableName = table.val();
+  var tableAlias = table.siblings('.table_alias').val();
+  var criteriaOp = criteriaDiv.find('.criteria_op').first().val();
+  var criteriaText = criteriaDiv.find('.rhs_text_val').first().val();
+  var query = '`' + Functions.escapeBacktick(tableAlias === '' ? tableName : tableAlias) + '`.';
   query += '`' + Functions.escapeBacktick(table.parent().find('.opColumn').first().val()) + '`';
   if (criteriaDiv.find('.criteria_rhs').first().val() === 'text') {
     if (isOpWithoutArg(criteriaOp)) {
       query += ' ' + criteriaOp;
     } else {
-      const formatsText = getFormatsText();
+      var formatsText = getFormatsText();
       if (!['IN (...)', 'NOT IN (...)'].includes(criteriaOp)) {
         criteriaText = Functions.escapeSingleQuote(criteriaText);
       }

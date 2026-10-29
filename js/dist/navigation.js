@@ -408,7 +408,7 @@ $(function () {
       type: 'POST',
       data: params,
       url: $(this).attr('href'),
-      success: function (data) {
+      success: function success(data) {
         if (typeof data !== 'undefined' && data.success === true) {
           Navigation.reload();
         } else {
@@ -450,7 +450,7 @@ $(function () {
       type: 'POST',
       data: params,
       url: $(this).attr('href'),
-      success: function (data) {
+      success: function success(data) {
         Functions.ajaxRemoveMessage($msg);
         if (typeof data !== 'undefined' && data.success === true) {
           $tr.remove();
@@ -486,7 +486,7 @@ $(function () {
         'favoriteTables': hasLocalStorage ? window.localStorage.favoriteTables : '',
         'server': CommonParams.get('server')
       },
-      success: function (data) {
+      success: function success(data) {
         if (data.changes) {
           $('#pma_favorite_list').html(data.list);
           $('#' + anchorId).parent().html(data.anchor);
@@ -1140,7 +1140,8 @@ Navigation.ResizeHandler = function () {
    * @return {void}
    */
   this.treeInit = function () {
-    const isLoadedOnMobile = $(window).width() < 768;
+    var _this = this;
+    var isLoadedOnMobile = $(window).width() < 768;
     // Hide the pma_navigation initially when loaded on mobile
     if (isLoadedOnMobile) {
       this.setWidth(0);
@@ -1161,14 +1162,14 @@ Navigation.ResizeHandler = function () {
     // to show/hide horizontal scrollbars depending on page content width
     setInterval(this.treeResize, 2000);
     this.treeResize();
-    const callbackSuccessGetConfigValue = data => {
-      this.setWidth(data);
+    var callbackSuccessGetConfigValue = function callbackSuccessGetConfigValue(data) {
+      _this.setWidth(data);
       $('#topmenu').menuResizer('resize');
     };
     // Skip mobile
     if (isLoadedOnMobile === false) {
       // Make an init using the default found value
-      const initialResizeValue = $('#pma_navigation').data('config-navigation-width');
+      var initialResizeValue = $('#pma_navigation').data('config-navigation-width');
       callbackSuccessGetConfigValue(initialResizeValue);
     }
     Functions.configGet('NavigationWidth', false, callbackSuccessGetConfigValue);
@@ -1190,7 +1191,7 @@ Navigation.FastFilter = {
    *
    * @return {void}
    */
-  Filter: function ($this, searchClause) {
+  Filter: function Filter($this, searchClause) {
     /**
      * @var {object} $this A jQuery object pointing to the list container
      *                     which is the nearest parent of the fast filter
@@ -1225,7 +1226,7 @@ Navigation.FastFilter = {
    *
    * @return {string}
    */
-  getSearchClause: function () {
+  getSearchClause: function getSearchClause() {
     var retval = '';
     var $input = $('#pma_navigation_tree').find('li.fast_filter.db_fast_filter input.searchClause');
     if ($input.length && $input.val() !== $input[0].defaultValue) {
@@ -1241,7 +1242,7 @@ Navigation.FastFilter = {
    *
    * @return {string}
    */
-  getSearchClause2: function ($this) {
+  getSearchClause2: function getSearchClause2($this) {
     var $filterContainer = $this.closest('div.list_container');
     var $filterInput = $([]);
     if ($filterContainer.find('li.fast_filter:not(.db_fast_filter) input.searchClause').length !== 0) {
@@ -1258,7 +1259,7 @@ Navigation.FastFilter = {
    *                  at the top of this file
    */
   events: {
-    focus: function () {
+    focus: function focus() {
       var $obj = $(this).closest('div.list_container');
       if (!$obj.data('fastFilter')) {
         $obj.data('fastFilter', new Navigation.FastFilter.Filter($obj, $(this).val()));
@@ -1269,7 +1270,7 @@ Navigation.FastFilter = {
         $(this).trigger('select');
       }
     },
-    blur: function () {
+    blur: function blur() {
       if ($(this).val() === '') {
         $(this).val(this.defaultValue);
       }
@@ -1278,7 +1279,7 @@ Navigation.FastFilter = {
         $obj.data('fastFilter').restore();
       }
     },
-    keyup: function (event) {
+    keyup: function keyup(event) {
       var $obj = $(this).closest('div.list_container');
       var str = '';
       if ($(this).val() !== this.defaultValue && $(this).val() !== '') {
@@ -1310,10 +1311,10 @@ Navigation.FastFilter = {
       // filters items that are directly under the div as well as grouped in
       // groups. Does not filter child items (i.e. a database search does
       // not filter tables)
-      var itemFilter = function ($curr) {
+      var _itemFilter = function itemFilter($curr) {
         $curr.children('ul').children('li.navGroup').each(function () {
           $(this).children('div.list_container').each(function () {
-            itemFilter($(this)); // recursive
+            _itemFilter($(this)); // recursive
           });
         });
         $curr.children('ul').children('li').children('a').not('.container').each(function () {
@@ -1324,14 +1325,14 @@ Navigation.FastFilter = {
           }
         });
       };
-      itemFilter(outerContainer);
+      _itemFilter(outerContainer);
 
       // hides containers that does not have any visible children
-      var containerFilter = function ($curr) {
+      var _containerFilter = function containerFilter($curr) {
         $curr.children('ul').children('li.navGroup').each(function () {
           var $group = $(this);
           $group.children('div.list_container').each(function () {
-            containerFilter($(this)); // recursive
+            _containerFilter($(this)); // recursive
           });
           $group.show().removeClass('hidden');
           if ($group.children('div.list_container').children('ul').children('li').not('.hidden').length === 0) {
@@ -1339,7 +1340,7 @@ Navigation.FastFilter = {
           }
         });
       };
-      containerFilter(outerContainer);
+      _containerFilter(outerContainer);
       if ($(this).val() !== this.defaultValue && $(this).val() !== '') {
         if (!$obj.data('fastFilter')) {
           $obj.data('fastFilter', new Navigation.FastFilter.Filter($obj, $(this).val()));
@@ -1360,7 +1361,7 @@ Navigation.FastFilter = {
       }
       Navigation.filterStateUpdate(filterName, $(this).val());
     },
-    clear: function (event) {
+    clear: function clear(event) {
       event.stopPropagation();
       // Clear the input and apply the fast filter with empty input
       var filter = $(this).closest('div.list_container').data('fastFilter');
@@ -1414,7 +1415,7 @@ Navigation.FastFilter.Filter.prototype.request = function () {
     type: 'post',
     dataType: 'json',
     data: params,
-    complete: function (jqXHR, status) {
+    complete: function complete(jqXHR, status) {
       if (status !== 'abort') {
         var data = JSON.parse(jqXHR.responseText);
         self.$this.find('li.fast_filter').find('div.throbber').remove();
