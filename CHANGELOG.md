@@ -2,6 +2,29 @@
 
 Semua perubahan pada proyek xphpMyAdmin didokumentasikan di berkas ini.
 
+## [Standarisasi Terowongan VPS, Sinkronisasi Otomatis Cloud, & Tema Aksen Teal] - 2026-10-29
+
+### Standarisasi Konfigurasi Terowongan Server (VPS & SSH Tunneling)
+- Menyediakan preset nama pengguna VPS standar (`root`, `ubuntu`, `debian`, `ec2-user`).
+- Menyediakan tombol pemilih cepat path kunci privat standar (`~/.ssh/id_ed25519`, `~/.ssh/id_rsa`, `~/.ssh/id_ecdsa`) dan opsi dialog pemilihan berkas.
+- Menambahkan dukungan frasa sandi (passphrase) untuk kunci SSH privat terenkripsi dengan tombol intip sandi (*eye toggle*).
+- Mengaktifkan otomasi ping kestabilan (*auto keep-alive*, interval 15 detik, maks 3 percobaan) guna mencegah terputusnya terowongan basis data saat *idle*.
+- Menyelaraskan forwarding aman ke loopback internal (`127.0.0.1:3306`) pada remote VPS.
+
+### Sinkronisasi Otomatis Aksi Pengguna (Auto-Sync Default untuk Non-Free & Manual Sync)
+- Mengaktifkan *auto-sync* secara default untuk setiap pengguna paket langganan (`Pro`, `Team`, `Business`), mengirim seluruh aksi basis data (tabel, kueri, pencadangan, pemulihan, rutinitas) ke server cloud Neon secara *debounced* dan *real-time*.
+- Mengaktifkan pengurasan otomatis antrean (*startup & post-login auto-drain*) saat pengguna masuk atau membuka aplikasi, sehingga seluruh aktivitas langsung berstatus tersinkron tanpa menunggu aksi berikutnya.
+- Menyelaraskan indikator bilah header dengan menyembunyikan lencana peringatan (*amber badge*) bagi akun berbayar karena sinkronisasi berlangsung mandiri di latar belakang, serta menampilkan indikator proses Teal responsif.
+- Mencegah kehilangan antrean data (*in-flight queueing*) saat transaksi beruntun terjadi di antarmuka.
+- Menyediakan tombol pintas sinkronisasi manual langsung di bilah navigasi header dengan indikator putaran animasi (*spinner*) saat proses berlangsung.
+- Menyediakan tombol sinkronisasi manual pada tab Jurnal Aktivitas dan Operasi Cloud di modal sinkronisasi.
+- Menyediakan sakelar preferensi kendali *auto-sync* di pengaturan modal untuk fleksibilitas pengaturan pengguna.
+- Membatasi pengguna paket gratis (*Starter*) hanya pada brankas lokal tanpa kebocoran data ke awan.
+
+### Penyelarasan Tema Aksen Teal & Penyempurnaan Tampilan
+- Menyelaraskan tema warna aksen aplikasi ke warna Teal (`oklch(0.55 0.12 184)` / `#14b8a6` / `teal-500`) di seluruh modal, tombol aksi, kartu server, dan navigasi.
+- Menghapus terminologi teknis internal pengembang pada antarmuka pengguna menjadi bahasa layanan yang ramah pengguna.
+
 ## [Validasi Rilis v1, Backup & Pemulihan - Brief 07] - 2026-10-23
 
 ### Utilitas CLI Backup Konsisten & Pemulihan Direktori Privat (Backup & Recovery CLI)

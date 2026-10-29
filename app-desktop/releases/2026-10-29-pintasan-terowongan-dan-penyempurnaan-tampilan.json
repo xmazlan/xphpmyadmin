@@ -3,12 +3,12 @@
   "type": "feature",
   "status": "published",
   "title": {
-    "id": "Otorisasi Peramban Eksternal, Brankas Lokal Gratis Tanpa Hambatan, & Sinkronisasi Cloud",
-    "en": "External Browser Authorization, Frictionless Local Vault, & Cloud Synchronization"
+    "id": "Standarisasi Terowongan VPS, Sinkronisasi Otomatis Cloud, dan Tema Aksen Teal",
+    "en": "VPS Tunnel Standardization, Automated Cloud Sync, & Teal Accent Theme"
   },
   "body": {
-    "id": "Pembaruan komprehensif menghadirkan integrasi otorisasi akun Google dan GitHub melalui peramban eksternal dengan pengalihan balik otomatis ke aplikasi desktop, penyederhanaan pendaftaran akun gratis dengan brankas lokal mandiri, paket installer multi-platform siap pasang, penyempurnaan tema gelap obsidian, kelengkapan fitur manajemen database (ekspor-impor multi-format, operasi pemeliharaan, pencarian mendalam, manajemen prosedur), serta arsitektur sinkronisasi cloud dengan pencatatan riwayat transaksi resmi dalam format JSON.",
-    "en": "A comprehensive release introducing external browser Google and GitHub account authorization with automatic redirection back into the desktop app, frictionless free user registration with standalone local vaults, ready-to-install multi-platform packages, refined obsidian dark theme, full database management capabilities (multi-format export-import, maintenance operations, deep search, routines management), and cloud synchronization architecture with official JSON transaction journaling."
+    "id": "Pembaruan menyeluruh menghadirkan standardisasi konfigurasi terowongan VPS dengan preset pengguna dan perlindungan kunci terenkripsi, sinkronisasi otomatis aksi pengguna ke server cloud secara default bagi akun Pro/Team/Business dengan opsi manual instan, penyelarasan tema visual aksen Teal di seluruh aplikasi, eliminasi istilah teknis internal, serta penyempurnaan stabilitas koneksi hening melalui auto keep-alive berkala.",
+    "en": "A unified release delivering VPS tunnel configuration standardization with user presets and encrypted key protection, default automated cloud synchronization of user activities for Pro/Team/Business accounts with instant manual sync options, app-wide Teal accent theme alignment, elimination of internal technical jargon, and enhanced idle connection resilience via periodic auto keep-alive."
   },
   "items": [
     {
@@ -95,6 +95,21 @@
       "type": "fix",
       "id": "Penyempurnaan Keterbacaan Kolom Masukan: Bidang isian teks pada formulir kini memiliki ruang vertikal yang lebih proporsional sehingga karakter garis bawah (_) dan huruf berekor dapat terlihat utuh tanpa terpotong batas bawah.",
       "en": "Input Field Readability Refinement: Form text fields now provide enhanced vertical spacing so underscores (_) and descender letters display completely without lower edge clipping."
+    },
+    {
+      "type": "improvement",
+      "id": "Penyelarasan Tema Aksen Teal & Eliminasi Istilah Teknis: Tampilan visual seluruh aplikasi desktop kini distandarisasikan dengan warna aksen Teal yang modern dan elegan, serta pembersihan menyeluruh istilah internal pengembang pada jendela sinkronisasi cloud menjadi terminologi layanan yang ramah pengguna.",
+      "en": "Teal Accent Theme Alignment & Technical Jargon Elimination: The desktop application visual aesthetic is now standardized with a sleek, modern Teal accent color, alongside a comprehensive cleanup of developer internal jargon across the cloud synchronization modal into citizen-friendly service terminology."
+    },
+    {
+      "type": "new",
+      "id": "Standarisasi Konfigurasi Terowongan Server VPS: Penyediaan preset nama pengguna standar VPS (root, ubuntu, debian, ec2-user), pilihan cepat path berkas kunci akses privat (id_ed25519, id_rsa, id_ecdsa), dukungan kunci privat terenkripsi dengan proteksi frasa sandi (passphrase), serta otomasi ping penjaga kestabilan (auto keep-alive) setiap 15 detik agar koneksi basis data tidak terputus saat hening.",
+      "en": "VPS Server Tunnel Configuration Standardization: Provision of standard VPS username presets (root, ubuntu, debian, ec2-user), quick selectors for private access key paths (id_ed25519, id_rsa, id_ecdsa), encrypted private key support with passphrase protection, and automated 15-second keep-alive pings preventing idle database connection drops."
+    },
+    {
+      "type": "new",
+      "id": "Sinkronisasi Otomatis Aksi Pengguna & Opsi Sinkron Manual: Setiap aktivitas pengguna pada paket non-free (Pro, Team, Business) kini otomatis disinkronkan secara langsung dan berkala ke server cloud tanpa jeda, dilengkapi sakelar kendali di menu pengaturan serta tombol sinkronisasi manual instan pada bilah navigasi utama dan tab jurnal aktivitas.",
+      "en": "Automated User Action Cloud Synchronization & Manual Sync Options: Every user activity on paid plans (Pro, Team, Business) is now automatically synchronized to the cloud server in real-time, complete with a preference toggle in settings alongside instant one-click manual synchronization buttons on the main navigation bar and activity journal tab."
     }
   ]
 }

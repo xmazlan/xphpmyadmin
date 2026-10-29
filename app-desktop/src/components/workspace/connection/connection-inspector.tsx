@@ -12,7 +12,7 @@ import {
   Terminal,
   Zap,
 } from "lucide-react";
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -71,6 +71,7 @@ export function ConnectionInspector({
   showSshPassword,
 }: ConnectionInspectorProps) {
   const sshKeyFileInputRef = useRef<HTMLInputElement>(null);
+  const [showSshPassphrase, setShowSshPassphrase] = useState(false);
 
   if (!isOpen) {
     return null;
@@ -179,6 +180,7 @@ export function ConnectionInspector({
                       auth_type: "password",
                       host: "",
                       key: "",
+                      passphrase: "",
                       password: "",
                       port: 22,
                       username: "root",
@@ -445,6 +447,31 @@ export function ConnectionInspector({
                   placeholder="root / ubuntu"
                   value={editForm.ssh?.username ?? ""}
                 />
+                <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                  <span className="text-[9px] text-muted-foreground/80">
+                    Preset:
+                  </span>
+                  {["root", "ubuntu", "debian", "ec2-user"].map((userPreset) => (
+                    <button
+                      className={cn(
+                        "cursor-pointer rounded border px-1.5 py-0.5 font-mono text-[9px] transition-all",
+                        editForm.ssh?.username === userPreset
+                          ? "border-purple-400 bg-purple-500/25 font-semibold text-purple-200"
+                          : "border-border/60 bg-background/60 text-muted-foreground hover:border-purple-400/40 hover:text-foreground"
+                      )}
+                      key={userPreset}
+                      onClick={() =>
+                        setEditForm({
+                          ...editForm,
+                          ssh: { ...editForm.ssh!, username: userPreset },
+                        })
+                      }
+                      type="button"
+                    >
+                      {userPreset}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div>
                 <Label className="text-[10px] text-muted-foreground">
@@ -526,51 +553,137 @@ export function ConnectionInspector({
 
             {/* Private Key SSH Input */}
             {editForm.ssh?.auth_type === "key" && (
-              <div>
-                <Label className="text-[10px] text-muted-foreground">
-                  Path File SSH Private Key (id_rsa / id_ed25519)
-                </Label>
-                <div className="mt-1 flex items-center gap-1.5">
-                  <Input
-                    className="h-8 flex-1 border-border bg-background py-0.5 font-mono text-xs leading-normal"
-                    onChange={(e) =>
-                      setEditForm({
-                        ...editForm,
-                        ssh: { ...editForm.ssh!, key: e.target.value },
-                      })
-                    }
-                    placeholder="~/.ssh/id_ed25519 atau /home/user/.ssh/id_rsa"
-                    value={editForm.ssh?.key || ""}
-                  />
-                  <input
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const pathStr = (file as any).path || file.name;
+              <div className="space-y-2">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">
+                    Path File SSH Private Key (id_rsa / id_ed25519)
+                  </Label>
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <Input
+                      className="h-8 flex-1 border-border bg-background py-0.5 font-mono text-xs leading-normal"
+                      onChange={(e) =>
                         setEditForm({
                           ...editForm,
-                          ssh: { ...editForm.ssh!, key: pathStr },
-                        });
+                          ssh: { ...editForm.ssh!, key: e.target.value },
+                        })
                       }
-                    }}
-                    ref={sshKeyFileInputRef}
-                    type="file"
-                  />
-                  <Button
-                    className="h-8 shrink-0 px-2.5 text-[10px]"
-                    onClick={() => sshKeyFileInputRef.current?.click()}
-                    size="sm"
-                    title="Pilih Berkas Kunci SSH"
-                    type="button"
-                    variant="outline"
-                  >
-                    <FolderOpen size={12} />
-                    <span className="hidden sm:inline">Pilih</span>
-                  </Button>
+                      placeholder="~/.ssh/id_ed25519 atau ~/.ssh/id_rsa"
+                      value={editForm.ssh?.key || ""}
+                    />
+                    <input
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const pathStr = (file as any).path || file.name;
+                          setEditForm({
+                            ...editForm,
+                            ssh: { ...editForm.ssh!, key: pathStr },
+                          });
+                        }
+                      }}
+                      ref={sshKeyFileInputRef}
+                      type="file"
+                    />
+                    <Button
+                      className="h-8 shrink-0 px-2.5 text-[10px]"
+                      onClick={() => sshKeyFileInputRef.current?.click()}
+                      size="sm"
+                      title="Pilih Berkas Kunci SSH"
+                      type="button"
+                      variant="outline"
+                    >
+                      <FolderOpen size={12} />
+                      <span className="hidden sm:inline">Pilih</span>
+                    </Button>
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                    <span className="text-[9px] text-muted-foreground/80">
+                      Standar:
+                    </span>
+                    {["~/.ssh/id_ed25519", "~/.ssh/id_rsa", "~/.ssh/id_ecdsa"].map(
+                      (keyPath) => (
+                        <button
+                          className={cn(
+                            "cursor-pointer rounded border px-1.5 py-0.5 font-mono text-[9px] transition-all",
+                            editForm.ssh?.key === keyPath
+                              ? "border-purple-400 bg-purple-500/25 font-semibold text-purple-200"
+                              : "border-border/60 bg-background/60 text-muted-foreground hover:border-purple-400/40 hover:text-foreground"
+                          )}
+                          key={keyPath}
+                          onClick={() =>
+                            setEditForm({
+                              ...editForm,
+                              ssh: { ...editForm.ssh!, key: keyPath },
+                            })
+                          }
+                          type="button"
+                        >
+                          {keyPath}
+                        </button>
+                      )
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">
+                    Passphrase Kunci Privat (Opsional)
+                  </Label>
+                  <div className="relative mt-1">
+                    <Input
+                      className="h-8 border-border bg-background pr-7 py-0.5 font-mono text-xs leading-normal"
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          ssh: { ...editForm.ssh!, passphrase: e.target.value },
+                        })
+                      }
+                      placeholder="Kosongkan jika kunci SSH tidak dilindungi passphrase..."
+                      type={showSshPassphrase ? "text" : "password"}
+                      value={editForm.ssh?.passphrase ?? ""}
+                    />
+                    <button
+                      className="absolute top-2 right-2 cursor-pointer text-muted-foreground/70 hover:text-foreground"
+                      onClick={() => setShowSshPassphrase(!showSshPassphrase)}
+                      title={
+                        showSshPassphrase
+                          ? "Sembunyikan passphrase"
+                          : "Lihat passphrase"
+                      }
+                      type="button"
+                    >
+                      {showSshPassphrase ? (
+                        <EyeOff size={12} />
+                      ) : (
+                        <Eye size={12} />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
+
+            {/* Standard VPS Tunnel Info Footer */}
+            <div className="mt-1 rounded border border-purple-500/20 bg-purple-950/20 p-2 text-[10px] leading-relaxed text-purple-200/90">
+              <div className="flex items-center gap-1.5 font-medium text-purple-300">
+                <Shield size={11} />
+                <span>Standar Tunneling VPS Aktif:</span>
+              </div>
+              <ul className="mt-1 list-inside list-disc space-y-0.5 text-[9.5px] text-purple-200/80">
+                <li>
+                  Forwarding aman: MySQL dihubungi via loopback internal VPS (
+                  <code className="text-purple-100">127.0.0.1:3306</code>).
+                </li>
+                <li>
+                  Auto Keep-Alive: Ping berkala 15 detik aktif otomatis untuk
+                  mencegah tunnel terputus saat idle.
+                </li>
+                <li>
+                  Kunci SSH terenkripsi didukung penuh via Passphrase.
+                </li>
+              </ul>
+            </div>
           </div>
         )}
 

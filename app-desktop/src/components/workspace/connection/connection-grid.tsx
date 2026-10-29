@@ -238,7 +238,7 @@ export function ConnectionGrid({
                   className={cn(
                     "group relative cursor-pointer rounded-lg border border-border bg-card p-3.5 transition-all hover:border-white/20 hover:bg-muted/40",
                     isSelected &&
-                      "border-primary shadow-[0_0_12px_rgba(87,193,255,0.15)] ring-1 ring-primary",
+                      "border-primary shadow-[0_0_12px_rgba(20,184,166,0.2)] ring-1 ring-primary",
                     isSsh && !isSelected && "border-purple-500/20 hover:border-purple-500/40"
                   )}
                   key={p.id}

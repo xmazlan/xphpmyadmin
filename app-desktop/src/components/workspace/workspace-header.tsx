@@ -1,4 +1,4 @@
-import { Cloud, LogOut, Search, Sparkles, User, X } from "lucide-react";
+import { Cloud, LogOut, RefreshCw, Search, Sparkles, User, X } from "lucide-react";
 import type React from "react";
 import { SiGithub, SiGoogle } from "@icons-pack/react-simple-icons";
 import ToggleTheme from "@/components/toggle-theme";
@@ -10,8 +10,10 @@ interface WorkspaceHeaderProps {
   activeTabId: string;
   activeTabs: ActiveTabItem[];
   isSidebarCollapsed: boolean;
+  isSyncing?: boolean;
   onCloseTab: (tabId: string, e: React.MouseEvent) => void;
   onLogout?: () => void;
+  onManualSync?: () => void;
   onOpenCloudSync?: () => void;
   onSearchChange: (query: string) => void;
   onSelectTab: (tabId: string) => void;
@@ -32,8 +34,10 @@ export function WorkspaceHeader({
   activeTabId,
   activeTabs,
   isSidebarCollapsed,
+  isSyncing = false,
   onCloseTab,
   onLogout,
+  onManualSync,
   onOpenCloudSync,
   onSearchChange,
   onSelectTab,
@@ -122,21 +126,59 @@ export function WorkspaceHeader({
           />
         </div>
 
-        {/* Cloud Sync Button */}
+        {/* Cloud Sync Button & Manual Trigger */}
         {onOpenCloudSync && (
-          <button
-            className="relative flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            onClick={onOpenCloudSync}
-            title="Cloud Sync & Jurnal Audit"
-            type="button"
-          >
-            <Cloud size={14} />
-            {pendingSyncCount > 0 && (
-              <span className="-top-1 -right-1 absolute flex size-3.5 items-center justify-center rounded-full bg-amber-500 font-bold font-mono text-[9px] text-black shadow-xs">
-                {pendingSyncCount > 9 ? "9+" : pendingSyncCount}
-              </span>
+          <div className="flex items-center gap-1">
+            <button
+              className="relative flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+              onClick={onOpenCloudSync}
+              title={
+                isSyncing
+                  ? "Sedang menyinkronkan aktivitas ke cloud..."
+                  : pendingSyncCount > 0
+                    ? userPlan !== "free"
+                      ? `${pendingSyncCount} aktivitas dalam proses sinkronisasi otomatis.`
+                      : `${pendingSyncCount} aktivitas belum disinkronkan (Perlu langganan). Klik untuk kelola Cloud Sync.`
+                    : "Cloud Sync & Jurnal Audit"
+              }
+              type="button"
+            >
+              {isSyncing ? (
+                <RefreshCw size={13} className="animate-spin text-teal-400" />
+              ) : (
+                <Cloud
+                  size={14}
+                  className={
+                    pendingSyncCount > 0
+                      ? userPlan !== "free"
+                        ? "text-teal-400"
+                        : "text-amber-400"
+                      : "text-muted-foreground"
+                  }
+                />
+              )}
+              {!isSyncing && pendingSyncCount > 0 && userPlan === "free" && (
+                <span className="-top-1 -right-1 absolute flex size-3.5 items-center justify-center rounded-full bg-amber-500 font-bold font-mono text-[9px] text-black shadow-xs">
+                  {pendingSyncCount > 9 ? "9+" : pendingSyncCount}
+                </span>
+              )}
+            </button>
+
+            {userPlan !== "free" && onManualSync && (
+              <button
+                className="hidden sm:flex size-7 items-center justify-center rounded-md border border-teal-500/30 text-teal-400 transition-colors hover:bg-teal-500/10 cursor-pointer disabled:opacity-50"
+                disabled={isSyncing}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onManualSync();
+                }}
+                title="Sinkronkan Manual ke Cloud Sekarang"
+                type="button"
+              >
+                <RefreshCw size={12} className={cn(isSyncing && "animate-spin")} />
+              </button>
             )}
-          </button>
+          </div>
         )}
 
         {/* User Profile Badge (if authenticated) */}

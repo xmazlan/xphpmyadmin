@@ -225,6 +225,7 @@ export function HomePage() {
         auth_type: "password",
         host: "",
         key: "",
+        passphrase: "",
         password: "",
         port: 22,
         username: "root",

@@ -38,6 +38,67 @@ describe("Workspace Components", () => {
     ).toBeInTheDocument();
   });
 
+  it("handles pending sync badges correctly based on subscription tier", () => {
+    // 1. Free tier shows amber pending badge
+    const { getByText, queryByText, rerender } = render(
+      <WorkspaceHeader
+        activeTabId="tab-home"
+        activeTabs={[
+          { env: "Local", id: "tab-home", name: "Pengelola Koneksi" },
+        ]}
+        isSidebarCollapsed={false}
+        onCloseTab={vi.fn()}
+        onOpenCloudSync={vi.fn()}
+        onSearchChange={vi.fn()}
+        onSelectTab={vi.fn()}
+        onToggleSidebar={vi.fn()}
+        pendingSyncCount={3}
+        searchQuery=""
+        userConfig={{
+          apiEndpoint: "https://er-service.duckdns.org/api/sync",
+          authEndpoint: "https://er-service.duckdns.org/api/auth",
+          autoSync: false,
+          billingCycle: "annual",
+          maxVaults: 1,
+          status: "idle",
+          subscriptionTier: "free",
+        }}
+      />
+    );
+
+    expect(getByText("3")).toBeInTheDocument();
+
+    // 2. Subscribed user (Pro/Team/Business) suppresses amber warning badge because auto-sync handles it
+    rerender(
+      <WorkspaceHeader
+        activeTabId="tab-home"
+        activeTabs={[
+          { env: "Local", id: "tab-home", name: "Pengelola Koneksi" },
+        ]}
+        isSidebarCollapsed={false}
+        onCloseTab={vi.fn()}
+        onOpenCloudSync={vi.fn()}
+        onSearchChange={vi.fn()}
+        onSelectTab={vi.fn()}
+        onToggleSidebar={vi.fn()}
+        pendingSyncCount={3}
+        searchQuery=""
+        userConfig={{
+          apiEndpoint: "https://er-service.duckdns.org/api/sync",
+          authEndpoint: "https://er-service.duckdns.org/api/auth",
+          autoSync: true,
+          billingCycle: "annual",
+          maxVaults: 10,
+          status: "idle",
+          subscriptionTier: "pro",
+          userEmail: "pro@example.com",
+        }}
+      />
+    );
+
+    expect(queryByText("3")).toBeNull();
+  });
+
   it("renders ConnectionSidebar correctly", () => {
     const { getByText } = render(
       <ConnectionSidebar isSidebarCollapsed={false} />
@@ -102,6 +163,37 @@ describe("Workspace Components", () => {
     expect(getByText("Host Details")).toBeInTheDocument();
     expect(getByText("Server Database MySQL / MariaDB")).toBeInTheDocument();
     expect(getByText("Hubungkan ke Database")).toBeInTheDocument();
+  });
+
+  it("renders ConnectionInspector correctly with SSH Tunnel method", () => {
+    const sshProfile = INITIAL_PROFILES.find((p) => p.method === "ssh")!;
+    const { getByText } = render(
+      <ConnectionInspector
+        diagnostics={null}
+        editForm={sshProfile}
+        isOpen={true}
+        isTesting={false}
+        onClose={vi.fn()}
+        onConnect={vi.fn()}
+        onInspectSshKey={vi.fn()}
+        onSaveProfile={vi.fn()}
+        onTestConnection={vi.fn()}
+        passwordAction="keep"
+        passwordInput=""
+        setEditForm={vi.fn()}
+        setPasswordAction={vi.fn()}
+        setPasswordInput={vi.fn()}
+        setShowPassword={vi.fn()}
+        setShowSshPassword={vi.fn()}
+        showPassword={false}
+        showSshPassword={false}
+      />
+    );
+
+    expect(getByText("SSH Tunnel Details")).toBeInTheDocument();
+    expect(getByText("Konfigurasi SSH Server (VPS / Bastion)")).toBeInTheDocument();
+    expect(getByText("Standar Tunneling VPS Aktif:")).toBeInTheDocument();
+    expect(getByText("Passphrase Kunci Privat (Opsional)")).toBeInTheDocument();
   });
 
   it("renders ExplorerSidebar correctly", () => {

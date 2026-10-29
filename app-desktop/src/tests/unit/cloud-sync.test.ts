@@ -15,6 +15,7 @@ import {
   recordUserAction,
   saveSnippet,
   syncWithCloudBackend,
+  triggerAutoSyncToCloud,
   updateCloudSyncConfig,
   upgradeSubscriptionPlan,
 } from "@/services/cloud-sync";
@@ -299,4 +300,71 @@ describe("Cloud Sync & State Journaling (er-backend)", () => {
     expect(mergeRes.error).toContain("Paket gratis hanya memiliki brankas lokal");
   });
 
+  it("should auto-sync user actions by default when tier is not free, and allow manual sync", async () => {
+    // 1. Non-free tier (pro) defaults autoSync to true
+    updateCloudSyncConfig({
+      apiEndpoint: "https://er-service.duckdns.org/api/sync",
+      apiToken: "pro_token_123",
+      subscriptionTier: "pro",
+    });
+    const cfg = getCloudSyncConfig();
+    expect(cfg.subscriptionTier).toBe("pro");
+    expect(cfg.autoSync).toBe(true);
+
+    const mockFetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes("/push")) {
+        return Promise.resolve({
+          json: async () => ({
+            message: "Auto-synced to cloud Neon DB",
+            success: true,
+          }),
+          ok: true,
+        });
+      }
+      return Promise.resolve({
+        json: async () => ({ success: true }),
+        ok: true,
+      });
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    // Record an action
+    recordUserAction({
+      action: "table_create",
+      category: "table",
+      database: "test_db",
+      details: {},
+      table: "products",
+    });
+
+    // Auto-sync triggers push to backend
+    const autoSyncRes = await triggerAutoSyncToCloud(MOCK_PROFILES, 0);
+    expect(autoSyncRes.success).toBe(true);
+    expect(mockFetch).toHaveBeenCalled();
+
+    // Journal should be marked as synced
+    const journal = getStoredJournal();
+    expect(journal[0].syncStatus).toBe("synced");
+
+    // 2. Free tier skips auto-sync (local vault only)
+    updateCloudSyncConfig({ subscriptionTier: "free" });
+    mockFetch.mockClear();
+
+    const freeAutoSyncRes = await triggerAutoSyncToCloud(MOCK_PROFILES, 0);
+    expect(freeAutoSyncRes.skipped).toBe(true);
+    expect(freeAutoSyncRes.success).toBe(false);
+    expect(mockFetch).not.toHaveBeenCalled();
+
+    // 3. Non-free user can still perform manual sync anytime
+    updateCloudSyncConfig({
+      apiToken: "business_token",
+      subscriptionTier: "business",
+    });
+    const manualSyncRes = await syncWithCloudBackend(
+      MOCK_PROFILES,
+      "business_token"
+    );
+    expect(manualSyncRes.success).toBe(true);
+    expect(mockFetch).toHaveBeenCalled();
+  });
 });

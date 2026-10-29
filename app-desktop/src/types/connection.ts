@@ -13,6 +13,7 @@ export const sshConfigSchema = z.object({
   auth_type: z.enum(["password", "key"]).default("password").optional(),
   host: z.string().min(1).max(253),
   key: z.string().max(4096).nullable().optional(),
+  passphrase: z.string().max(65_536).nullable().optional(),
   password: z.string().max(65_536).nullable().optional(),
   port: z.number().int().min(1).max(65_535).default(22),
   username: z.string().min(1).max(128).default("root"),

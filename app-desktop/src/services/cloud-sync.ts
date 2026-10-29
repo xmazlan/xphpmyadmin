@@ -35,6 +35,18 @@ const MEMORY_STORE: {
   snippets: [],
 };
 
+let cachedProfiles: Profile[] = [];
+
+export function setCachedProfiles(profiles: Profile[]): void {
+  if (Array.isArray(profiles)) {
+    cachedProfiles = profiles;
+  }
+}
+
+export function getCachedProfiles(): Profile[] {
+  return cachedProfiles;
+}
+
 function isStorageAvailable(): boolean {
   return typeof window !== "undefined" && typeof localStorage !== "undefined";
 }
@@ -184,20 +196,48 @@ export function deleteSnippet(id: string): void {
 }
 
 export function getCloudSyncConfig(): CloudSyncConfig {
-  if (!isStorageAvailable()) return MEMORY_STORE.config;
-  try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_KEYS.CLOUD_SYNC_CONFIG);
-    return raw ? { ...MEMORY_STORE.config, ...JSON.parse(raw) } : MEMORY_STORE.config;
-  } catch {
-    return MEMORY_STORE.config;
+  let baseConfig = MEMORY_STORE.config;
+  if (isStorageAvailable()) {
+    try {
+      const raw = localStorage.getItem(LOCAL_STORAGE_KEYS.CLOUD_SYNC_CONFIG);
+      if (raw) {
+        baseConfig = { ...MEMORY_STORE.config, ...JSON.parse(raw) };
+      }
+    } catch {
+      baseConfig = MEMORY_STORE.config;
+    }
   }
+  const isNonFree = baseConfig.subscriptionTier !== "free";
+  // Non-free tiers (Pro, Team, Business) aktif sinkronisasi otomatis secara default
+  const autoSync = baseConfig.autoSync !== undefined ? baseConfig.autoSync : isNonFree;
+  return {
+    ...baseConfig,
+    autoSync,
+  };
 }
 
 export function updateCloudSyncConfig(
   updates: Partial<CloudSyncConfig>
 ): CloudSyncConfig {
   const current = getCloudSyncConfig();
-  const updated: CloudSyncConfig = { ...current, ...updates };
+  const nextTier = updates.subscriptionTier ?? current.subscriptionTier;
+  const isNonFree = nextTier !== "free";
+
+  let resolvedAutoSync = current.autoSync;
+  if (updates.autoSync !== undefined) {
+    resolvedAutoSync = updates.autoSync;
+  } else if (
+    updates.subscriptionTier !== undefined &&
+    updates.subscriptionTier !== current.subscriptionTier
+  ) {
+    resolvedAutoSync = isNonFree;
+  }
+
+  const updated: CloudSyncConfig = {
+    ...current,
+    ...updates,
+    autoSync: resolvedAutoSync,
+  };
 
   if (isStorageAvailable()) {
     try {
@@ -216,9 +256,11 @@ export function updateCloudSyncConfig(
 }
 
 export function buildCloudSyncSnapshot(
-  profiles: Profile[],
+  profiles?: Profile[],
   preferencesOverride?: Partial<CloudSyncPreferences>
 ): CloudSyncSnapshot {
+  const resolvedProfiles =
+    profiles && profiles.length > 0 ? profiles : getCachedProfiles();
   const journal = getStoredJournal();
   const queryHistory = getStoredQueryHistory();
   const snippets = getStoredSnippets();
@@ -247,7 +289,7 @@ export function buildCloudSyncSnapshot(
     revision: Date.now(),
     subscriptionTier: config.subscriptionTier,
     totalActions: journal.length,
-    totalProfiles: profiles.length,
+    totalProfiles: resolvedProfiles.length,
     totalQueries: queryHistory.length,
     userEmail: config.userEmail,
     userId: config.userId,
@@ -258,7 +300,7 @@ export function buildCloudSyncSnapshot(
     journal,
     metadata,
     preferences,
-    profiles,
+    profiles: resolvedProfiles,
     queryHistory,
     snippets,
   };
@@ -337,7 +379,7 @@ export function importCloudBackupJson(jsonString: string): {
 // er-backend Integration: PUSH (/api/sync/push)
 // -------------------------------------------------------------
 export async function syncWithCloudBackend(
-  profiles: Profile[],
+  profiles?: Profile[],
   tokenOverride?: string,
   endpointOverride?: string
 ): Promise<{
@@ -354,10 +396,12 @@ export async function syncWithCloudBackend(
       syncedItems: 0,
     };
   }
+  const resolvedProfiles =
+    profiles && profiles.length > 0 ? profiles : getCachedProfiles();
   const token = (tokenOverride || config.apiToken || config.userEmail || "user_pro_sync").trim();
   const baseEndpoint = (endpointOverride || config.apiEndpoint).replace(/\/+$/, "");
   const pushUrl = baseEndpoint.endsWith("/push") ? baseEndpoint : `${baseEndpoint}/push`;
-  const snapshot = buildCloudSyncSnapshot(profiles);
+  const snapshot = buildCloudSyncSnapshot(resolvedProfiles);
 
   updateCloudSyncConfig({ lastErrorMessage: undefined, status: "syncing" });
 
@@ -383,7 +427,7 @@ export async function syncWithCloudBackend(
 
     if (!response.ok || resJson.success === false) {
       throw new Error(
-        resJson.error || `er-backend mengembalikan status ${response.status}`
+        resJson.error || `Server cloud mengembalikan status ${response.status}`
       );
     }
 
@@ -429,6 +473,76 @@ export async function syncWithCloudBackend(
 }
 
 // -------------------------------------------------------------
+// Auto-Sync to Cloud: Debounced Background Trigger
+// -------------------------------------------------------------
+let autoSyncTimeout: any = null;
+let isAutoSyncInProgress = false;
+let hasPendingSyncRequest = false;
+
+export function triggerAutoSyncToCloud(
+  profiles?: Profile[],
+  delayMs = 600
+): Promise<{
+  error?: string;
+  message?: string;
+  skipped?: boolean;
+  success: boolean;
+  syncedItems?: number;
+}> {
+  if (profiles && profiles.length > 0) {
+    setCachedProfiles(profiles);
+  }
+
+  const config = getCloudSyncConfig();
+  // Status free dibatasi hanya ke brankas lokal, jangan sinkronkan ke backend
+  if (config.subscriptionTier === "free" || config.autoSync === false) {
+    return Promise.resolve({ skipped: true, success: false });
+  }
+
+  if (autoSyncTimeout) {
+    clearTimeout(autoSyncTimeout);
+  }
+
+  if (delayMs <= 0) {
+    if (isAutoSyncInProgress) {
+      hasPendingSyncRequest = true;
+      return Promise.resolve({ skipped: true, success: false });
+    }
+    isAutoSyncInProgress = true;
+    return syncWithCloudBackend(profiles || getCachedProfiles()).finally(() => {
+      isAutoSyncInProgress = false;
+      if (hasPendingSyncRequest) {
+        hasPendingSyncRequest = false;
+        triggerAutoSyncToCloud(getCachedProfiles(), 300);
+      }
+    });
+  }
+
+  return new Promise((resolve) => {
+    autoSyncTimeout = setTimeout(async () => {
+      autoSyncTimeout = null;
+      if (isAutoSyncInProgress) {
+        hasPendingSyncRequest = true;
+        return resolve({ skipped: true, success: false });
+      }
+      isAutoSyncInProgress = true;
+      try {
+        const res = await syncWithCloudBackend(profiles || getCachedProfiles());
+        resolve(res);
+      } catch (err: any) {
+        resolve({ error: err?.message || String(err), success: false });
+      } finally {
+        isAutoSyncInProgress = false;
+        if (hasPendingSyncRequest) {
+          hasPendingSyncRequest = false;
+          triggerAutoSyncToCloud(getCachedProfiles(), 300);
+        }
+      }
+    }, delayMs);
+  });
+}
+
+// -------------------------------------------------------------
 // er-backend Integration: PULL (/api/sync/pull)
 // -------------------------------------------------------------
 export async function pullFromCloudBackend(
@@ -469,7 +583,7 @@ export async function pullFromCloudBackend(
 
     if (!response.ok || resJson.success === false) {
       throw new Error(
-        resJson.error || `er-backend pull mengembalikan kode status ${response.status}`
+        resJson.error || `Server cloud pull mengembalikan kode status ${response.status}`
       );
     }
 
@@ -544,7 +658,7 @@ export async function mergeWithCloudBackend(
 
     if (!response.ok || resJson.success === false) {
       throw new Error(
-        resJson.error || `er-backend merge status ${response.status}`
+        resJson.error || `Server cloud merge status ${response.status}`
       );
     }
 
@@ -660,7 +774,7 @@ export async function registerToCloudBackend(
     const resJson = await response.json().catch(() => ({}));
 
     if (!response.ok || resJson.success === false) {
-      throw new Error(resJson.error || "Gagal mendaftar ke server er-backend");
+      throw new Error(resJson.error || "Gagal mendaftar ke server cloud");
     }
 
     const userTier: SubscriptionTier =

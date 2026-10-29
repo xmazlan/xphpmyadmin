@@ -169,8 +169,8 @@ export function AuthGate({ onBypassLocal }: AuthGateProps) {
   return (
     <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-y-auto bg-gradient-to-b from-background via-card/60 to-background p-4 sm:p-6">
       {/* Background ambient decorative glow */}
-      <div className="-top-32 -left-32 pointer-events-none absolute size-96 rounded-full bg-primary/10 blur-3xl" />
-      <div className="-bottom-32 -right-32 pointer-events-none absolute size-96 rounded-full bg-blue-500/10 blur-3xl" />
+      <div className="-top-32 -left-32 pointer-events-none absolute size-96 rounded-full bg-primary/15 blur-3xl" />
+      <div className="-bottom-32 -right-32 pointer-events-none absolute size-96 rounded-full bg-teal-500/10 blur-3xl" />
 
       {/* Main Container Card */}
       <div className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-card/95 p-6 shadow-2xl backdrop-blur-md sm:p-8">
