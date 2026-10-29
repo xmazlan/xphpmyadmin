@@ -4,11 +4,11 @@ export default [
   {
     key: "en",
     nativeName: "English",
-    prefix: "EN-US",
+    prefix: "EN",
   },
   {
-    key: "pt-BR",
-    nativeName: "Português (Brasil)",
-    prefix: "PT-BR",
+    key: "id",
+    nativeName: "Bahasa Indonesia",
+    prefix: "ID",
   },
 ] as const satisfies Language[];

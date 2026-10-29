@@ -23,3 +23,15 @@ contextBridge.exposeInMainWorld("electronOAuth", {
     return ipcRenderer.invoke("start-oauth", provider);
   },
 });
+
+contextBridge.exposeInMainWorld("electronWindow", {
+  onWindowStateChange: (
+    callback: (data: { isMaximized: boolean }) => void
+  ) => {
+    const listener = (_: any, data: any) => callback(data);
+    ipcRenderer.on("window-state-change", listener);
+    return () => {
+      ipcRenderer.removeListener("window-state-change", listener);
+    };
+  },
+});

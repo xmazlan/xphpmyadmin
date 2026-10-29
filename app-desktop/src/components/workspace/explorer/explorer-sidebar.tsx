@@ -4,6 +4,7 @@ import {
   RefreshCw,
   Search,
   Server,
+  Settings,
   Table as TableIcon,
   X,
 } from "lucide-react";
@@ -24,6 +25,7 @@ interface ExplorerSidebarProps {
   onClose: () => void;
   onOpenCreateDbModal: () => void;
   onOpenDatabase: (db: string) => void;
+  onOpenSettings?: () => void;
   onRefreshDatabases: () => void;
   onSelectTable: (tbl: string) => void;
   onSwitchToHub: () => void;
@@ -45,6 +47,7 @@ export function ExplorerSidebar({
   onClose,
   onOpenCreateDbModal,
   onOpenDatabase,
+  onOpenSettings,
   onRefreshDatabases,
   onSelectTable,
   onSwitchToHub,
@@ -252,12 +255,24 @@ export function ExplorerSidebar({
 
       {/* Footer */}
       <div className="flex items-center justify-between border-border border-t bg-muted/40 p-2 text-[11px]">
-        <span className="flex max-w-[170px] items-center gap-1.5 truncate font-mono text-[10px] text-emerald-500">
-          <span className="inline-block h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-500" />
-          <span className="truncate">
-            {currentSelectedDatabase || "Live MariaDB"}
+        <div className="flex items-center gap-1.5 truncate">
+          {onOpenSettings && (
+            <button
+              className="flex size-5 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer transition-colors shrink-0"
+              onClick={onOpenSettings}
+              title="Pengaturan Aplikasi"
+              type="button"
+            >
+              <Settings size={12} />
+            </button>
+          )}
+          <span className="flex max-w-[130px] items-center gap-1.5 truncate font-mono text-[10px] text-emerald-500">
+            <span className="inline-block h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-500" />
+            <span className="truncate">
+              {currentSelectedDatabase || "Live MariaDB"}
+            </span>
           </span>
-        </span>
+        </div>
         <button
           className="shrink-0 cursor-pointer text-[11px] text-muted-foreground hover:text-foreground hover:underline"
           onClick={onSwitchToHub}

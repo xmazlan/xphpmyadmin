@@ -1,32 +1,42 @@
 import { useTranslation } from "react-i18next";
 import { setAppLanguage } from "@/actions/language";
 import langs from "@/localization/langs";
-import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
+import { cn } from "@/utils/tailwind";
 
-export default function LangToggle() {
+interface LangToggleProps {
+  className?: string;
+}
+
+export default function LangToggle({ className }: LangToggleProps) {
   const { i18n } = useTranslation();
-  const currentLang = i18n.language;
-
-  function onValueChange(value: string) {
-    setAppLanguage(value, i18n);
-  }
+  const currentLang = i18n.language?.startsWith("id") ? "id" : "en";
 
   return (
-    <ToggleGroup
-      onValueChange={onValueChange}
-      type="single"
-      value={currentLang}
+    <div
+      className={cn(
+        "flex items-center rounded-md border border-border bg-muted/40 p-0.5 text-xs font-mono select-none",
+        className
+      )}
     >
-      {langs.map((lang) => (
-        <ToggleGroupItem
-          key={lang.key}
-          size="lg"
-          value={lang.key}
-          variant="outline"
-        >
-          {`${lang.prefix}`}
-        </ToggleGroupItem>
-      ))}
-    </ToggleGroup>
+      {langs.map((lang) => {
+        const isActive = currentLang === lang.key;
+        return (
+          <button
+            key={lang.key}
+            className={cn(
+              "cursor-pointer rounded px-1.5 py-0.5 text-[10px] font-semibold transition-all",
+              isActive
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+            onClick={() => setAppLanguage(lang.key, i18n)}
+            title={lang.nativeName}
+            type="button"
+          >
+            {lang.prefix}
+          </button>
+        );
+      })}
+    </div>
   );
 }

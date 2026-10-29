@@ -1,25 +1,28 @@
 import { Database, FileCode2, FileUp, Table as TableIcon, Zap } from "lucide-react";
 import { useRef, useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import type { ImportFileInfo, TableItem } from "@/types/workspace";
 import { cn } from "@/utils/tailwind";
 
-interface ImportTabProps {
-  availableDatabases: string[];
+export interface ImportTabProps {
+  availableDatabases?: string[];
   availableTables?: TableItem[];
   currentSelectedDatabase: string;
+  fileInputRef?: React.RefObject<HTMLInputElement | null>;
   importSqlContent: string;
   importTab: "file" | "paste";
   importTargetTable?: string;
   isImporting: boolean;
   onExecuteImport: () => void;
-  onPickImportFile: (isModal: boolean) => void;
-  onProcessChosenFile: (file: File) => void;
-  onSelectDatabase: (dbName: string) => void;
+  onFileSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onOpenFileDialog?: () => void;
+  onPickImportFile?: (isModal: boolean) => void;
+  onProcessChosenFile?: (file: File) => void;
+  onSelectDatabase?: (dbName: string) => void;
   selectedImportFile: ImportFileInfo | null;
-  setCurrentSelectedDatabase: (val: string) => void;
+  setCurrentSelectedDatabase?: (val: string) => void;
   setImportSqlContent: (val: string) => void;
   setImportTab: (val: "file" | "paste") => void;
   setImportTargetTable?: (val: string) => void;
@@ -27,14 +30,17 @@ interface ImportTabProps {
 }
 
 export function ImportTab({
-  availableDatabases,
+  availableDatabases = [],
   availableTables = [],
   currentSelectedDatabase,
+  fileInputRef: externalFileInputRef,
   importSqlContent,
   importTab,
   importTargetTable = "",
   isImporting,
   onExecuteImport,
+  onFileSelect,
+  onOpenFileDialog,
   onPickImportFile,
   onProcessChosenFile,
   onSelectDatabase,
@@ -45,12 +51,24 @@ export function ImportTab({
   setImportTargetTable,
   setSelectedImportFile,
 }: ImportTabProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation();
+  const internalFileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = (externalFileInputRef || internalFileInputRef) as React.RefObject<HTMLInputElement>;
   const [isDraggingImport, setIsDraggingImport] = useState(false);
 
   const isCsvOrJson =
     selectedImportFile?.fileName?.toLowerCase().endsWith(".csv") ||
     selectedImportFile?.fileName?.toLowerCase().endsWith(".json");
+
+  const handleOpenPicker = () => {
+    if (onPickImportFile) {
+      onPickImportFile(false);
+    } else if (onOpenFileDialog) {
+      onOpenFileDialog();
+    } else {
+      fileInputRef.current?.click();
+    }
+  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-background p-4 sm:p-6">
@@ -60,24 +78,13 @@ export function ImportTab({
             <FileUp className="text-primary" size={18} />
             <div>
               <h2 className="font-semibold text-foreground text-sm">
-                Impor Data ke Database (
-                <span className="font-mono text-primary">
-                  {currentSelectedDatabase || "Pilih database"}
-                </span>
-                )
+                Impor Script SQL ke Database (`{currentSelectedDatabase}`)
               </h2>
               <p className="text-muted-foreground text-xs">
-                Pulihkan atau masukkan data dari berkas SQL, CSV, atau JSON
-                langsung ke basis data.
+                Pulihkan atau jalankan skrip SQL langsung ke basis data aktif.
               </p>
             </div>
           </div>
-          <Badge
-            className="border-primary/30 bg-primary/10 text-[10px] text-primary"
-            variant="outline"
-          >
-            Mendukung .sql, .csv, .json
-          </Badge>
         </div>
 
         <div className="space-y-4 rounded-lg border border-border bg-card p-4">
@@ -85,7 +92,7 @@ export function ImportTab({
           <div className="flex rounded-md border-border border-b bg-muted/40 p-1">
             <button
               className={cn(
-                "flex-1 rounded py-1.5 font-medium text-xs transition-all",
+                "flex-1 rounded py-1.5 font-medium text-xs transition-all cursor-pointer",
                 importTab === "file"
                   ? "bg-accent font-semibold text-foreground shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -97,7 +104,7 @@ export function ImportTab({
             </button>
             <button
               className={cn(
-                "flex-1 rounded py-1.5 font-medium text-xs transition-all",
+                "flex-1 rounded py-1.5 font-medium text-xs transition-all cursor-pointer",
                 importTab === "paste"
                   ? "bg-accent font-semibold text-foreground shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -119,8 +126,8 @@ export function ImportTab({
               <select
                 className="rounded border border-border bg-card px-2.5 py-1 font-mono text-foreground text-xs focus:border-primary focus:outline-none"
                 onChange={(e) => {
-                  setCurrentSelectedDatabase(e.target.value);
-                  onSelectDatabase(e.target.value);
+                  setCurrentSelectedDatabase?.(e.target.value);
+                  onSelectDatabase?.(e.target.value);
                 }}
                 value={currentSelectedDatabase}
               >
@@ -161,8 +168,10 @@ export function ImportTab({
                 accept=".sql,.csv,.json,.xml,text/plain"
                 className="hidden"
                 onChange={(e) => {
-                  if (e.target.files && e.target.files.length > 0) {
-                    onProcessChosenFile(e.target.files[0]);
+                  if (onFileSelect) {
+                    onFileSelect(e);
+                  } else if (e.target.files && e.target.files.length > 0) {
+                    onProcessChosenFile?.(e.target.files[0]);
                   }
                   e.target.value = "";
                 }}
@@ -177,7 +186,7 @@ export function ImportTab({
                     ? "border-primary bg-primary/10 shadow-[0_0_15px_rgba(20,184,166,0.25)]"
                     : "border-border bg-muted/40 hover:border-primary/50 hover:bg-muted"
                 )}
-                onClick={() => onPickImportFile(false)}
+                onClick={handleOpenPicker}
                 onDragLeave={() => setIsDraggingImport(false)}
                 onDragOver={(e) => {
                   e.preventDefault();
@@ -187,9 +196,16 @@ export function ImportTab({
                   e.preventDefault();
                   setIsDraggingImport(false);
                   if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                    onProcessChosenFile(e.dataTransfer.files[0]);
+                    onProcessChosenFile?.(e.dataTransfer.files[0]);
                   }
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    handleOpenPicker();
+                  }
+                }}
+                role="button"
+                tabIndex={0}
               >
                 <FileUp
                   className="mb-2 text-muted-foreground/70"
@@ -221,12 +237,12 @@ export function ImportTab({
                     </div>
                   </div>
                   <Button
-                    className="h-6 px-2 text-[11px] text-destructive hover:bg-destructive/10"
+                    className="h-6 px-2 text-[11px] text-destructive hover:bg-destructive/10 cursor-pointer"
                     onClick={() => setSelectedImportFile(null)}
                     size="sm"
                     variant="ghost"
                   >
-                    Batal
+                    {t("common.cancel", "Batal")}
                   </Button>
                 </div>
               )}
@@ -245,9 +261,25 @@ export function ImportTab({
             </div>
           )}
 
-          <div className="flex items-center justify-end border-border border-t pt-3">
+          <div className="flex items-center justify-between border-border border-t pt-3">
+            {selectedImportFile || importSqlContent.trim() ? (
+              <Button
+                className="h-8 border-border text-muted-foreground text-xs hover:bg-muted hover:text-foreground cursor-pointer"
+                disabled={isImporting}
+                onClick={() => {
+                  setSelectedImportFile(null);
+                  setImportSqlContent("");
+                }}
+                size="sm"
+                variant="outline"
+              >
+                {t("import.reset", "Batal / Bersihkan")}
+              </Button>
+            ) : (
+              <div />
+            )}
             <Button
-              className="h-8 bg-primary font-semibold text-primary-foreground text-xs hover:bg-primary/90"
+              className="h-8 bg-primary font-semibold text-primary-foreground text-xs hover:bg-primary/90 cursor-pointer"
               disabled={
                 isImporting ||
                 (importTab === "file" && !selectedImportFile) ||
@@ -257,7 +289,7 @@ export function ImportTab({
               size="sm"
             >
               <Zap className="mr-1.5 fill-current" size={13} />
-              {isImporting ? "Mengimpor Data..." : "Jalankan Proses Impor"}
+              {isImporting ? t("common.importing", "Mengimpor Data...") : t("import.execute", "Jalankan Proses Impor")}
             </Button>
           </div>
         </div>

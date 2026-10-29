@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import { app, BrowserWindow, nativeTheme } from "electron";
 import { ipcMain } from "electron/main";
@@ -22,6 +23,10 @@ let mainWindow: BrowserWindow | null = null;
 registerProtocolClient();
 
 // Ensure single instance lock for deep links
+if (process.platform === "linux") {
+  app.setName("xphpmyadmin-desktop");
+}
+
 const isPrimaryInstance = app.requestSingleInstanceLock();
 
 if (!isPrimaryInstance) {
@@ -57,11 +62,20 @@ if (!isPrimaryInstance) {
 function createWindow() {
   const basePath = getBasePath();
   const preload = path.join(basePath, "preload.js");
+  const candidateIconPaths = [
+    path.join(process.resourcesPath, "assets/icon.png"),
+    path.resolve(app.getAppPath(), "assets/icon.png"),
+    path.resolve(process.cwd(), "assets/icon.png"),
+    path.join(__dirname, "../renderer/main_window/assets/icon.png"),
+  ];
+  const appIconPath = candidateIconPaths.find((p) => fs.existsSync(p));
+
   mainWindow = new BrowserWindow({
     backgroundColor: "#07080a",
     height: 780,
+    icon: appIconPath,
     minHeight: 520,
-    minWidth: 780,
+    minWidth: 720,
     title: "xphpMyAdmin Desktop",
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "hidden",
     trafficLightPosition:
@@ -77,6 +91,18 @@ function createWindow() {
     width: 1240,
   });
   ipcContext.setMainWindow(mainWindow);
+
+  const notifyWindowState = () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("window-state-change", {
+        isMaximized: mainWindow.isMaximized(),
+      });
+    }
+  };
+
+  mainWindow.on("maximize", notifyWindowState);
+  mainWindow.on("unmaximize", notifyWindowState);
+  mainWindow.on("resize", notifyWindowState);
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
@@ -112,8 +138,10 @@ async function installExtensions() {
 
 function checkForUpdates() {
   updateElectronApp({
+    notifyUser: true,
+    updateInterval: "1 hour",
     updateSource: {
-      repo: "LuanRoger/electron-shadcn",
+      repo: "ajoroby/xphpmyadmin",
       type: UpdateSourceType.ElectronPublicUpdateService,
     },
   });

@@ -59,37 +59,37 @@ export function ConnectionGrid({
   return (
     <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
       {/* Top Toolbar */}
-      <div className="flex h-10 shrink-0 items-center justify-between border-border border-b bg-background px-3 sm:px-4">
-        <div className="flex items-center gap-2">
+      <div className="flex h-10 shrink-0 items-center justify-between border-border border-b bg-background px-2.5 sm:px-4 gap-2 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <Button
             className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md bg-primary px-2 font-semibold text-primary-foreground text-xs hover:bg-primary/90 sm:px-2.5"
             onClick={onAddNewHost}
             size="sm"
           >
             <Plus size={13} />
-            <span className="xs:inline hidden sm:inline">Tambah Koneksi</span>
-            <span className="inline xs:hidden sm:hidden">Baru</span>
+            <span className="hidden sm:inline">Tambah Koneksi</span>
+            <span className="sm:hidden">Tambah</span>
           </Button>
 
           {onAddNewSshTunnel && (
             <Button
-              className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-purple-500/40 bg-purple-600/15 px-2 font-semibold text-purple-200 text-xs hover:bg-purple-600/25 sm:px-2.5"
+              className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-purple-300 bg-purple-50 px-2 font-semibold text-purple-700 text-xs hover:bg-purple-100 dark:border-purple-500/40 dark:bg-purple-600/15 dark:text-purple-200 dark:hover:bg-purple-600/25 sm:px-2.5"
               onClick={onAddNewSshTunnel}
               size="sm"
               title="Buat koneksi baru dengan metode SSH Tunnel (VPS)"
               variant="outline"
             >
               <Terminal size={12} />
-              <span className="xs:inline hidden sm:inline">+ SSH Tunnel</span>
-              <span className="inline xs:hidden sm:hidden">SSH</span>
+              <span className="hidden sm:inline">+ SSH Tunnel</span>
+              <span className="sm:hidden">SSH</span>
             </Button>
           )}
 
-          <div className="mx-1 h-3.5 w-[1px] bg-border" />
+          <div className="mx-0.5 sm:mx-1 h-3.5 w-[1px] bg-border" />
 
           {/* Method Filter Tabs */}
           {onMethodFilterChange && (
-            <div className="hidden items-center gap-0.5 rounded-md border border-border bg-muted/40 p-0.5 md:flex">
+            <div className="hidden sm:flex items-center gap-0.5 rounded-md border border-border bg-muted/40 p-0.5">
               <button
                 className={cn(
                   "cursor-pointer rounded px-2 py-0.5 text-[11px] font-medium transition-all",
@@ -119,27 +119,27 @@ export function ConnectionGrid({
                   "flex cursor-pointer items-center gap-1 rounded px-2 py-0.5 text-[11px] font-medium transition-all",
                   methodFilter === "ssh"
                     ? "bg-purple-600 text-white shadow-xs"
-                    : "text-purple-400 hover:text-purple-300"
+                    : "text-purple-700 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300"
                 )}
                 onClick={() => onMethodFilterChange("ssh")}
                 type="button"
               >
                 <Terminal size={10} />
-                <span>SSH Tunnel</span>
+                <span>SSH</span>
               </button>
             </div>
           )}
 
-          <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+          <div className="flex items-center gap-1.5 text-muted-foreground text-xs pl-1">
             <input
               checked={favoritesOnly}
-              className="rounded border-border bg-muted text-foreground focus:ring-0"
+              className="rounded border-border bg-muted text-foreground focus:ring-0 cursor-pointer"
               id="fav-filter"
               onChange={(e) => onToggleFavoriteFilter(e.target.checked)}
               type="checkbox"
             />
             <label
-              className="cursor-pointer select-none text-[11px]"
+              className="cursor-pointer select-none text-[11px] hidden xs:inline"
               htmlFor="fav-filter"
             >
               Favorit
@@ -147,15 +147,15 @@ export function ConnectionGrid({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="hidden text-[11px] text-muted-foreground/70 sm:inline">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <span className="hidden text-[11px] text-muted-foreground/70 md:inline">
             Urutkan:
           </span>
           <Select
             onValueChange={(val: "recent" | "name") => onSortByChange(val)}
             value={sortBy}
           >
-            <SelectTrigger className="h-7 w-28 border-border text-xs sm:w-32">
+            <SelectTrigger className="h-7 w-24 sm:w-28 border-border text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="text-xs">
@@ -167,7 +167,7 @@ export function ConnectionGrid({
             className={cn(
               "flex h-7 items-center gap-1.5 border-border px-2 text-xs transition-colors",
               isInspectorOpen
-                ? "border-border bg-accent text-foreground"
+                ? "border-border bg-accent text-foreground font-medium"
                 : "bg-muted/40 text-muted-foreground hover:text-foreground"
             )}
             onClick={onToggleInspector}
@@ -180,7 +180,7 @@ export function ConnectionGrid({
             variant="outline"
           >
             <SlidersHorizontal size={12} />
-            <span className="hidden md:inline">Detail Host</span>
+            <span className="hidden sm:inline">Detail Host</span>
           </Button>
         </div>
       </div>
@@ -225,7 +225,7 @@ export function ConnectionGrid({
             className={cn(
               "grid gap-3 transition-all",
               isInspectorOpen
-                ? "grid-cols-1 md:grid-cols-2 2xl:grid-cols-3"
+                ? "grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3"
                 : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
             )}
           >
@@ -239,43 +239,43 @@ export function ConnectionGrid({
                     "group relative cursor-pointer rounded-lg border border-border bg-card p-3.5 transition-all hover:border-white/20 hover:bg-muted/40",
                     isSelected &&
                       "border-primary shadow-[0_0_12px_rgba(20,184,166,0.2)] ring-1 ring-primary",
-                    isSsh && !isSelected && "border-purple-500/20 hover:border-purple-500/40"
+                    isSsh && !isSelected && "border-purple-200 hover:border-purple-400 dark:border-purple-500/20 dark:hover:border-purple-500/40"
                   )}
                   key={p.id}
                   onClick={() => onSelectHost(p)}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       <div
                         className={cn(
-                          "flex size-8 items-center justify-center rounded-md border",
+                          "flex size-8 shrink-0 items-center justify-center rounded-md border",
                           isProd
                             ? "border-destructive/30 bg-destructive/10 text-destructive"
                             : isSsh
-                              ? "border-purple-500/40 bg-purple-500/10 text-purple-400"
+                              ? "border-purple-200 bg-purple-100 text-purple-700 dark:border-purple-500/40 dark:bg-purple-500/10 dark:text-purple-400"
                               : "border-border bg-muted text-primary"
                         )}
                       >
                         {isSsh ? <Terminal size={15} /> : <Database size={15} />}
                       </div>
-                      <div>
-                        <h4 className="flex items-center gap-1.5 font-semibold text-foreground text-xs tracking-tight transition-colors group-hover:text-primary">
-                          {p.name}
+                      <div className="min-w-0 flex-1">
+                        <h4 className="flex items-center gap-1.5 font-semibold text-foreground text-xs tracking-tight transition-colors group-hover:text-primary truncate">
+                          <span className="truncate">{p.name}</span>
                           {isProd && (
-                            <ShieldAlert className="text-destructive" size={11} />
+                            <ShieldAlert className="text-destructive shrink-0" size={11} />
                           )}
                         </h4>
-                        <p className="font-mono text-[11px] text-muted-foreground">
+                        <p className="font-mono text-[11px] text-muted-foreground truncate">
                           {p.host}:{p.port}
                         </p>
                         {isSsh && p.ssh?.host && (
-                          <p className="font-mono text-[10px] text-purple-400/90">
+                          <p className="font-mono text-[10px] text-purple-700 dark:text-purple-400/90 truncate">
                             via {p.ssh.username || "root"}@{p.ssh.host}:{p.ssh.port || 22}
                           </p>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 shrink-0">
                       <button
                         aria-label={`Hapus koneksi ${p.name}`}
                         className="cursor-pointer rounded p-1 text-muted-foreground/60 transition-colors hover:bg-destructive/10 hover:text-destructive"
@@ -306,10 +306,10 @@ export function ConnectionGrid({
                     </div>
                   </div>
                   <div className="mt-3 flex items-center justify-between border-border border-t pt-2 text-[10px]">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       <Badge
                         className={cn(
-                          "px-1.5 py-0 font-medium text-[9px] uppercase tracking-wide",
+                          "px-1.5 py-0 font-medium text-[9px] uppercase tracking-wide shrink-0",
                           isProd &&
                             "border-destructive/30 bg-destructive/10 text-destructive",
                           p.environment === "Staging" &&
@@ -325,16 +325,16 @@ export function ConnectionGrid({
                       </Badge>
                       {isSsh ? (
                         <Badge
-                          className="border-purple-500/40 bg-purple-500/10 px-1.5 py-0 font-medium text-[9px] text-purple-300"
+                          className="border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-500/40 dark:bg-purple-500/10 dark:text-purple-300 px-1.5 py-0 font-medium text-[9px] truncate"
                           variant="outline"
                         >
-                          🔒 SSH Tunnel
+                          🔒 SSH
                         </Badge>
                       ) : (
-                        <span className="text-muted-foreground/70">Direct</span>
+                        <span className="text-muted-foreground/70 text-[10px]">Direct</span>
                       )}
                     </div>
-                    <span className="text-muted-foreground/70">
+                    <span className="text-muted-foreground/70 truncate ml-2 text-[10px]">
                       {p.last_used_at ? "Aktif baru-baru ini" : "Belum dibuka"}
                     </span>
                   </div>

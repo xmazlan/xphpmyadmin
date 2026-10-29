@@ -1,57 +1,63 @@
-import { FileCode2, FileUp, Table as TableIcon, X, Zap } from "lucide-react";
-import { useRef, useState } from "react";
+import { FileCode2, UploadCloud, X, Zap } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import type { ImportFileInfo, TableItem } from "@/types/workspace";
 import { cn } from "@/utils/tailwind";
 
-interface ImportModalProps {
-  availableTables?: TableItem[];
+export interface ImportModalProps {
+  onPickImportFile?: (isModal: boolean) => any;
+  onSelectDatabase?: (db: string) => any;
+  onProcessChosenFile?: (file: any) => any;
+  availableTables?: any[];
+  importTargetTable?: string;
+  setImportTargetTable?: (val: string) => void;
   currentSelectedDatabase: string;
+  fileInputRef?: React.RefObject<HTMLInputElement | null>;
   importSqlContent: string;
   importTab: "file" | "paste";
-  importTargetTable?: string;
   isImporting: boolean;
   isOpen: boolean;
   onClose: () => void;
   onExecuteImport: () => void;
-  onPickImportFile: (isModal: boolean) => void;
-  onProcessChosenFile: (file: File) => void;
-  selectedImportFile: ImportFileInfo | null;
+  onFileSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onOpenFileDialog?: () => void;
+  selectedImportFile: { fileName: string; filePath?: string; fileSize: number } | null;
+  setCurrentSelectedDatabase?: (val: string) => void;
   setImportSqlContent: (val: string) => void;
   setImportTab: (val: "file" | "paste") => void;
-  setImportTargetTable?: (val: string) => void;
-  setSelectedImportFile: (val: ImportFileInfo | null) => void;
+  setSelectedImportFile: (val: any) => void;
 }
 
 export function ImportModal({
-  availableTables = [],
   currentSelectedDatabase,
+  fileInputRef,
   importSqlContent,
   importTab,
-  importTargetTable = "",
   isImporting,
   isOpen,
   onClose,
   onExecuteImport,
+  onFileSelect,
+  onOpenFileDialog,
   onPickImportFile,
-  onProcessChosenFile,
   selectedImportFile,
   setImportSqlContent,
   setImportTab,
-  setImportTargetTable,
   setSelectedImportFile,
 }: ImportModalProps) {
-  const modalFileInputRef = useRef<HTMLInputElement>(null);
-  const [isDraggingImport, setIsDraggingImport] = useState(false);
+  const { t } = useTranslation();
 
   if (!isOpen) {
     return null;
   }
 
-  const isCsvOrJson =
-    selectedImportFile?.fileName?.toLowerCase().endsWith(".csv") ||
-    selectedImportFile?.fileName?.toLowerCase().endsWith(".json");
+  const handleOpenPicker = () => {
+    if (onPickImportFile) {
+      onPickImportFile(true);
+    } else if (onOpenFileDialog) {
+      onOpenFileDialog();
+    }
+  };
 
   return (
     <div className="fade-in fixed inset-0 z-50 flex animate-in items-center justify-center bg-black/80 p-4 backdrop-blur-sm duration-150">
@@ -60,19 +66,19 @@ export function ImportModal({
         <div className="flex items-center justify-between border-border border-b bg-muted/40 px-4 py-3">
           <div className="flex items-center gap-2">
             <div className="flex size-7 items-center justify-center rounded-md border border-primary/30 bg-primary/10 text-primary">
-              <FileUp size={14} />
+              <UploadCloud size={14} />
             </div>
             <div>
               <h3 className="font-semibold text-foreground text-xs">
-                Impor Berkas / Data ke Database
+                {t("import.title", "Impor Skrip / Data SQL")}
               </h3>
               <p className="font-mono text-[11px] text-primary">
-                Target: `{currentSelectedDatabase || "MariaDB Server"}`
+                Target Database: `{currentSelectedDatabase}`
               </p>
             </div>
           </div>
           <button
-            className="rounded p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
+            className="rounded p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
             onClick={onClose}
             type="button"
           >
@@ -80,111 +86,65 @@ export function ImportModal({
           </button>
         </div>
 
-        {/* Tab Navigasi */}
-        <div className="flex border-border border-b bg-muted/40 px-4 pt-1">
-          <button
-            className={cn(
-              "border-b-2 px-3 py-2 font-medium text-xs transition-all",
-              importTab === "file"
-                ? "border-primary font-semibold text-primary"
-                : "border-transparent text-muted-foreground/70 hover:text-foreground"
-            )}
-            onClick={() => setImportTab("file")}
-            type="button"
-          >
-            Pilih Berkas (.sql, .csv, .json)
-          </button>
-          <button
-            className={cn(
-              "border-b-2 px-3 py-2 font-medium text-xs transition-all",
-              importTab === "paste"
-                ? "border-primary font-semibold text-primary"
-                : "border-transparent text-muted-foreground/70 hover:text-foreground"
-            )}
-            onClick={() => setImportTab("paste")}
-            type="button"
-          >
-            Tempel Script SQL
-          </button>
-        </div>
-
         {/* Body Modal */}
-        <div className="flex-1 space-y-3 overflow-y-auto p-4 text-xs">
-          {isCsvOrJson && availableTables.length > 0 && (
-            <div className="flex items-center justify-between rounded-md border border-border bg-muted px-3 py-2 text-xs">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <TableIcon className="text-primary" size={13} />
-                <span>Tabel Target (CSV/JSON):</span>
-              </div>
-              <select
-                className="rounded border border-border bg-card px-2.5 py-1 font-mono text-foreground text-xs focus:border-primary focus:outline-none"
-                onChange={(e) => setImportTargetTable?.(e.target.value)}
-                value={importTargetTable}
-              >
-                <option value="">[Otomatis berdasarkan nama berkas]</option>
-                {availableTables.map((tbl) => (
-                  <option key={tbl.name} value={tbl.name}>
-                    {tbl.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+        <div className="flex-1 space-y-4 overflow-y-auto p-4 text-xs">
+          {/* Segmented Control Metode Impor */}
+          <div className="flex rounded-lg border border-border bg-muted/40 p-1">
+            <button
+              className={cn(
+                "flex-1 rounded py-1 font-semibold text-xs transition-all cursor-pointer",
+                importTab === "file"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              onClick={() => setImportTab("file")}
+              type="button"
+            >
+              Unggah Berkas (.sql / .txt)
+            </button>
+            <button
+              className={cn(
+                "flex-1 rounded py-1 font-semibold text-xs transition-all cursor-pointer",
+                importTab === "paste"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              onClick={() => setImportTab("paste")}
+              type="button"
+            >
+              Tempel Teks SQL Manual
+            </button>
+          </div>
 
           {importTab === "file" ? (
             <div className="space-y-3">
               <input
-                accept=".sql,.csv,.json,.xml,text/plain"
+                accept=".sql,.txt"
                 className="hidden"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files.length > 0) {
-                    onProcessChosenFile(e.target.files[0]);
-                  }
-                  e.target.value = "";
-                }}
-                ref={modalFileInputRef}
+                onChange={onFileSelect}
+                ref={fileInputRef as any}
                 type="file"
               />
 
               <div
-                className={cn(
-                  "flex cursor-pointer select-none flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-center transition-all",
-                  isDraggingImport
-                    ? "border-primary bg-primary/10 shadow-[0_0_15px_rgba(20,184,166,0.25)]"
-                    : "border-border bg-muted/40 hover:border-primary/50 hover:bg-muted"
-                )}
-                onClick={() => onPickImportFile(true)}
-                onDragLeave={() => setIsDraggingImport(false)}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setIsDraggingImport(true);
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setIsDraggingImport(false);
-                  if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                    onProcessChosenFile(e.dataTransfer.files[0]);
+                className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-border border-dashed p-6 text-center transition-all hover:border-white/30 hover:bg-muted/30"
+                onClick={handleOpenPicker}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    handleOpenPicker();
                   }
                 }}
+                role="button"
+                tabIndex={0}
               >
-                <FileUp
-                  className={cn(
-                    "mb-2",
-                    selectedImportFile
-                      ? "text-emerald-500"
-                      : "text-muted-foreground/70"
-                  )}
-                  size={28}
-                />
-                <p className="font-semibold text-foreground text-xs">
-                  {selectedImportFile
-                    ? selectedImportFile.fileName
-                    : "Tarik berkas .sql, .csv, atau .json ke sini, atau klik untuk memilih"}
+                <div className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                  <FileCode2 size={20} />
+                </div>
+                <p className="mt-2 font-semibold text-foreground text-xs">
+                  Klik untuk Memilih Berkas SQL dari Komputer
                 </p>
-                <p className="mt-1 text-[11px] text-muted-foreground/70">
-                  {selectedImportFile
-                    ? `Ukuran: ${(selectedImportFile.fileSize / 1024).toFixed(1)} KB • Klik untuk mengganti berkas`
-                    : "Mendukung SQL Dump, format CSV tabel, dan JSON terstruktur"}
+                <p className="mt-0.5 text-[10px] text-muted-foreground/70">
+                  Mendukung format SQL Dump standard (MySQL / MariaDB).
                 </p>
               </div>
 
@@ -200,12 +160,12 @@ export function ImportModal({
                     </span>
                   </div>
                   <Button
-                    className="h-6 px-2 text-[11px] text-destructive hover:bg-destructive/10"
+                    className="h-6 px-2 text-[11px] text-destructive hover:bg-destructive/10 cursor-pointer"
                     onClick={() => setSelectedImportFile(null)}
                     size="sm"
                     variant="ghost"
                   >
-                    Batal
+                    {t("common.cancel", "Batal")}
                   </Button>
                 </div>
               )}
@@ -213,7 +173,7 @@ export function ImportModal({
           ) : (
             <div className="space-y-1.5">
               <Label className="text-[11px] text-muted-foreground">
-                Ketik atau Tempel Perintah SQL:
+                {t("import.pastePrompt", "Ketik atau Tempel Perintah SQL:")}
               </Label>
               <textarea
                 className="h-44 w-full resize-none rounded-md border border-border bg-background p-2.5 font-mono text-foreground text-xs focus:border-white/30 focus:outline-none"
@@ -225,10 +185,18 @@ export function ImportModal({
           )}
         </div>
 
-        {/* Footer Modal */}
-        <div className="flex items-center justify-end border-border border-t bg-muted/40 px-4 py-3">
+        {/* Footer Modal dengan Tombol Batal */}
+        <div className="flex items-center justify-between border-border border-t bg-muted/40 px-4 py-3">
           <Button
-            className="h-7 bg-primary font-semibold text-primary-foreground text-xs hover:bg-primary/90"
+            className="h-7 border-border text-muted-foreground text-xs hover:bg-muted hover:text-foreground cursor-pointer"
+            onClick={onClose}
+            size="sm"
+            variant="outline"
+          >
+            {t("common.cancel", "Batal")}
+          </Button>
+          <Button
+            className="h-7 bg-primary font-semibold text-primary-foreground text-xs hover:bg-primary/90 cursor-pointer"
             disabled={
               isImporting ||
               (importTab === "file" && !selectedImportFile) ||
@@ -238,7 +206,7 @@ export function ImportModal({
             size="sm"
           >
             <Zap className="mr-1.5 fill-current" size={12} />
-            {isImporting ? "Mengimpor Data..." : "Jalankan Proses Impor"}
+            {isImporting ? t("common.importing", "Mengimpor Data...") : t("import.execute", "Jalankan Proses Impor")}
           </Button>
         </div>
       </div>

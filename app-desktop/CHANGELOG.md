@@ -4,6 +4,29 @@ Semua perubahan penting pada aplikasi **xphpMyAdmin Desktop** didokumentasikan d
 
 ---
 
+## [1.4.2] - 2026-10-30
+
+### Pusat Pengaturan Terpadu & Sinkronisasi Cerdas
+- **Pusat Pengaturan Aplikasi Mandiri (`SettingsView`)**: Menggantikan jendela modal sembul dengan halaman pengaturan terpadu penuh yang dapat diakses langsung melalui tombol pintasan di sudut kiri bawah bilah navigasi samping, mencakup kustomisasi bahasa, tema visual, interval *keep-alive*, batas kueri default, dan pengaturan sinkronisasi awan.
+- **Sinkronisasi Cloud Berbasis Aksi (Event-Driven)**: Mengubah mekanisme animasi sinkronisasi yang sebelumnya berputar terus-menerus menjadi sinkronisasi hening otomatis yang hanya terpicu saat pengguna melakukan aksi nyata (menyimpan koneksi, memperbarui preferensi, menghapus profil, atau mengedit data) untuk akun berlangganan aktif.
+- **Standardisasi Tombol Batal**: Menambahkan tombol pembatalan eksplisit (*Cancel* / *Batal*) pada seluruh formulir, modal, dan dialog aksi (impor, ekspor, manajemen koneksi) untuk fleksibilitas pembatalan interaktif.
+- **Dukungan Dwibahasa Penuh & Default Bahasa Inggris**: Mengonfigurasi dukungan dwibahasa (Bahasa Inggris dan Bahasa Indonesia) dengan Bahasa Inggris (`en`) sebagai bahasa bawaan aktif pada seluruh komponen antarmuka, pesan validasi, dan formulir.
+- **Penyederhanaan Tampilan Masuk & Pendaftaran**: Merapikan halaman autentikasi menjadi satu kartu ringkas bebas bilah gulir vertikal dan horizontal (`overflow-hidden`), dengan navigasi tab satu-klik yang intuitif antara formulir Masuk dan Daftar.
+- **Pembersihan Bilah Atas & Identitas ER Suite**: Menghilangkan tombol pengubah bahasa redundan dari bilah judul jendela (*title bar*), serta menyelaraskan penamaan layanan sinkronisasi awan dengan identitas resmi ER Suite.
+
+### Antarmuka Responsif Adaptif (Windowed & Fullscreen)
+- **Deteksi Mode Jendela Dinamis**: Implementasi hook `useResponsiveWindow` dan event IPC status jendela (`maximize`, `unmaximize`, `resize`) untuk sinkronisasi state jendela secara real-time.
+- **Ikon Kontrol Jendela Adaptif**: Tombol kontrol di header otomatis beralih antara ikon Maksimalkan (kotak tunggal) saat mode windowed dan Pulihkan (dua kotak bertumpuk) saat mode layar penuh / maximized, dengan pintasan *double-click* pada title bar.
+- **Koreksi Batas Layar Studio**: Memperbaiki container utama studio (`workspace/$profileId`) dari `h-screen w-screen` menjadi `h-full w-full min-h-0 min-w-0` sehingga tidak meluap atau terpotong oleh title bar dan header.
+- **Grid Kartu Host Responsif**: Penataan grid kartu host otomatis beralih ke 1 kolom lega (`grid-cols-1`) saat panel inspektur terbuka pada mode jendela sedang/sempit, dan mengembang menjadi 2-3 kolom pada mode layar penuh.
+- **Pencegahan Text Clipping**: Nama koneksi, alamat host:port, rute tunnel SSH, dan badge status kini dilengkapi penanganan `truncate` dan `min-w-0`.
+- **Pengguliran Horizontal Aman pada Seluruh Tabel**: Seluruh wrapper tabel data (Struktur tabel, Rutin, Pemicu, Status MariaDB, Variabel server, Charset, Engine, Plugin, dan Hasil query SQL) kini dilengkapi `overflow-x-auto` dengan lebar minimum terproteksi.
+
+### Harmonisasi Kontras Tinggi Tema Terang (Light Mode)
+- **Dukungan Adaptif Warna Ungu**: Seluruh elemen bertema ungu untuk SSH Tunneling, filter tab, jalur loopback VPS, dan badge paket Business kini menggunakan varian adaptif dengan kontras tajam (`text-purple-700/900`, `bg-purple-50/100`, `border-purple-200/300`) di tema terang, serta tetap elegan di tema gelap.
+
+---
+
 ## [1.4.1] - 2026-10-29
 
 ### Standarisasi Terowongan Server (VPS & SSH Tunneling)
@@ -39,12 +62,8 @@ Semua perubahan penting pada aplikasi **xphpMyAdmin Desktop** didokumentasikan d
 
 ## [1.0.0] - 2026-10-24
 
-### Peluncuran Perdana Antarmuka Desktop Modern
-- **Kanvas Gelap Responsif**: Tata letak desktop modern berbasis dark-canvas yang dinamis dan proporsional baik pada mode jendela kecil maupun layar penuh.
-- **Bilah Navigasi Lengkap Inti phpMyAdmin**: Menghadirkan 10 tab utama manajemen basis data (Databases, SQL, Status, Users, Export, Import, Variables, Charsets, Engines, Plugins).
-- **Pengelola Sambungan Terpadu**: Tata letak bertingkat dengan bilah pencarian cerdas, penyaring favorit, riwayat penggunaan terakhir, dan navigasi multi-tab server.
-- **Diagnostik Kesehatan Sambungan Multi-Tahap**: Verifikasi otomatis kesiapan jaringan lokal, kepercayaan host SSH, autentikasi pengguna, dan pengukuran latensi (*latency ping*).
-- **Brankas Sandi Terenkripsi (Keychain/Vault)**: Penyimpanan kredensial akses lokal yang terlindungi enkripsi dengan opsi perbarui (*replace*) atau hapus (*remove*).
-- **Dialog Perlindungan Data Destruktif**: Peringatan konfirmasi visual terpadu sebelum eksekusi aksi sensitif (Drop Database, Drop Table, Truncate Table).
-- **Standarisasi Token Semantik Desain**: Pondasi komponen antarmuka yang bersih berbasis token semantik shadcn/ui dan Tailwind CSS dengan dukungan tema terang dan gelap mulus.
-
+### Peluncuran Antarmuka Desktop Modern
+- **Basis Canvas Gelap**: Desain antarmuka berbasis desktop responsif mode windowed dan layar penuh.
+- **Navigasi Tab phpMyAdmin Lengkap**: Dukungan tab Basis Data, SQL, Status, Pengguna, Ekspor, Impor, Variabel, Charset, Engine, dan Plugin.
+- **Pengelola Sambungan Terpusat**: Pencarian cerdas, multi-tab sesi kerja, dan diagnosa kesehatan koneksi otomatis.
+- **Pengamanan Kredensial Mandiri**: Penyimpanan kredensial terenkripsi lokal dan dialog konfirmasi perlindungan visual untuk tindakan sensitif.

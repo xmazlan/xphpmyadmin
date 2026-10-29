@@ -1,9 +1,9 @@
 {
   "name": "xphpmyadmin-desktop",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "private": true,
   "packageManager": "yarn@1.22.22",
-  "description": "xphpMyAdmin Desktop — Modern database manager with SSH tunneling for macOS (Apple Silicon & Intel), Windows, and Linux",
+  "description": "xphpMyAdmin Desktop \u2014 Modern database manager with SSH tunneling for macOS (Apple Silicon & Intel), Windows, and Linux",
   "license": "MIT",
   "author": "ROG <luanroger.dev@gmail.com>",
   "main": ".vite/build/main.js",
@@ -123,5 +123,9 @@
     "vite": "^8.3.2",
     "vitest": "^5.0.5"
   },
-  "productName": "xphpMyAdmin Desktop"
+  "productName": "xphpMyAdmin Desktop",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ajoroby/xphpmyadmin.git"
+  }
 }

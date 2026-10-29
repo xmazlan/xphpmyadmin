@@ -9,3 +9,10 @@ export async function maximizeWindow() {
 export async function closeWindow() {
   await ipc.client.window.closeWindow();
 }
+export async function isWindowMaximized(): Promise<boolean> {
+  try {
+    return await ipc.client.window.isMaximized();
+  } catch {
+    return false;
+  }
+}

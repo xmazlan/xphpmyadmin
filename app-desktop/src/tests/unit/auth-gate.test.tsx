@@ -1,7 +1,7 @@
 import { act, fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { AuthGate } from "@/components/auth/auth-gate";
-import { CloudSyncProvider, useCloudSync } from "@/context/cloud-sync-context";
+import { CloudSyncProvider } from "@/context/cloud-sync-context";
 
 describe("AuthGate Component & Free Tier (Local Vault) Policy", () => {
   it("renders Google, GitHub, and email/password login options", () => {
@@ -11,17 +11,17 @@ describe("AuthGate Component & Free Tier (Local Vault) Policy", () => {
       </CloudSyncProvider>
     );
 
-    // Social logins
-    expect(getByText(/Lanjutkan dengan Google/i)).toBeDefined();
-    expect(getByText(/Lanjutkan dengan GitHub/i)).toBeDefined();
+    // Social logins (supports English default & Indonesian)
+    expect(getByText(/Continue with Google|Lanjutkan dengan Google/i)).toBeDefined();
+    expect(getByText(/Continue with GitHub|Lanjutkan dengan GitHub/i)).toBeDefined();
 
     // Credentials login
-    expect(getByPlaceholderText(/nama@email.com/i)).toBeDefined();
+    expect(getByPlaceholderText(/name@email.com|nama@email.com/i)).toBeDefined();
     expect(getByPlaceholderText(/••••••••/i)).toBeDefined();
-    expect(getAllByText(/Masuk ke Workspace/i).length).toBeGreaterThanOrEqual(1);
+    expect(getAllByText(/Sign in to Workspace|Masuk ke Workspace/i).length).toBeGreaterThanOrEqual(1);
 
     // Quick test accounts
-    expect(getByText(/Akun Uji Coba Cepat/i)).toBeDefined();
+    expect(getByText(/Quick Demo Accounts|Akun Uji Coba Cepat/i)).toBeDefined();
     expect(getByText(/💼 Business/i)).toBeDefined();
     expect(getByText(/👥 Team/i)).toBeDefined();
     expect(getByText(/⚡ Pro/i)).toBeDefined();
@@ -35,18 +35,18 @@ describe("AuthGate Component & Free Tier (Local Vault) Policy", () => {
       </CloudSyncProvider>
     );
 
-    const registerTab = getByText(/Daftar Akun Gratis/i);
+    const registerTab = getByText(/Create Free Account|Daftar Akun Gratis/i);
     fireEvent.click(registerTab);
 
     // Name input appears
-    expect(getByPlaceholderText(/Nama lengkap Anda/i)).toBeDefined();
+    expect(getByPlaceholderText(/Your full name|Nama lengkap Anda/i)).toBeDefined();
 
     // Crucial: User does NOT choose a plan when registering!
-    expect(queryByText(/Pilih Paket/i)).toBeNull();
+    expect(queryByText(/Pilih Paket|Select Plan/i)).toBeNull();
 
     // Informs user of Starter plan (full local)
-    expect(getByText(/Paket Starter Gratis \(Full Lokal\)/i)).toBeDefined();
-    expect(getByText(/Daftar Akun Gratis \(Lokal\)/i)).toBeDefined();
+    expect(getByText(/Free Starter Plan \(Full Local\)|Paket Starter Gratis \(Full Lokal\)/i)).toBeDefined();
+    expect(getByText(/Create Free Account \(Local\)|Daftar Akun Gratis \(Lokal\)/i)).toBeDefined();
   });
 
   it("triggers offline local bypass when clicked", () => {
@@ -57,7 +57,7 @@ describe("AuthGate Component & Free Tier (Local Vault) Policy", () => {
       </CloudSyncProvider>
     );
 
-    const bypassBtn = getByText(/Lewati & Lanjut dalam Mode Lokal Mandiri/i);
+    const bypassBtn = getByText(/Skip & Continue in Local Offline Mode|Lewati & Lanjut dalam Mode Lokal Mandiri/i);
     fireEvent.click(bypassBtn);
     expect(onBypass).toHaveBeenCalledTimes(1);
   });
@@ -69,11 +69,11 @@ describe("AuthGate Component & Free Tier (Local Vault) Policy", () => {
       </CloudSyncProvider>
     );
 
-    const googleBtn = getByText(/Lanjutkan dengan Google/i);
+    const googleBtn = getByText(/Continue with Google|Lanjutkan dengan Google/i);
     fireEvent.click(googleBtn);
 
-    expect(getByText(/Masuk via Google Workspace/i)).toBeDefined();
-    expect(getByText(/Konfirmasi & Masuk/i)).toBeDefined();
+    expect(getByText(/Google Workspace/i)).toBeDefined();
+    expect(getByText(/Confirm & Sign In|Konfirmasi & Masuk/i)).toBeDefined();
   });
 
   it("opens OAuth confirmation dialog when clicking GitHub login in non-Electron environment", () => {
@@ -83,11 +83,11 @@ describe("AuthGate Component & Free Tier (Local Vault) Policy", () => {
       </CloudSyncProvider>
     );
 
-    const githubBtn = getByText(/Lanjutkan dengan GitHub/i);
+    const githubBtn = getByText(/Continue with GitHub|Lanjutkan dengan GitHub/i);
     fireEvent.click(githubBtn);
 
-    expect(getByText(/Masuk via GitHub OAuth/i)).toBeDefined();
-    expect(getByText(/Konfirmasi & Masuk/i)).toBeDefined();
+    expect(getByText(/GitHub OAuth/i)).toBeDefined();
+    expect(getByText(/Confirm & Sign In|Konfirmasi & Masuk/i)).toBeDefined();
   });
 
   it("redirects to external browser when electronOAuth is available and handles auto-reopen callback", async () => {
@@ -112,13 +112,13 @@ describe("AuthGate Component & Free Tier (Local Vault) Policy", () => {
     );
 
     // Click Google OAuth
-    const googleBtn = getByText(/Lanjutkan dengan Google/i);
+    const googleBtn = getByText(/Continue with Google|Lanjutkan dengan Google/i);
     fireEvent.click(googleBtn);
 
     expect(startOAuthMock).toHaveBeenCalledWith("google");
-    expect(await findByText(/Menunggu Autentikasi di Peramban Web\.\.\./i)).toBeDefined();
-    expect(getByText(/Buka Peramban Lagi/i)).toBeDefined();
-    expect(getByText(/Batalkan/i)).toBeDefined();
+    expect(await findByText(/Waiting for Browser Authentication\.\.\.|Menunggu Autentikasi di Peramban Web\.\.\./i)).toBeDefined();
+    expect(getByText(/Open Browser Again|Buka Peramban Lagi/i)).toBeDefined();
+    expect(getByText(/Cancel|Batalkan/i)).toBeDefined();
 
     // Simulate callback redirect from browser into desktop app
     expect(capturedCallback).toBeTypeOf("function");
@@ -138,7 +138,7 @@ describe("AuthGate Component & Free Tier (Local Vault) Policy", () => {
     });
 
     // Check successful authentication toast/message
-    expect(await findByText(/Berhasil masuk via Google!/i)).toBeDefined();
+    expect(await findByText(/Successfully signed in via Google!|Berhasil masuk via Google!/i)).toBeDefined();
 
     // Clean up mock
     delete (window as any).electronOAuth;

@@ -27,6 +27,7 @@ export const userActionTypeSchema = z.enum([
   "profile_create",
   "profile_update",
   "profile_delete",
+  "settings_update",
 ]);
 export type UserActionType = z.infer<typeof userActionTypeSchema>;
 
@@ -37,6 +38,7 @@ export const userActionCategorySchema = z.enum([
   "data",
   "export_import",
   "connection",
+  "settings",
 ]);
 export type UserActionCategory = z.infer<typeof userActionCategorySchema>;
 
@@ -118,12 +120,12 @@ export const SUBSCRIPTION_PLANS: Record<"pro" | "team" | "business", PlanPricing
   },
   team: {
     annualMonthlyRate: 20,
-    description: "Untuk kolaborasi tim terorganisir dengan brankas bersama dan tagihan terkonsolidasi.",
+    description: "Untuk tim engineering yang berbagi konfigurasi koneksi dan riwayat audit kueri.",
     features: [
-      "One team vault for secure sharing",
-      "Real-time collaboration",
-      "Shared session logs for collaboration",
-      "Consolidated billing",
+      "Shared team vault (up to 5 seats)",
+      "Role-based connection sharing",
+      "Centralized query audit log",
+      "Real-time database sync",
     ],
     id: "team",
     maxVaults: 20,
@@ -134,9 +136,10 @@ export const SUBSCRIPTION_PLANS: Record<"pro" | "team" | "business", PlanPricing
   },
   business: {
     annualMonthlyRate: 30,
-    description: "Untuk enterprise skala besar dengan kontrol akses brankas granular dan integrasi SAML SSO.",
+    description: "Untuk organisasi skala besar dengan kebutuhan audit kepatuhan dan vault tak terbatas.",
     features: [
-      "Multiple team vaults for advanced sharing control",
+      "Unlimited connection profiles",
+      "Advanced audit compliance export",
       "Granular access control for vaults",
       "SAML SSO (Enterprise Add-on)",
     ],

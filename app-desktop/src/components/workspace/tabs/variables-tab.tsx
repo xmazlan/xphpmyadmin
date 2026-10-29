@@ -67,7 +67,7 @@ export function VariablesTab({
       </div>
 
       <div className="flex-1 overflow-auto">
-        <table className="w-full border-collapse text-left font-mono text-xs">
+        <table className="w-full min-w-[500px] border-collapse text-left font-mono text-xs">
           <thead>
             <tr className="sticky top-0 border-border border-b bg-muted/40 text-muted-foreground">
               <th className="w-1/3 px-4 py-2 font-semibold">Nama Variabel</th>

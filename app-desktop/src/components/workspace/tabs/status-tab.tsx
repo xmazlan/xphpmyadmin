@@ -51,7 +51,7 @@ export function StatusTab({
 
       <div className="flex-1 space-y-4 overflow-auto p-4">
         {/* KPI Metric Cards */}
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <Card className="space-y-1 border-border bg-card p-3.5">
             <p className="flex items-center gap-1.5 font-medium text-[11px] text-muted-foreground">
               <Clock className="text-emerald-500" size={12} />
@@ -125,8 +125,8 @@ export function StatusTab({
             </h3>
           </div>
 
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <table className="w-full border-collapse text-left font-mono text-xs">
+          <div className="overflow-x-auto rounded-lg border border-border bg-card">
+            <table className="w-full min-w-[550px] border-collapse text-left font-mono text-xs">
               <thead>
                 <tr className="border-border border-b bg-muted/40 text-muted-foreground">
                   <th className="px-3 py-2">ID</th>

@@ -1,10 +1,28 @@
-import { Cloud, LogOut, RefreshCw, Search, Sparkles, User, X } from "lucide-react";
+import {
+  Cloud,
+  LogOut,
+  RefreshCw,
+  Search,
+  Sparkles,
+  User,
+  X,
+} from "lucide-react";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import { SiGithub, SiGoogle } from "@icons-pack/react-simple-icons";
+import { APP_VERSION } from "@/components/app-logo";
+import LangToggle from "@/components/lang-toggle";
 import ToggleTheme from "@/components/toggle-theme";
+import type { ActiveTabItem } from "@/components/workspace/types";
 import type { CloudSyncConfig } from "@/types/cloud-sync";
 import { cn } from "@/utils/tailwind";
-import type { ActiveTabItem } from "./types";
+
+const ENV_COLORS: Record<string, string> = {
+  Local: "text-emerald-500",
+  Other: "text-muted-foreground",
+  Production: "text-destructive",
+  Staging: "text-amber-500",
+};
 
 interface WorkspaceHeaderProps {
   activeTabId: string;
@@ -15,20 +33,13 @@ interface WorkspaceHeaderProps {
   onLogout?: () => void;
   onManualSync?: () => void;
   onOpenCloudSync?: () => void;
-  onSearchChange: (query: string) => void;
+  onSearchChange: (val: string) => void;
   onSelectTab: (tabId: string) => void;
   onToggleSidebar: () => void;
   pendingSyncCount?: number;
   searchQuery: string;
   userConfig?: CloudSyncConfig;
 }
-
-const ENV_COLORS: Record<string, string> = {
-  Local: "text-emerald-500",
-  Other: "text-muted-foreground",
-  Production: "text-destructive",
-  Staging: "text-amber-500",
-};
 
 export function WorkspaceHeader({
   activeTabId,
@@ -46,19 +57,24 @@ export function WorkspaceHeader({
   searchQuery,
   userConfig,
 }: WorkspaceHeaderProps) {
+  const { t } = useTranslation();
   const userPlan = userConfig?.subscriptionTier || "free";
   const userEmail = userConfig?.userEmail;
   const userName = userConfig?.userName || userEmail?.split("@")[0] || "User";
   const userProvider = userConfig?.userProvider;
 
   return (
-    <header className="flex h-11 shrink-0 select-none items-center justify-between gap-2 border-border border-b bg-card px-3">
+    <header className="flex h-11 shrink-0 select-none items-center justify-between gap-2 border-border border-b bg-card px-2.5 sm:px-3">
       <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
         {/* Sidebar Toggle */}
         <button
-          className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
           onClick={onToggleSidebar}
-          title={isSidebarCollapsed ? "Perluas Sidebar" : "Ciutkan Sidebar"}
+          title={
+            isSidebarCollapsed
+              ? t("header.expandSidebar", "Perluas Sidebar")
+              : t("header.collapseSidebar", "Ciutkan Sidebar")
+          }
           type="button"
         >
           <Sparkles size={14} />
@@ -70,7 +86,7 @@ export function WorkspaceHeader({
           return (
             <button
               className={cn(
-                "flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 font-medium text-xs transition-all",
+                "flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2 sm:px-2.5 font-medium text-xs transition-all cursor-pointer",
                 isActive
                   ? "border border-border bg-accent font-semibold text-foreground shadow-xs"
                   : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
@@ -88,7 +104,9 @@ export function WorkspaceHeader({
                 )}
                 style={{ backgroundColor: "currentColor" }}
               />
-              <span className="max-w-[100px] truncate">{tab.name}</span>
+              <span className="max-w-[75px] sm:max-w-[120px] md:max-w-[160px] truncate">
+                {tab.name}
+              </span>
               {tab.id !== "tab-home" && (
                 <span
                   className="ml-0.5 cursor-pointer rounded p-0.5 text-muted-foreground/70 hover:bg-muted hover:text-foreground"
@@ -100,7 +118,7 @@ export function WorkspaceHeader({
                   }}
                   role="button"
                   tabIndex={0}
-                  title="Tutup Tab"
+                  title={t("header.closeTab", "Tutup Tab")}
                 >
                   <X size={10} />
                 </span>
@@ -110,9 +128,9 @@ export function WorkspaceHeader({
         })}
       </div>
 
-      {/* Right side: Omni-search + Cloud Sync + User Profile + Theme */}
-      <div className="flex shrink-0 items-center gap-2">
-        <div className="relative hidden w-36 sm:w-48 md:block">
+      {/* Right side: Omni-search + Cloud Sync + User Profile + Language + Theme */}
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        <div className="relative hidden w-28 sm:block sm:w-36 md:w-44 lg:w-60 transition-all">
           <Search
             className="absolute top-2 left-2.5 text-muted-foreground/70"
             size={12}
@@ -120,7 +138,7 @@ export function WorkspaceHeader({
           <input
             className="h-7 w-full rounded-md border border-border bg-muted/40 pr-2 pl-8 text-foreground text-xs placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none"
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Cari host atau database..."
+            placeholder={t("header.searchPlaceholder", "Search hosts or databases...")}
             type="text"
             value={searchQuery}
           />
@@ -134,12 +152,12 @@ export function WorkspaceHeader({
               onClick={onOpenCloudSync}
               title={
                 isSyncing
-                  ? "Sedang menyinkronkan aktivitas ke cloud..."
+                  ? t("common.syncing", "Sedang menyinkronkan...")
                   : pendingSyncCount > 0
                     ? userPlan !== "free"
                       ? `${pendingSyncCount} aktivitas dalam proses sinkronisasi otomatis.`
                       : `${pendingSyncCount} aktivitas belum disinkronkan (Perlu langganan). Klik untuk kelola Cloud Sync.`
-                    : "Cloud Sync & Jurnal Audit"
+                    : t("header.cloudSync", "Cloud Sync & Jurnal Audit")
               }
               type="button"
             >
@@ -172,7 +190,7 @@ export function WorkspaceHeader({
                   e.stopPropagation();
                   onManualSync();
                 }}
-                title="Sinkronkan Manual ke Cloud Sekarang"
+                title={t("header.manualSyncTooltip", "Sinkronkan Manual ke Cloud Sekarang")}
                 type="button"
               >
                 <RefreshCw size={12} className={cn(isSyncing && "animate-spin")} />
@@ -193,18 +211,18 @@ export function WorkspaceHeader({
                 <User size={12} className="text-primary" />
               )}
             </span>
-            <span className="max-w-[80px] truncate font-medium text-foreground text-xs sm:max-w-[110px]">
+            <span className="max-w-[65px] truncate font-medium text-foreground text-xs sm:max-w-[100px] lg:max-w-[140px]">
               {userName}
             </span>
             <span
               className={cn(
                 "cursor-pointer rounded px-1.5 py-0.2 font-bold font-mono text-[9px] uppercase transition-transform hover:scale-105",
                 userPlan === "business"
-                  ? "bg-purple-500/20 text-purple-400"
+                  ? "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400"
                   : userPlan === "team"
-                  ? "bg-blue-500/20 text-blue-400"
+                  ? "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"
                   : userPlan === "pro"
-                  ? "bg-primary/20 text-primary"
+                  ? "bg-teal-100 text-teal-800 dark:bg-primary/20 dark:text-primary"
                   : "bg-muted text-muted-foreground"
               )}
               onClick={onOpenCloudSync}
@@ -215,9 +233,9 @@ export function WorkspaceHeader({
 
             {onLogout && (
               <button
-                className="ml-1 flex size-5 items-center justify-center rounded text-muted-foreground/80 hover:bg-destructive/10 hover:text-destructive"
+                className="ml-1 flex size-5 items-center justify-center rounded text-muted-foreground/80 hover:bg-destructive/10 hover:text-destructive cursor-pointer"
                 onClick={onLogout}
-                title="Keluar dari Akun (Logout)"
+                title={t("header.logoutTooltip", "Keluar dari Akun (Logout)")}
                 type="button"
               >
                 <LogOut size={11} />
@@ -226,6 +244,13 @@ export function WorkspaceHeader({
           </div>
         )}
 
+        <span
+          className="inline-flex items-center rounded border border-teal-500/25 bg-teal-500/10 px-1.5 py-0.5 font-mono text-[10px] font-medium text-teal-400 select-none"
+          title={t("header.versionTitle", "Versi Aplikasi xphpMyAdmin Desktop")}
+        >
+          v{APP_VERSION}
+        </span>
+        <LangToggle />
         <ToggleTheme />
       </div>
     </header>

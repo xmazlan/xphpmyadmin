@@ -177,8 +177,8 @@ export function StructureTab({
             </div>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <table className="w-full border-collapse text-left font-mono text-xs">
+          <div className="overflow-x-auto rounded-lg border border-border bg-card">
+            <table className="w-full min-w-[760px] border-collapse text-left font-mono text-xs">
               <thead>
                 <tr className="border-border border-b bg-muted/40 text-muted-foreground">
                   <th className="w-8 px-3 py-2.5 text-center">
