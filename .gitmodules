@@ -1,0 +1,3 @@
+[submodule "app-desktop"]
+	path = app-desktop
+	url = https://github.com/robyajo/er-phpmyadmin-studio.git
