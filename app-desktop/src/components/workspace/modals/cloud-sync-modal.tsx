@@ -47,10 +47,10 @@ interface CloudSyncModalProps {
 
 const PRESET_ENDPOINTS = [
   {
-    auth: "https://er-service.duckdns.org/api/auth",
+    auth: "https://www.er-service.duckdns.org/api/auth",
     id: "cloud",
     label: "Cloud (Produksi)",
-    sync: "https://er-service.duckdns.org/api/sync",
+    sync: "https://www.er-service.duckdns.org/api/sync",
   },
   {
     auth: "http://127.0.0.1:4000/api/auth",
@@ -61,7 +61,7 @@ const PRESET_ENDPOINTS = [
 ];
 
 export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
-  const { profiles, setProfiles } = useConnection();
+  const { mergeProfiles, profiles, setProfiles } = useConnection();
   const {
     clearJournal,
     config,
@@ -212,7 +212,7 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
     const res = await pullFromCloud(tokenInput);
     if (res.success && res.data) {
       if (res.data.profiles && res.data.profiles.length > 0) {
-        setProfiles(res.data.profiles);
+        mergeProfiles(res.data.profiles);
       }
       toast.success(
         `Tarik dari Cloud Berhasil! (${res.data.profiles.length} profil dimuat dari ${res.lastDevice || "Neon Cloud"})`
@@ -233,6 +233,9 @@ export function CloudSyncModal({ isOpen, onClose }: CloudSyncModalProps) {
     }
     const res = await mergeWithCloud(profiles, tokenInput);
     if (res.success) {
+      if (res.data?.profiles && res.data.profiles.length > 0) {
+        mergeProfiles(res.data.profiles);
+      }
       toast.success(res.message || "Penggabungan cerdas cloud berhasil!");
     } else {
       toast.error(`Gabung Cerdas Gagal: ${res.error}`);

@@ -94,62 +94,72 @@ export function ConnectionInspector({
   };
 
   return (
-    <aside className="flex w-72 shrink-0 flex-col overflow-y-auto border-border border-l bg-card transition-all duration-200 sm:w-80 lg:w-96">
-      {/* Header */}
-      <div className="flex items-center justify-between border-border border-b bg-muted/40 p-3">
-        <div className="flex items-center gap-2">
-          {editForm.method === "ssh" ? (
-            <Terminal className="text-purple-400" size={15} />
-          ) : (
-            <Database className="text-primary" size={15} />
-          )}
-          <h3 className="font-semibold text-foreground text-xs uppercase tracking-wide">
+    <aside className="flex w-80 shrink-0 flex-col h-full overflow-hidden border-border border-l bg-card transition-all duration-200 sm:w-84 lg:w-96 select-none">
+      {/* Header (Pinned) */}
+      <div className="flex h-11 shrink-0 items-center justify-between border-border border-b bg-card/80 px-3.5 backdrop-blur-xs">
+        <div className="flex items-center gap-2 min-w-0">
+          <div
+            className={cn(
+              "flex size-6.5 shrink-0 items-center justify-center rounded-md border",
+              editForm.method === "ssh"
+                ? "border-purple-300 bg-purple-100 text-purple-700 dark:border-purple-500/40 dark:bg-purple-500/15 dark:text-purple-300"
+                : "border-primary/30 bg-primary/10 text-primary"
+            )}
+          >
+            {editForm.method === "ssh" ? (
+              <Terminal size={13} />
+            ) : (
+              <Database size={13} />
+            )}
+          </div>
+          <h3 className="font-semibold text-foreground text-xs uppercase tracking-wider truncate">
             {editForm.method === "ssh" ? "SSH Tunnel Details" : "Host Details"}
           </h3>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 shrink-0">
           <Badge
             className={cn(
-              "text-[9px] uppercase tracking-wider",
+              "text-[9px] uppercase tracking-wider px-1.5 py-0",
               editForm.environment === "Production" &&
-                "border-destructive/30 bg-destructive/10 text-destructive"
+                "border-destructive/30 bg-destructive/10 text-destructive font-medium"
             )}
           >
             {editForm.environment}
           </Badge>
           <button
-            className="cursor-pointer rounded p-1 text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground"
+            className="cursor-pointer rounded-md p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
             onClick={onClose}
             title="Tutup Panel Inspector"
             type="button"
           >
-            <PanelRightClose size={14} />
+            <PanelRightClose size={15} />
           </button>
         </div>
       </div>
 
-      <div className="flex-1 space-y-4 p-4 text-xs">
+      <div className="flex-1 overflow-y-auto space-y-3.5 p-3.5 text-xs">
         {/* Profile Name & Environment */}
-        <div className="space-y-3">
+        <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-3 shadow-2xs">
           <div>
-            <Label className="text-[11px] text-muted-foreground">
+            <Label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
               Nama Profil
             </Label>
             <Input
-              className="mt-1 h-8 border-border bg-muted/40 py-1 text-foreground text-xs"
+              className="mt-1 h-8 border-border bg-background px-2.5 text-xs text-foreground placeholder:text-muted-foreground/50"
               onChange={(e) =>
                 setEditForm({ ...editForm, name: e.target.value })
               }
+              placeholder="Misal: Production DB atau Staging VPS..."
               value={editForm.name}
             />
           </div>
 
           {/* Metode Koneksi Segmented Buttons */}
           <div>
-            <Label className="text-[11px] text-muted-foreground">
+            <Label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
               Metode Koneksi
             </Label>
-            <div className="mt-1 grid grid-cols-2 gap-1 rounded-md border border-border bg-muted/30 p-1">
+            <div className="mt-1 grid grid-cols-2 gap-1 rounded-md border border-border bg-muted/40 p-1">
               <button
                 className={cn(
                   "flex cursor-pointer items-center justify-center gap-1.5 rounded py-1.5 text-xs font-medium transition-all",
@@ -170,7 +180,7 @@ export function ConnectionInspector({
                   "flex cursor-pointer items-center justify-center gap-1.5 rounded py-1.5 text-xs font-medium transition-all",
                   editForm.method === "ssh"
                     ? "bg-purple-600 font-semibold text-white shadow-xs ring-1 ring-purple-400/50"
-                    : "text-muted-foreground hover:bg-purple-500/10 hover:text-purple-300"
+                    : "text-muted-foreground hover:bg-purple-500/10 hover:text-purple-700 dark:hover:text-purple-300"
                 )}
                 onClick={() =>
                   setEditForm({
@@ -196,7 +206,7 @@ export function ConnectionInspector({
           </div>
 
           <div>
-            <Label className="text-[11px] text-muted-foreground">
+            <Label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
               Environment
             </Label>
             <Select
@@ -205,7 +215,7 @@ export function ConnectionInspector({
               }
               value={editForm.environment}
             >
-              <SelectTrigger className="mt-1 h-8 border-border text-xs">
+              <SelectTrigger className="mt-1 h-8 border-border bg-background px-2.5 text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="text-xs">
@@ -219,22 +229,22 @@ export function ConnectionInspector({
         </div>
 
         {/* Server Details */}
-        <div className="space-y-2.5 rounded-lg border border-border bg-muted/40 p-3">
+        <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-3 shadow-2xs">
           <div className="flex items-center justify-between">
             <h4 className="font-semibold text-[11px] text-foreground">
               Server Database MySQL / MariaDB
             </h4>
             {editForm.method === "ssh" && (
-              <Badge className="border-purple-400/40 bg-purple-500/10 text-[9px] text-purple-300">
+              <Badge className="border-purple-300 bg-purple-100 text-[9px] text-purple-700 dark:border-purple-400/40 dark:bg-purple-500/10 dark:text-purple-300">
                 via SSH Tunnel
               </Badge>
             )}
           </div>
 
           {editForm.method === "ssh" && (
-            <p className="rounded bg-purple-950/30 p-1.5 text-[10px] text-purple-200">
+            <p className="rounded border border-purple-200 bg-purple-50/80 p-1.5 text-[10px] text-purple-800 dark:border-purple-500/20 dark:bg-purple-950/30 dark:text-purple-200">
               💡 <strong>Tips VPS:</strong> Database Host biasanya diisi{" "}
-              <code className="text-purple-100">127.0.0.1</code> karena MySQL
+              <code className="rounded bg-purple-100 px-1 py-0.2 font-mono text-purple-900 dark:bg-purple-900/50 dark:text-purple-100">127.0.0.1</code> karena MySQL
               dihubungi langsung dari dalam VPS via tunnel.
             </p>
           )}
@@ -309,7 +319,7 @@ export function ConnectionInspector({
                 Username MySQL
               </Label>
               <Input
-                className="mt-1 h-8 border-border bg-muted/40 py-1 text-foreground text-xs"
+                className="mt-1 h-8 border-border bg-background px-2.5 text-xs text-foreground placeholder:text-muted-foreground/50"
                 onChange={(e) =>
                   setEditForm({ ...editForm, username: e.target.value })
                 }
@@ -338,7 +348,7 @@ export function ConnectionInspector({
               </Label>
               <div className="relative mt-1">
                 <Input
-                  className="h-8 border-border bg-background pr-7 py-0.5 font-mono text-xs leading-normal"
+                  className="h-8 border-border bg-background pl-2.5 pr-7 font-mono text-xs text-foreground leading-normal"
                   onChange={(e) => {
                     setPasswordInput(e.target.value);
                     setPasswordAction("replace");
@@ -365,15 +375,15 @@ export function ConnectionInspector({
 
         {/* SSH Tunnel Configuration Section */}
         {editForm.method === "ssh" && (
-          <div className="flex flex-col gap-2.5 rounded-lg border border-purple-400/40 bg-purple-500/10 p-3 shadow-xs">
+          <div className="flex flex-col gap-2.5 rounded-lg border border-purple-200 bg-purple-50/60 p-3 shadow-xs dark:border-purple-500/30 dark:bg-purple-950/20">
             <div className="flex items-center justify-between">
-              <h4 className="flex items-center gap-1.5 font-semibold text-[11px] text-purple-300">
+              <h4 className="flex items-center gap-1.5 font-semibold text-[11px] text-purple-700 dark:text-purple-300">
                 <Terminal size={13} />
                 Konfigurasi SSH Server (VPS / Bastion)
               </h4>
               <div className="flex items-center gap-1">
                 <Button
-                  className="h-5.5 rounded px-1.5 text-[10px] text-purple-200 hover:bg-purple-500/20"
+                  className="h-5.5 rounded px-1.5 text-[10px] text-purple-700 hover:bg-purple-200/50 dark:text-purple-200 dark:hover:bg-purple-500/20"
                   onClick={handleCopySshCli}
                   size="sm"
                   title="Salin perintah CLI ssh -N -L"
@@ -383,7 +393,7 @@ export function ConnectionInspector({
                   CLI
                 </Button>
                 <Button
-                  className="h-5.5 rounded px-2 text-[10px] text-purple-200 hover:bg-purple-500/20"
+                  className="h-5.5 rounded px-2 text-[10px] text-purple-700 hover:bg-purple-200/50 dark:text-purple-200 dark:hover:bg-purple-500/20"
                   onClick={onInspectSshKey}
                   size="sm"
                   variant="ghost"
@@ -456,8 +466,8 @@ export function ConnectionInspector({
                       className={cn(
                         "cursor-pointer rounded border px-1.5 py-0.5 font-mono text-[9px] transition-all",
                         editForm.ssh?.username === userPreset
-                          ? "border-purple-400 bg-purple-500/25 font-semibold text-purple-200"
-                          : "border-border/60 bg-background/60 text-muted-foreground hover:border-purple-400/40 hover:text-foreground"
+                          ? "border-purple-300 bg-purple-100 font-semibold text-purple-800 dark:border-purple-400 dark:bg-purple-500/25 dark:text-purple-200"
+                          : "border-border/60 bg-background/60 text-muted-foreground hover:border-purple-300 hover:text-purple-700 dark:hover:border-purple-400/40 dark:hover:text-foreground"
                       )}
                       key={userPreset}
                       onClick={() =>
@@ -524,7 +534,7 @@ export function ConnectionInspector({
                 </Label>
                 <div className="relative mt-1">
                   <Input
-                    className="h-8 border-border bg-background pr-7 py-0.5 font-mono text-xs leading-normal"
+                    className="h-8 border-border bg-background pl-2.5 pr-7 font-mono text-xs text-foreground leading-normal"
                     onChange={(e) =>
                       setEditForm({
                         ...editForm,
@@ -607,8 +617,8 @@ export function ConnectionInspector({
                           className={cn(
                             "cursor-pointer rounded border px-1.5 py-0.5 font-mono text-[9px] transition-all",
                             editForm.ssh?.key === keyPath
-                              ? "border-purple-400 bg-purple-500/25 font-semibold text-purple-200"
-                              : "border-border/60 bg-background/60 text-muted-foreground hover:border-purple-400/40 hover:text-foreground"
+                              ? "border-purple-300 bg-purple-100 font-semibold text-purple-800 dark:border-purple-400 dark:bg-purple-500/25 dark:text-purple-200"
+                              : "border-border/60 bg-background/60 text-muted-foreground hover:border-purple-300 hover:text-purple-700 dark:hover:border-purple-400/40 dark:hover:text-foreground"
                           )}
                           key={keyPath}
                           onClick={() =>
@@ -632,7 +642,7 @@ export function ConnectionInspector({
                   </Label>
                   <div className="relative mt-1">
                     <Input
-                      className="h-8 border-border bg-background pr-7 py-0.5 font-mono text-xs leading-normal"
+                      className="h-8 border-border bg-background pl-2.5 pr-7 font-mono text-xs text-foreground leading-normal"
                       onChange={(e) =>
                         setEditForm({
                           ...editForm,
@@ -665,15 +675,15 @@ export function ConnectionInspector({
             )}
 
             {/* Standard VPS Tunnel Info Footer */}
-            <div className="mt-1 rounded border border-purple-500/20 bg-purple-950/20 p-2 text-[10px] leading-relaxed text-purple-200/90">
-              <div className="flex items-center gap-1.5 font-medium text-purple-300">
+            <div className="mt-1 rounded border border-purple-200 bg-purple-50/80 p-2 text-[10px] leading-relaxed text-purple-800 dark:border-purple-500/20 dark:bg-purple-950/20 dark:text-purple-200/90">
+              <div className="flex items-center gap-1.5 font-medium text-purple-700 dark:text-purple-300">
                 <Shield size={11} />
                 <span>Standar Tunneling VPS Aktif:</span>
               </div>
-              <ul className="mt-1 list-inside list-disc space-y-0.5 text-[9.5px] text-purple-200/80">
+              <ul className="mt-1 list-inside list-disc space-y-0.5 text-[9.5px] text-purple-700/80 dark:text-purple-200/80">
                 <li>
                   Forwarding aman: MySQL dihubungi via loopback internal VPS (
-                  <code className="text-purple-100">127.0.0.1:3306</code>).
+                  <code className="rounded bg-purple-100 px-1 py-0.2 font-mono text-purple-900 dark:bg-purple-900/40 dark:text-purple-100">127.0.0.1:3306</code>).
                 </li>
                 <li>
                   Auto Keep-Alive: Ping berkala 15 detik aktif otomatis untuk
@@ -807,11 +817,11 @@ export function ConnectionInspector({
         )}
       </div>
 
-      {/* Action Buttons */}
-      <div className="shrink-0 space-y-2 border-border border-t bg-muted/40 p-3.5">
+      {/* Action Buttons (Pinned Footer) */}
+      <div className="shrink-0 space-y-2 border-border border-t bg-card/95 backdrop-blur-xs p-3 shadow-lg">
         <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
           <Button
-            className="h-7.5 border-border bg-transparent text-muted-foreground text-xs hover:bg-muted hover:text-foreground"
+            className="h-8 border-border bg-transparent text-muted-foreground text-xs hover:bg-muted hover:text-foreground cursor-pointer"
             onClick={onClose}
             size="sm"
             variant="outline"
@@ -819,7 +829,7 @@ export function ConnectionInspector({
             Batal
           </Button>
           <Button
-            className="h-7.5 border-border bg-transparent text-foreground text-xs hover:bg-muted hover:text-foreground"
+            className="h-8 border-border bg-transparent text-foreground text-xs hover:bg-muted hover:text-foreground cursor-pointer"
             disabled={isTesting}
             onClick={onTestConnection}
             size="sm"
@@ -832,7 +842,7 @@ export function ConnectionInspector({
             <span className="truncate">{isTesting ? "Menguji..." : "Tes"}</span>
           </Button>
           <Button
-            className="h-7.5 bg-primary font-semibold text-primary-foreground text-xs hover:bg-primary/90"
+            className="h-8 bg-primary font-semibold text-primary-foreground text-xs hover:bg-primary/90 cursor-pointer"
             onClick={onSaveProfile}
             size="sm"
           >
@@ -841,7 +851,7 @@ export function ConnectionInspector({
           </Button>
         </div>
         <Button
-          className="flex h-8 w-full items-center justify-center gap-1 rounded-md bg-primary font-semibold text-primary-foreground text-xs shadow-sm hover:bg-primary/90"
+          className="flex h-8.5 w-full items-center justify-center gap-1.5 rounded-md bg-primary font-semibold text-primary-foreground text-xs shadow-sm hover:bg-primary/90 cursor-pointer"
           onClick={onConnect}
           size="sm"
         >

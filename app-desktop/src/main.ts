@@ -79,7 +79,7 @@ function createWindow() {
     title: "xphpMyAdmin Desktop",
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "hidden",
     trafficLightPosition:
-      process.platform === "darwin" ? { x: 5, y: 5 } : undefined,
+      process.platform === "darwin" ? { x: 12, y: 11 } : undefined,
     webPreferences: {
       contextIsolation: true,
       devTools: inDevelopment,

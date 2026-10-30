@@ -1,7 +1,9 @@
 import type React from "react";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { INITIAL_PROFILES } from "@/components/workspace/constants";
 import type { ActiveTabItem } from "@/components/workspace/types";
+import { LOCAL_STORAGE_KEYS } from "@/constants";
+import { mergeProfilesLists, setCachedProfiles } from "@/services/cloud-sync";
 import type { Profile } from "@/types/connection";
 
 interface ConnectionContextValue {
@@ -10,6 +12,7 @@ interface ConnectionContextValue {
   addTab: (tab: ActiveTabItem) => void;
   closeTab: (tabId: string) => void;
   isSidebarCollapsed: boolean;
+  mergeProfiles: (incoming: Profile[]) => void;
   profiles: Profile[];
   savedPasswords: Record<string, string>;
   searchQuery: string;
@@ -31,7 +34,23 @@ export function ConnectionProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [profiles, setProfiles] = useState<Profile[]>(INITIAL_PROFILES);
+  const [profiles, setProfiles] = useState<Profile[]>(() => {
+    if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+      try {
+        const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.PROFILES);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      } catch {
+        // fallback
+      }
+    }
+    return INITIAL_PROFILES;
+  });
+
   const [savedPasswords, setSavedPasswords] = useState<Record<string, string>>({
     "a1c3d4e5-3333-4444-8888-3456789abcde": "",
     "e4a1b2c3-1111-4444-8888-123456789abc": "secret",
@@ -42,6 +61,26 @@ export function ConnectionProvider({
   const [activeTabId, setActiveTabId] = useState("tab-home");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Sync to localStorage and global cached profiles whenever profiles change
+  useEffect(() => {
+    if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+      try {
+        localStorage.setItem(
+          LOCAL_STORAGE_KEYS.PROFILES,
+          JSON.stringify(profiles)
+        );
+      } catch {
+        // ignore storage errors
+      }
+    }
+    setCachedProfiles(profiles);
+  }, [profiles]);
+
+  const mergeProfiles = (incoming: Profile[]) => {
+    if (!incoming || incoming.length === 0) return;
+    setProfiles((prev) => mergeProfilesLists(prev, incoming));
+  };
 
   const addTab = (tab: ActiveTabItem) => {
     setActiveTabs((prev) => {
@@ -68,6 +107,7 @@ export function ConnectionProvider({
         addTab,
         closeTab,
         isSidebarCollapsed,
+        mergeProfiles,
         profiles,
         savedPasswords,
         searchQuery,

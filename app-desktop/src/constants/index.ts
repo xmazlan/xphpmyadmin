@@ -5,6 +5,7 @@ export const LOCAL_STORAGE_KEYS = {
   CLOUD_SYNC_QUERY_HISTORY: "xphpmyadmin_query_history",
   CLOUD_SYNC_SNIPPETS: "xphpmyadmin_saved_snippets",
   LANGUAGE: "lang",
+  PROFILES: "xphpmyadmin_profiles",
   THEME: "theme",
 };
 

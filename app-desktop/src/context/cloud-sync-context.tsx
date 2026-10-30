@@ -283,21 +283,30 @@ export function CloudSyncProvider({
     }
   };
 
+  const syncAfterAuth = async () => {
+    const currentConfig = getCloudSyncConfig();
+    if (currentConfig.subscriptionTier !== "free") {
+      setIsSyncing(true);
+      try {
+        const pullRes = await pullFromCloudBackend();
+        if (!pullRes.success || !pullRes.data?.profiles?.length) {
+          await triggerAutoSyncToCloud(cachedProfiles, 0);
+        }
+      } catch {
+        // fallback to push if pull fails
+        await triggerAutoSyncToCloud(cachedProfiles, 0).catch(() => {});
+      } finally {
+        refreshState();
+        setIsSyncing(false);
+      }
+    }
+  };
+
   const handleLogin = async (email: string, pass: string) => {
     const res = await loginToCloudBackend(email, pass);
     refreshState();
     if (res.success) {
-      const currentConfig = getCloudSyncConfig();
-      if (currentConfig.subscriptionTier !== "free") {
-        setIsSyncing(true);
-        triggerAutoSyncToCloud(cachedProfiles, 0)
-          .then(() => {
-            refreshState();
-          })
-          .finally(() => {
-            setIsSyncing(false);
-          });
-      }
+      await syncAfterAuth();
     }
     return res;
   };
@@ -312,17 +321,7 @@ export function CloudSyncProvider({
     const res = await registerToCloudBackend(name, email, pass, plan, billingCycle);
     refreshState();
     if (res.success) {
-      const currentConfig = getCloudSyncConfig();
-      if (currentConfig.subscriptionTier !== "free") {
-        setIsSyncing(true);
-        triggerAutoSyncToCloud(cachedProfiles, 0)
-          .then(() => {
-            refreshState();
-          })
-          .finally(() => {
-            setIsSyncing(false);
-          });
-      }
+      await syncAfterAuth();
     }
     return res;
   };
@@ -334,17 +333,7 @@ export function CloudSyncProvider({
   ) => {
     saveAuthSession(token, user, provider);
     refreshState();
-    const currentConfig = getCloudSyncConfig();
-    if (currentConfig.subscriptionTier !== "free") {
-      setIsSyncing(true);
-      triggerAutoSyncToCloud(cachedProfiles, 0)
-        .then(() => {
-          refreshState();
-        })
-        .finally(() => {
-          setIsSyncing(false);
-        });
-    }
+    syncAfterAuth();
   };
 
   const handleOAuthLogin = async (
@@ -356,17 +345,7 @@ export function CloudSyncProvider({
     const res = await oauthLoginCloudBackend(provider, email, name, image);
     refreshState();
     if (res.success) {
-      const currentConfig = getCloudSyncConfig();
-      if (currentConfig.subscriptionTier !== "free") {
-        setIsSyncing(true);
-        triggerAutoSyncToCloud(cachedProfiles, 0)
-          .then(() => {
-            refreshState();
-          })
-          .finally(() => {
-            setIsSyncing(false);
-          });
-      }
+      await syncAfterAuth();
     }
     return res;
   };

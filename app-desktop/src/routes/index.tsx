@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   fetchDatabases,
@@ -67,6 +67,16 @@ export function HomePage() {
   const [diagnostics, setDiagnostics] = useState<DiagnosticStage[] | null>(
     null
   );
+
+  // Otomatis sesuaikan selectedId dan form saat profiles disinkronkan dari cloud
+  useEffect(() => {
+    if (profiles.length > 0) {
+      if (!selectedId || !profiles.some((p) => p.id === selectedId)) {
+        setSelectedId(profiles[0].id);
+        setEditForm({ ...profiles[0] });
+      }
+    }
+  }, [profiles, selectedId]);
 
   // Handlers
   const handleSelectHost = (profile: Profile) => {

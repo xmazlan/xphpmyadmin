@@ -1,5 +1,6 @@
 import { act, fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { getPlatform } from "@/actions/app";
 import DragWindowRegion from "@/components/drag-window-region";
 import { ConnectionGrid } from "@/components/workspace/connection/connection-grid";
 import { INITIAL_PROFILES } from "@/components/workspace/constants";
@@ -27,6 +28,23 @@ describe("Responsive Window & Layout Modes", () => {
     expect(getByText("xphpMyAdmin Desktop")).toBeInTheDocument();
     const maxBtn = await findByTitle(/Maksimalkan/i);
     expect(maxBtn).toBeInTheDocument();
+  });
+
+  it("does not render right window control buttons when on macOS", async () => {
+    vi.mocked(getPlatform).mockResolvedValueOnce("darwin");
+    const { queryByTitle, getByText } = render(
+      <DragWindowRegion title="xphpMyAdmin Desktop" />
+    );
+
+    expect(getByText("xphpMyAdmin Desktop")).toBeInTheDocument();
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(queryByTitle(/Minimalkan/i)).toBeNull();
+    expect(queryByTitle(/Maksimalkan/i)).toBeNull();
+    expect(queryByTitle(/Tutup/i)).toBeNull();
   });
 
   it("handles double click on draglayer to toggle window state", async () => {

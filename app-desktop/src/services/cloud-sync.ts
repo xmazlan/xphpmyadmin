@@ -37,6 +37,55 @@ const MEMORY_STORE: {
 
 let cachedProfiles: Profile[] = [];
 
+/**
+ * Smart merge local profiles with remote profiles.
+ * - Non-overlapping profiles from remote are added.
+ * - Matching profiles (by id) are resolved using connection_revision or updated_at.
+ * - Local-only profiles are preserved.
+ */
+export function mergeProfilesLists(
+  localProfiles: Profile[] = [],
+  remoteProfiles: Profile[] = []
+): Profile[] {
+  if (!remoteProfiles || remoteProfiles.length === 0) {
+    return localProfiles;
+  }
+  if (!localProfiles || localProfiles.length === 0) {
+    return remoteProfiles;
+  }
+
+  const profileMap = new Map<string, Profile>();
+
+  for (const local of localProfiles) {
+    if (local && local.id) {
+      profileMap.set(local.id, local);
+    }
+  }
+
+  for (const remote of remoteProfiles) {
+    if (!remote || !remote.id) continue;
+    const existing = profileMap.get(remote.id);
+    if (!existing) {
+      profileMap.set(remote.id, remote);
+    } else {
+      const remoteRev = remote.connection_revision ?? 1;
+      const localRev = existing.connection_revision ?? 1;
+
+      if (remoteRev > localRev) {
+        profileMap.set(remote.id, remote);
+      } else if (remoteRev === localRev) {
+        const remoteTime = remote.updated_at ? new Date(remote.updated_at).getTime() : 0;
+        const localTime = existing.updated_at ? new Date(existing.updated_at).getTime() : 0;
+        if (remoteTime >= localTime) {
+          profileMap.set(remote.id, remote);
+        }
+      }
+    }
+  }
+
+  return Array.from(profileMap.values());
+}
+
 export function setCachedProfiles(profiles: Profile[]): void {
   if (Array.isArray(profiles)) {
     cachedProfiles = profiles;
@@ -44,6 +93,23 @@ export function setCachedProfiles(profiles: Profile[]): void {
 }
 
 export function getCachedProfiles(): Profile[] {
+  if (cachedProfiles.length > 0) {
+    return cachedProfiles;
+  }
+  if (isStorageAvailable()) {
+    try {
+      const raw = localStorage.getItem(LOCAL_STORAGE_KEYS.PROFILES);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          cachedProfiles = parsed;
+          return cachedProfiles;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
   return cachedProfiles;
 }
 
@@ -195,6 +261,17 @@ export function deleteSnippet(id: string): void {
   }
 }
 
+export function normalizeCloudEndpoint(url?: string): string {
+  let cleaned = (url || '').trim().replace(/\/+$/, '');
+  if (!cleaned) return cleaned;
+  if (cleaned.startsWith('https://er-service.duckdns.org')) {
+    cleaned = cleaned.replace('https://er-service.duckdns.org', 'https://www.er-service.duckdns.org');
+  } else if (cleaned.startsWith('http://er-service.duckdns.org')) {
+    cleaned = cleaned.replace('http://er-service.duckdns.org', 'https://www.er-service.duckdns.org');
+  }
+  return cleaned;
+}
+
 export function getCloudSyncConfig(): CloudSyncConfig {
   let baseConfig = MEMORY_STORE.config;
   if (isStorageAvailable()) {
@@ -206,6 +283,12 @@ export function getCloudSyncConfig(): CloudSyncConfig {
     } catch {
       baseConfig = MEMORY_STORE.config;
     }
+  }
+  if (baseConfig.apiEndpoint) {
+    baseConfig.apiEndpoint = normalizeCloudEndpoint(baseConfig.apiEndpoint);
+  }
+  if (baseConfig.authEndpoint) {
+    baseConfig.authEndpoint = normalizeCloudEndpoint(baseConfig.authEndpoint);
   }
   const isNonFree = baseConfig.subscriptionTier !== "free";
   // Non-free tiers (Pro, Team, Business) aktif sinkronisasi otomatis secara default
@@ -233,9 +316,17 @@ export function updateCloudSyncConfig(
     resolvedAutoSync = isNonFree;
   }
 
+  const sanitizedUpdates = { ...updates };
+  if (sanitizedUpdates.apiEndpoint) {
+    sanitizedUpdates.apiEndpoint = normalizeCloudEndpoint(sanitizedUpdates.apiEndpoint);
+  }
+  if (sanitizedUpdates.authEndpoint) {
+    sanitizedUpdates.authEndpoint = normalizeCloudEndpoint(sanitizedUpdates.authEndpoint);
+  }
+
   const updated: CloudSyncConfig = {
     ...current,
-    ...updates,
+    ...sanitizedUpdates,
     autoSync: resolvedAutoSync,
   };
 
@@ -349,6 +440,25 @@ export function importCloudBackupJson(jsonString: string): {
 
     if (isStorageAvailable()) {
       try {
+        if (snapshot.profiles?.length) {
+          let mergedProfiles = snapshot.profiles;
+          try {
+            const rawStored = localStorage.getItem(LOCAL_STORAGE_KEYS.PROFILES);
+            if (rawStored) {
+              const currentLocal = JSON.parse(rawStored);
+              if (Array.isArray(currentLocal) && currentLocal.length > 0) {
+                mergedProfiles = mergeProfilesLists(currentLocal, snapshot.profiles);
+              }
+            }
+          } catch {
+            // fallback
+          }
+          localStorage.setItem(
+            LOCAL_STORAGE_KEYS.PROFILES,
+            JSON.stringify(mergedProfiles)
+          );
+          setCachedProfiles(mergedProfiles);
+        }
         if (snapshot.journal?.length) {
           localStorage.setItem(
             LOCAL_STORAGE_KEYS.CLOUD_SYNC_JOURNAL,
@@ -411,7 +521,7 @@ export async function syncWithCloudBackend(
   const resolvedProfiles =
     profiles && profiles.length > 0 ? profiles : getCachedProfiles();
   const token = (tokenOverride || config.apiToken || config.userEmail || "user_pro_sync").trim();
-  const baseEndpoint = (endpointOverride || config.apiEndpoint).replace(/\/+$/, "");
+  const baseEndpoint = normalizeCloudEndpoint(endpointOverride || config.apiEndpoint);
   const pushUrl = baseEndpoint.endsWith("/push") ? baseEndpoint : `${baseEndpoint}/push`;
   const snapshot = buildCloudSyncSnapshot(resolvedProfiles);
 
@@ -575,7 +685,7 @@ export async function pullFromCloudBackend(
     };
   }
   const token = (tokenOverride || config.apiToken || config.userEmail || "user_pro_sync").trim();
-  const baseEndpoint = (endpointOverride || config.apiEndpoint).replace(/\/+$/, "");
+  const baseEndpoint = normalizeCloudEndpoint(endpointOverride || config.apiEndpoint);
   const pullUrl = baseEndpoint.endsWith("/pull") ? baseEndpoint : `${baseEndpoint}/pull`;
 
   try {
@@ -647,7 +757,7 @@ export async function mergeWithCloudBackend(
     };
   }
   const token = (tokenOverride || config.apiToken || config.userEmail || "user_pro_sync").trim();
-  const baseEndpoint = (endpointOverride || config.apiEndpoint).replace(/\/+$/, "");
+  const baseEndpoint = normalizeCloudEndpoint(endpointOverride || config.apiEndpoint);
   const mergeUrl = baseEndpoint.endsWith("/merge") ? baseEndpoint : `${baseEndpoint}/merge`;
   const snapshot = buildCloudSyncSnapshot(profiles);
 
@@ -703,7 +813,7 @@ export async function loginToCloudBackend(
   authEndpointOverride?: string
 ): Promise<{ error?: string; success: boolean; user?: any }> {
   const config = getCloudSyncConfig();
-  const baseAuth = (authEndpointOverride || config.authEndpoint).replace(/\/+$/, "");
+  const baseAuth = normalizeCloudEndpoint(authEndpointOverride || config.authEndpoint);
   const loginUrl = baseAuth.endsWith("/login") ? baseAuth : `${baseAuth}/login`;
 
   try {
@@ -767,7 +877,7 @@ export async function registerToCloudBackend(
   authEndpointOverride?: string
 ): Promise<{ error?: string; success: boolean; user?: any }> {
   const config = getCloudSyncConfig();
-  const baseAuth = (authEndpointOverride || config.authEndpoint).replace(/\/+$/, "");
+  const baseAuth = normalizeCloudEndpoint(authEndpointOverride || config.authEndpoint);
   const regUrl = baseAuth.endsWith("/register") ? baseAuth : `${baseAuth}/register`;
 
   try {
@@ -845,7 +955,7 @@ export async function upgradeSubscriptionPlan(
     return { success: true };
   }
 
-  const baseAuth = config.authEndpoint.replace(/\/+$/, "");
+  const baseAuth = normalizeCloudEndpoint(config.authEndpoint);
   const planUrl = `${baseAuth}/plan`;
 
   try {
@@ -905,7 +1015,7 @@ export async function oauthLoginCloudBackend(
   authEndpointOverride?: string
 ): Promise<{ error?: string; success: boolean; user?: any }> {
   const config = getCloudSyncConfig();
-  const baseAuth = (authEndpointOverride || config.authEndpoint).replace(/\/+$/, "");
+  const baseAuth = normalizeCloudEndpoint(authEndpointOverride || config.authEndpoint);
   const oauthUrl = baseAuth.endsWith("/oauth") ? baseAuth : `${baseAuth}/oauth`;
 
   try {

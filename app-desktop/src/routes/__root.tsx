@@ -1,7 +1,7 @@
 import { createRootRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import type React from "react";
-import { Activity, useEffect, useMemo, useState } from "react";
+import { Activity, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AuthGate } from "@/components/auth/auth-gate";
 import { CloudSyncModal } from "@/components/workspace/modals/cloud-sync-modal";
@@ -28,6 +28,7 @@ function AppShell() {
     activeTabs,
     closeTab,
     isSidebarCollapsed,
+    mergeProfiles,
     profiles,
     searchQuery,
     setActiveTabId,
@@ -40,6 +41,7 @@ function AppShell() {
     isSyncing,
     journal,
     logout,
+    pullFromCloud,
     setCachedProfiles,
     syncNow,
   } = useCloudSync();
@@ -53,6 +55,44 @@ function AppShell() {
       setCachedProfiles(profiles);
     }
   }, [profiles, setCachedProfiles]);
+
+  // Otomatis tarik (auto-pull) snapshot dan profil dari Cloud saat aplikasi dijalankan (mount)
+  // bagi pengguna dengan paket Pro, Team, atau Business
+  const lastPulledKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const isNonFree = config.subscriptionTier !== "free";
+    const autoSyncEnabled = config.autoSync ?? isNonFree;
+    const currentKey = (config.apiToken || config.userEmail || "").trim();
+
+    if (
+      isNonFree &&
+      autoSyncEnabled &&
+      currentKey &&
+      lastPulledKeyRef.current !== currentKey
+    ) {
+      lastPulledKeyRef.current = currentKey;
+      pullFromCloud()
+        .then((res) => {
+          if (res.success && res.data?.profiles && res.data.profiles.length > 0) {
+            mergeProfiles(res.data.profiles);
+            toast.success("Profil Host Tersinkronisasi", {
+              description: `${res.data.profiles.length} host database dimuat dari ${res.lastDevice || "Neon Cloud"}.`,
+            });
+          }
+        })
+        .catch((err) => {
+          console.warn("Auto-pull on startup skipped or failed:", err);
+        });
+    }
+  }, [
+    config.subscriptionTier,
+    config.autoSync,
+    config.apiToken,
+    config.userEmail,
+    pullFromCloud,
+    mergeProfiles,
+  ]);
 
   const pendingCount = useMemo(() => {
     return journal.filter((item) => item.syncStatus === "pending").length;
@@ -133,8 +173,6 @@ function AppShell() {
         isOpen={isCloudSyncOpen}
         onClose={() => setIsCloudSyncOpen(false)}
       />
-
-
     </div>
   );
 }

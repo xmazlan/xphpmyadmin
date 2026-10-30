@@ -528,7 +528,7 @@ export function SettingsView() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border p-4 bg-card shadow-xs">
                     <div>
                       <div className="flex items-center gap-2">
-                        <Terminal className="size-4 text-purple-400 shrink-0" />
+                        <Terminal className="size-4 text-purple-600 dark:text-purple-400 shrink-0" />
                         <span className="font-medium text-sm">
                           {t("settings.sshKeepAlive", "Interval SSH Keep-Alive")}
                         </span>
